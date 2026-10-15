@@ -115,6 +115,21 @@ from blocks, defined in `src/blocks/index.ts` and drawn by `src/components/block
 - **Photo album**: one of our galleries that is shared by link, shown inline with the viewer.
   It disappears from the page as soon as sharing is turned off.
 
+## Website inquiries
+
+- The homepage contact section has an inquiry form. Requests land in *Sales → Inquiries*, visible
+  to the studio's admins, production managers and finance managers (not editors or clients).
+- The form posts to a server action (`src/app/(frontend)/[locale]/inquiryAction.ts`); the
+  collection itself has no public create access. The studio comes from the host name.
+- Spam protection without third-party services (`src/lib/inquiries.ts`): a hidden field bots
+  fill in, a signed form token (refused if sent within 3 seconds or after 24 hours), messages
+  with more than 3 links dropped, and at most 5 requests per sender and 3 per email address an
+  hour. Bots get a normal "thank you" so they learn nothing. Senders are tracked only by a keyed
+  hash of their address (`senderKey`), never the address itself.
+- Behind a proxy, the client address comes from `CF-Connecting-IP`, `X-Real-IP` or the first
+  `X-Forwarded-For` entry; make sure the proxy sets one of these.
+- Known limitation: no email notification yet. That needs an email provider (Resend, Postmark…).
+
 ## Background jobs
 
 Payload's job queue stores jobs in Postgres, so no Redis is needed yet. The web server runs

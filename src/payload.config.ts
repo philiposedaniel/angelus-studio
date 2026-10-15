@@ -14,6 +14,7 @@ import { Media } from './collections/Media'
 import { isSuperAdmin } from './access/roles'
 import { Services } from './collections/Services'
 import { Pages } from './collections/Pages'
+import { Inquiries } from './collections/Inquiries'
 import { SiteSettings } from './collections/SiteSettings'
 import { Tenants } from './collections/Tenants'
 import { Users } from './collections/Users'
@@ -49,6 +50,7 @@ export default buildConfig({
     GalleryPhotos,
     GalleryFavorites,
     GalleryDownloads,
+    Inquiries,
   ],
   localization: {
     locales: LOCALES.map((code) => ({ code, label: LOCALE_LABELS[code] })),
@@ -92,6 +94,7 @@ export default buildConfig({
         'gallery-photos': {},
         'gallery-favorites': {},
         'gallery-downloads': {},
+        inquiries: {},
       },
       tenantsArrayField: {
         includeDefaultField: false,
