@@ -4,7 +4,9 @@ import Image from 'next/image'
 import { notFound } from 'next/navigation'
 
 import { ButtonLink } from '@/components/ButtonLink'
+import { InquiryForm } from '@/components/InquiryForm'
 import { getDictionary } from '@/i18n/dictionaries'
+import { issueFormToken } from '@/lib/inquiries'
 import { resolveLocale } from '@/lib/locale'
 import { getPublishedServices, getSiteSettings } from '@/lib/site'
 import { getCurrentTenant } from '@/lib/tenant'
@@ -179,9 +181,11 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
               <ContactItem icon={<MapPin className="size-5" />}>{contact.address}</ContactItem>
             )}
           </ul>
-          {!contact.email && !contact.phone && !contact.whatsapp && (
-            <p className="mt-6 text-sm text-mist">{t.contact.empty}</p>
-          )}
+          <div className="mt-16 max-w-3xl">
+            <h3 className="font-display text-3xl">{t.inquiry.title}</h3>
+            <p className="mt-2 mb-8 text-mist">{t.inquiry.intro}</p>
+            <InquiryForm locale={locale} formToken={issueFormToken(tenant.id)} t={t.inquiry} />
+          </div>
         </div>
       </section>
     </>

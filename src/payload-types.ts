@@ -77,6 +77,7 @@ export interface Config {
     'gallery-photos': GalleryPhoto;
     'gallery-favorites': GalleryFavorite;
     'gallery-downloads': GalleryDownload;
+    inquiries: Inquiry;
     'payload-kv': PayloadKv;
     'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
@@ -95,6 +96,7 @@ export interface Config {
     'gallery-photos': GalleryPhotosSelect<false> | GalleryPhotosSelect<true>;
     'gallery-favorites': GalleryFavoritesSelect<false> | GalleryFavoritesSelect<true>;
     'gallery-downloads': GalleryDownloadsSelect<false> | GalleryDownloadsSelect<true>;
+    inquiries: InquiriesSelect<false> | InquiriesSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -518,6 +520,33 @@ export interface GalleryDownload {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "inquiries".
+ */
+export interface Inquiry {
+  id: number;
+  tenant?: (number | null) | Tenant;
+  name: string;
+  email: string;
+  phone?: string | null;
+  eventType: 'wedding' | 'event' | 'corporate' | 'livestream' | 'portrait' | 'other';
+  eventDate?: string | null;
+  location?: string | null;
+  message: string;
+  /**
+   * Language the visitor wrote in; reply in it.
+   */
+  locale?: string | null;
+  status: 'new' | 'contacted' | 'quoted' | 'booked' | 'closed';
+  /**
+   * Internal notes.
+   */
+  notes?: string | null;
+  senderKey?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -680,6 +709,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'gallery-downloads';
         value: number | GalleryDownload;
+      } | null)
+    | ({
+        relationTo: 'inquiries';
+        value: number | Inquiry;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -1018,6 +1051,26 @@ export interface GalleryDownloadsSelect<T extends boolean = true> {
   sizeBytes?: T;
   expiresAt?: T;
   error?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "inquiries_select".
+ */
+export interface InquiriesSelect<T extends boolean = true> {
+  tenant?: T;
+  name?: T;
+  email?: T;
+  phone?: T;
+  eventType?: T;
+  eventDate?: T;
+  location?: T;
+  message?: T;
+  locale?: T;
+  status?: T;
+  notes?: T;
+  senderKey?: T;
   updatedAt?: T;
   createdAt?: T;
 }
