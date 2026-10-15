@@ -57,6 +57,7 @@ starts. Every schema change therefore needs `pnpm migrate:create <name>` and a c
 | `NEXT_PUBLIC_SERVER_URL` | Public base URL, used for links and metadata. |
 | `PAYLOAD_DB_PUSH` | Set to `false` to disable dev schema push. |
 | `DEFAULT_TENANT_SLUG` | Studio shown when the host name matches no studio domain. |
+| `PRIVATE_MEDIA_DIR` | Folder for private client photos. Defaults to `./private-media`. |
 
 ## Studios and languages
 
@@ -67,3 +68,16 @@ starts. Every schema change therefore needs `pnpm migrate:create <name>` and a c
 ## Health check
 
 `GET /healthz` returns `{"status":"ok"}` when the app can reach the database, otherwise 503.
+
+## Client portal and galleries
+
+- Staff create a gallery under *Client delivery → Galleries*, choose the clients who may see it,
+  upload photos under *Gallery photos*, then set the status to *Published to clients*.
+- Clients sign in at `/<language>/portal`. They see only galleries assigned to them that are
+  published and not expired, can mark favorites, and can download originals only when the
+  gallery allows downloads.
+- Photos are stored outside `public/` and every file request goes through Payload's file route,
+  which checks access first. Resized copies (480px and 1920px WebP) are generated on upload;
+  originals are kept untouched.
+- Cookie sessions are only accepted from the site itself (Payload's CSRF rules), so tools like
+  curl cannot reuse a browser cookie to fetch private files.

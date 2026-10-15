@@ -6,6 +6,9 @@ import { buildConfig } from 'payload'
 import sharp from 'sharp'
 import { fileURLToPath } from 'url'
 
+import { Galleries } from './collections/Galleries'
+import { GalleryFavorites } from './collections/GalleryFavorites'
+import { GalleryPhotos } from './collections/GalleryPhotos'
 import { Media } from './collections/Media'
 import { isSuperAdmin } from './access/roles'
 import { Services } from './collections/Services'
@@ -32,7 +35,7 @@ export default buildConfig({
     },
   },
   serverURL: process.env.NEXT_PUBLIC_SERVER_URL,
-  collections: [Tenants, Users, Media, Services, SiteSettings],
+  collections: [Tenants, Users, Media, Services, SiteSettings, Galleries, GalleryPhotos, GalleryFavorites],
   localization: {
     locales: LOCALES.map((code) => ({ code, label: LOCALE_LABELS[code] })),
     defaultLocale: DEFAULT_LOCALE,
@@ -62,6 +65,9 @@ export default buildConfig({
         media: {},
         services: {},
         'site-settings': { isGlobal: true },
+        galleries: {},
+        'gallery-photos': {},
+        'gallery-favorites': {},
       },
       tenantsArrayField: {
         includeDefaultField: false,
