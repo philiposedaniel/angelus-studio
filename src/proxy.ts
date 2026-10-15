@@ -18,6 +18,7 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Skip the admin panel, API, health check, Next internals and files with an extension.
-  matcher: ['/((?!admin|api|healthz|_next|.*\\..*).*)'],
+  // Skip the admin panel, API, health check, share links (/s/…, language chosen by the page),
+  // Next internals and files with an extension.
+  matcher: ['/((?!admin|api|healthz|s/|_next|.*\\..*).*)'],
 }

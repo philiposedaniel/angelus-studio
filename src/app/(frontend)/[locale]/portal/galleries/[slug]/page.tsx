@@ -1,9 +1,10 @@
 import config from '@payload-config'
-import { ArrowLeft, Download, Maximize2 } from 'lucide-react'
+import { ArrowLeft, Download } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
+import { PhotoAlbum } from '@/components/album/PhotoAlbum'
 import { FavoriteButton } from '@/components/portal/FavoriteButton'
 import { GalleryZipButton } from '@/components/portal/GalleryZipButton'
 import { getDictionary } from '@/i18n/dictionaries'
@@ -26,7 +27,9 @@ export default async function GalleryPage({
   const { locale: requested, slug } = await params
   const locale = await resolveLocale(tenant, requested)
   const user = await requirePortalUser(tenant, locale)
-  const t = getDictionary(locale).portal
+  const dictionary = getDictionary(locale)
+  const t = dictionary.portal
+  const a = dictionary.album
   const query = await searchParams
   const onlyFavorites = query.view === 'favorites'
   const page = Math.max(1, Number(query.page) || 1)
@@ -96,7 +99,11 @@ export default async function GalleryPage({
       {gallery.description && <p className="mt-4 max-w-3xl text-mist">{gallery.description}</p>}
 
       <nav aria-label={t.favorites} className="mt-8 flex gap-3">
-        <Link href={base} className={tab(!onlyFavorites)} aria-current={!onlyFavorites ? 'page' : undefined}>
+        <Link
+          href={base}
+          className={tab(!onlyFavorites)}
+          aria-current={!onlyFavorites ? 'page' : undefined}
+        >
           {t.showAll}
         </Link>
         <Link
@@ -132,52 +139,59 @@ export default async function GalleryPage({
       {photos.docs.length === 0 ? (
         <p className="mt-10 text-mist">{t.emptyGallery}</p>
       ) : (
-        <ul className="mt-10 columns-2 gap-4 sm:columns-3 lg:columns-4">
-          {photos.docs.map((photo) => (
-            <li key={photo.id} className="group relative mb-4 break-inside-avoid overflow-hidden rounded-xl bg-graphite">
-              {/* Private files are served with the visitor's session, so no image optimizer. */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={photo.sizes?.thumbnail?.url ?? photo.url ?? ''}
-                alt={photo.alt ?? ''}
-                width={photo.sizes?.thumbnail?.width ?? photo.width ?? undefined}
-                height={photo.sizes?.thumbnail?.height ?? photo.height ?? undefined}
-                loading="lazy"
-                className="h-auto w-full"
-              />
-              <div className="absolute top-2 right-2 flex gap-2">
-                <FavoriteButton
-                  photoId={photo.id}
-                  initialFavoriteId={favoriteByPhoto.get(photo.id) ?? null}
-                  labels={{ favorite: t.favorite, unfavorite: t.unfavorite, error: t.favoriteError }}
-                />
-              </div>
-              <div className="absolute right-2 bottom-2 flex gap-2 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100">
-                <a
-                  href={photo.sizes?.web?.url ?? photo.url ?? '#'}
-                  target="_blank"
-                  rel="noopener"
-                  aria-label={t.viewLarge}
-                  title={t.viewLarge}
-                  className="flex size-10 items-center justify-center rounded-full bg-ink/70 text-ivory backdrop-blur hover:text-gold"
-                >
-                  <Maximize2 aria-hidden="true" className="size-5" />
-                </a>
+        <PhotoAlbum
+          className="mt-10"
+          labels={{
+            open: a.open,
+            close: a.close,
+            previous: a.previous,
+            next: a.next,
+            position: a.position,
+          }}
+          photos={photos.docs.map((photo) => {
+            const width = photo.sizes?.web?.width ?? photo.width ?? 1
+            const height = photo.sizes?.web?.height ?? photo.height ?? 1
+            return {
+              id: photo.id,
+              alt: photo.alt ?? '',
+              thumb: {
+                src: photo.sizes?.thumbnail?.url ?? photo.url ?? '',
+                width: photo.sizes?.thumbnail?.width ?? width,
+                height: photo.sizes?.thumbnail?.height ?? height,
+              },
+              large: { src: photo.sizes?.web?.url ?? photo.url ?? '', width, height },
+            }
+          })}
+          tileExtras={Object.fromEntries(
+            photos.docs.map((photo) => [
+              photo.id,
+              <div key={photo.id} className="pointer-events-none absolute inset-0">
+                <div className="pointer-events-auto absolute top-2 right-2">
+                  <FavoriteButton
+                    photoId={photo.id}
+                    initialFavoriteId={favoriteByPhoto.get(photo.id) ?? null}
+                    labels={{
+                      favorite: t.favorite,
+                      unfavorite: t.unfavorite,
+                      error: t.favoriteError,
+                    }}
+                  />
+                </div>
                 {gallery.allowDownloads && photo.url && (
                   <a
                     href={photo.url}
                     download={photo.filename ?? true}
                     aria-label={t.downloadOriginal}
                     title={t.downloadOriginal}
-                    className="flex size-10 items-center justify-center rounded-full bg-ink/70 text-ivory backdrop-blur hover:text-gold"
+                    className="pointer-events-auto absolute right-2 bottom-2 flex size-10 items-center justify-center rounded-full bg-ink/70 text-ivory opacity-100 backdrop-blur transition-opacity hover:text-gold sm:opacity-0 sm:group-hover:opacity-100 sm:focus:opacity-100"
                   >
                     <Download aria-hidden="true" className="size-5" />
                   </a>
                 )}
-              </div>
-            </li>
-          ))}
-        </ul>
+              </div>,
+            ]),
+          )}
+        />
       )}
 
       {photos.totalPages > 1 && (
