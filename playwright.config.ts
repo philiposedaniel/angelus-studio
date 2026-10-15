@@ -6,6 +6,9 @@ import { defineConfig, devices } from '@playwright/test'
  */
 import 'dotenv/config'
 
+// Test workers load Payload to seed data; only the web server should run background jobs.
+process.env.PAYLOAD_JOBS_AUTORUN = 'false'
+
 /**
  * See https://playwright.dev/docs/test-configuration.
  */
@@ -46,5 +49,6 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     url: 'http://localhost:3000/healthz',
     timeout: 180_000,
+    env: { PAYLOAD_JOBS_AUTORUN: 'true' },
   },
 })
