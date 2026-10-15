@@ -62,6 +62,12 @@ export function SiteHeader({ companyName, locale, locales, dictionary }: Props) 
               </ul>
             </nav>
           )}
+          <Link
+            href={`/${locale}/portal`}
+            className="hidden text-sm tracking-wide text-mist transition-colors hover:text-gold sm:inline"
+          >
+            {dictionary.portal.clientLogin}
+          </Link>
           <ButtonLink href={`/${locale}#contact`} className="px-5 py-2">
             {t.bookNow}
           </ButtonLink>

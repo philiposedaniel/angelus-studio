@@ -23,6 +23,12 @@ Browser ──> Cloudflare (DNS, CDN, WAF) ──> Coolify proxy ──> app con
   language prefix; content fields are localized in Payload with English fallback.
 - The public homepage resolves the studio from the host name and reads its site settings and
   published services with public access rules.
+- Client portal (`/[locale]/portal`): sign-in, galleries list, gallery view with favorites and
+  downloads. Collections `galleries`, `gallery-photos` (private uploads), `gallery-favorites`,
+  all studio-scoped. Rules live in `src/access/galleries.ts`; original downloads are guarded by
+  an upload handler in `src/collections/GalleryPhotos.ts`.
+- Private photos are on local disk (`PRIVATE_MEDIA_DIR`, a Docker volume in production). Moving
+  them to private S3/R2 storage with signed URLs and direct browser uploads is the next storage step.
 
 ## Planned
 

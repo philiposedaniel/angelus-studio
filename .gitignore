@@ -52,3 +52,6 @@ node_modules/
 # local env (never commit secrets)
 .env.*
 !.env.example
+
+# private client media (local development storage)
+/private-media
