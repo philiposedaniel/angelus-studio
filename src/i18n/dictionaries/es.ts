@@ -78,5 +78,9 @@ export const es: Dictionary = {
     unavailableTitle: 'Este álbum no está disponible',
     unavailableText: 'Es posible que el enlace se haya desactivado o haya caducado. Pida uno nuevo a quien lo compartió.',
   },
+  blocks: {
+    viewOnGooglePhotos: 'Ver álbum en Google Fotos',
+    openAlbum: 'Abrir el álbum completo',
+  },
   footer: { rights: 'Todos los derechos reservados.' },
 }

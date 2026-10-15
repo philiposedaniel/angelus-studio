@@ -6,7 +6,7 @@ import { SiteFooter } from '@/components/SiteFooter'
 import { SiteHeader } from '@/components/SiteHeader'
 import { getDictionary } from '@/i18n/dictionaries'
 import { resolveLocale, tenantLocales } from '@/lib/locale'
-import { getSiteSettings } from '@/lib/site'
+import { getMenuPages, getSiteSettings } from '@/lib/site'
 import { getCurrentTenant } from '@/lib/tenant'
 import './styles.css'
 
@@ -50,7 +50,10 @@ export default async function FrontendLayout({ children, params }: LayoutProps<'
   const tenant = await getCurrentTenant()
   if (!tenant) notFound()
   const locale = await resolveLocale(tenant, (await params).locale)
-  const settings = await getSiteSettings(tenant.id, locale)
+  const [settings, menuPages] = await Promise.all([
+    getSiteSettings(tenant.id, locale),
+    getMenuPages(tenant.id, locale),
+  ])
   const dictionary = getDictionary(locale)
   const companyName = settings?.companyName ?? tenant.name
 
@@ -68,6 +71,7 @@ export default async function FrontendLayout({ children, params }: LayoutProps<'
           locale={locale}
           locales={tenantLocales(tenant)}
           dictionary={dictionary}
+          menuPages={menuPages}
         />
         <main id="main" className="flex-1">
           {children}

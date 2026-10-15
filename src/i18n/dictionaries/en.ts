@@ -76,6 +76,10 @@ export const en = {
     unavailableTitle: 'This album is not available',
     unavailableText: 'The link may have been turned off or expired. Please ask whoever shared it for a new one.',
   },
+  blocks: {
+    viewOnGooglePhotos: 'View album on Google Photos',
+    openAlbum: 'Open the full album',
+  },
   footer: { rights: 'All rights reserved.' },
 }
 
