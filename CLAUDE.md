@@ -16,7 +16,10 @@ Payload CMS 3 running inside it, on PostgreSQL. Self-hosted on a dedicated Ubunt
 
 - `src/payload.config.ts`: collections, globals, database adapter.
 - `src/collections/`, `src/globals/`: Payload schema. Every collection declares explicit access rules.
-- `src/access/`: roles and access helpers. All authorization goes through here.
+- `src/access/`: platform and studio roles and access helpers. All authorization goes through here.
+- Multi-tenant: every studio-owned collection is registered with the multi-tenant plugin in
+  `src/payload.config.ts` and filtered by `tenant`. See `docs/decisions/0002-multi-tenant.md`.
+- `src/i18n/`: languages and interface dictionaries; public routes live under `src/app/(frontend)/[locale]`.
 - `src/app/(frontend)/`: public website. `src/app/(payload)/`: generated admin and REST API (do not edit by hand).
 - `src/migrations/`: committed database migrations.
 - `tests/unit`, `tests/int` (Vitest, Local API against Postgres), `tests/e2e` (Playwright).
@@ -29,7 +32,12 @@ Payload CMS 3 running inside it, on PostgreSQL. Self-hosted on a dedicated Ubunt
 4. Authorization is deny-by-default and enforced on the server. Every new collection, global,
    endpoint, server action and background job gets explicit access rules plus a test that tries
    to cross client boundaries. Never rely on hidden URLs or client-side checks.
-5. Local API calls made on behalf of a user pass `user` and `overrideAccess: false`.
+5. Local API calls made on behalf of a user pass `user` and `overrideAccess: false`. Public
+   reads always filter by the current studio's `tenant`.
+5a. Every new studio-owned collection: register it with the multi-tenant plugin and add tests
+   in `tests/int` proving one studio cannot read or change another studio's records.
+5b. User-facing text is translatable: localize CMS fields and put interface text in
+   `src/i18n/dictionaries`, never hardcoded English in components.
 6. Never expose private originals through public URLs. Client deliverables will use private
    object storage and short-lived signed URLs; the `media` collection is public website media only.
 7. Never hardcode secrets or commit `.env` files.

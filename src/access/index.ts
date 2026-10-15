@@ -1,28 +1,41 @@
-import type { Access, FieldAccess } from 'payload'
+import type { Access, FieldAccess, Where } from 'payload'
 
-import { isAdmin, isStaff } from './roles'
+import { isSuperAdmin, isStaffAnywhere, tenantIdsWithRole, type TenantRole } from './roles'
 
 export * from './roles'
 
 export const anyone: Access = () => true
 
-export const authenticated: Access = ({ req: { user } }) => Boolean(user)
+export const superAdminsOnly: Access = ({ req: { user } }) => isSuperAdmin(user)
 
-export const adminsOnly: Access = ({ req: { user } }) => isAdmin(user)
+export const superAdminsOnlyField: FieldAccess = ({ req: { user } }) => isSuperAdmin(user)
 
-export const staffOnly: Access = ({ req: { user } }) => isStaff(user)
+export const staffAnywhere: Access = ({ req: { user } }) => isStaffAnywhere(user)
 
-/** Administrators see every record; anyone else only their own user record. */
-export const adminsOrSelf: Access = ({ req: { user } }) => {
-  if (!user) return false
-  if (isAdmin(user)) return true
-  return { id: { equals: user.id } }
+/**
+ * Grants access to documents of the studios where the user holds one of `roles`.
+ * The multi-tenant plugin also limits every query to the user's own studios; this adds
+ * the role requirement on top. Super admins see everything.
+ */
+export const tenantRoles =
+  (roles: readonly TenantRole[], tenantField = 'tenant'): Access =>
+  ({ req: { user } }) => {
+    if (isSuperAdmin(user)) return true
+    const ids = tenantIdsWithRole(user, roles)
+    if (ids.length === 0) return false
+    return { [tenantField]: { in: ids } } satisfies Where
+  }
+
+export const tenantAdmins = tenantRoles(['admin'])
+
+/** Staff roles that may manage public website content for their studio. */
+export const tenantContentEditors = tenantRoles(['admin', 'production-manager', 'editor'])
+
+/** The public sees published documents; studio staff also see their drafts. */
+export const publishedOrTenantStaff: Access = ({ req: { user } }) => {
+  if (isSuperAdmin(user)) return true
+  const ids = tenantIdsWithRole(user, ['admin', 'production-manager', 'editor'])
+  const published: Where = { published: { equals: true } }
+  if (ids.length === 0) return published
+  return { or: [published, { tenant: { in: ids } }] }
 }
-
-/** Staff see everything; the public only sees documents marked as published. */
-export const publishedOrStaff: Access = ({ req: { user } }) => {
-  if (isStaff(user)) return true
-  return { published: { equals: true } }
-}
-
-export const adminsOnlyField: FieldAccess = ({ req: { user } }) => isAdmin(user)

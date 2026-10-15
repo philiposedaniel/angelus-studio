@@ -1,22 +1,22 @@
-import type { GlobalConfig } from 'payload'
+import type { CollectionConfig } from 'payload'
 
-import { adminsOnly, anyone } from '@/access'
+import { anyone, superAdminsOnly, tenantAdmins } from '@/access'
 
-export const SiteSettings: GlobalConfig = {
+/** One settings document per studio (the multi-tenant plugin treats it as a per-tenant global). */
+export const SiteSettings: CollectionConfig = {
   slug: 'site-settings',
-  label: 'Site settings',
+  labels: { singular: 'Site settings', plural: 'Site settings' },
+  admin: { useAsTitle: 'companyName' },
   access: {
     read: anyone,
-    update: adminsOnly,
+    create: tenantAdmins,
+    update: tenantAdmins,
+    delete: superAdminsOnly,
   },
   fields: [
-    { name: 'companyName', type: 'text', required: true, defaultValue: 'Angelus Media Productions' },
-    {
-      name: 'tagline',
-      type: 'text',
-      defaultValue: 'Cinematic photography, film and live production.',
-    },
-    { name: 'introduction', type: 'textarea' },
+    { name: 'companyName', type: 'text', required: true },
+    { name: 'tagline', type: 'text', localized: true },
+    { name: 'introduction', type: 'textarea', localized: true },
     { name: 'heroImage', type: 'upload', relationTo: 'media' },
     {
       type: 'group',
@@ -31,7 +31,7 @@ export const SiteSettings: GlobalConfig = {
           validate: (value: string | null | undefined) =>
             !value || /^\d{7,15}$/.test(value) || 'Digits only, 7 to 15 of them.',
         },
-        { name: 'address', type: 'textarea' },
+        { name: 'address', type: 'textarea', localized: true },
       ],
     },
     {

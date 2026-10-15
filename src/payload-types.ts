@@ -67,9 +67,11 @@ export interface Config {
   };
   blocks: {};
   collections: {
+    tenants: Tenant;
     users: User;
     media: Media;
     services: Service;
+    'site-settings': SiteSetting;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -77,9 +79,11 @@ export interface Config {
   };
   collectionsJoins: {};
   collectionsSelect: {
+    tenants: TenantsSelect<false> | TenantsSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     services: ServicesSelect<false> | ServicesSelect<true>;
+    'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -88,14 +92,15 @@ export interface Config {
   db: {
     defaultIDType: number;
   };
-  fallbackLocale: null;
-  globals: {
-    'site-settings': SiteSetting;
-  };
-  globalsSelect: {
-    'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
-  };
-  locale: null;
+  fallbackLocale:
+    | ('false' | 'none' | 'null')
+    | false
+    | null
+    | ('en' | 'es' | 'fr' | 'pt' | 'de' | 'it')
+    | ('en' | 'es' | 'fr' | 'pt' | 'de' | 'it')[];
+  globals: {};
+  globalsSelect: {};
+  locale: 'en' | 'es' | 'fr' | 'pt' | 'de' | 'it';
   widgets: {
     collections: CollectionsWidget;
   };
@@ -125,22 +130,48 @@ export interface UserAuthOperations {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tenants".
+ */
+export interface Tenant {
+  id: number;
+  name: string;
+  slug: string;
+  /**
+   * Host name this studio’s public website is served on, e.g. angelusmedia.com
+   */
+  domain?: string | null;
+  /**
+   * Languages this studio’s public website offers.
+   */
+  languages: ('en' | 'es' | 'fr' | 'pt' | 'de' | 'it')[];
+  defaultLocale: 'en' | 'es' | 'fr' | 'pt' | 'de' | 'it';
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users".
  */
 export interface User {
   id: number;
   name?: string | null;
-  roles: (
-    | 'super-admin'
-    | 'admin'
-    | 'production-manager'
-    | 'photographer'
-    | 'videographer'
-    | 'editor'
-    | 'finance-manager'
-    | 'event-organizer'
-    | 'client'
-  )[];
+  roles: ('super-admin' | 'user')[];
+  tenants?:
+    | {
+        tenant: number | Tenant;
+        roles: (
+          | 'admin'
+          | 'production-manager'
+          | 'photographer'
+          | 'videographer'
+          | 'editor'
+          | 'finance-manager'
+          | 'event-organizer'
+          | 'client'
+        )[];
+        id?: string | null;
+      }[]
+    | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -169,6 +200,7 @@ export interface User {
  */
 export interface Media {
   id: number;
+  tenant?: (number | null) | Tenant;
   alt: string;
   updatedAt: string;
   createdAt: string;
@@ -214,6 +246,7 @@ export interface Media {
  */
 export interface Service {
   id: number;
+  tenant?: (number | null) | Tenant;
   title: string;
   slug: string;
   summary: string;
@@ -223,6 +256,36 @@ export interface Service {
    */
   order?: number | null;
   published?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "site-settings".
+ */
+export interface SiteSetting {
+  id: number;
+  tenant?: (number | null) | Tenant;
+  companyName: string;
+  tagline?: string | null;
+  introduction?: string | null;
+  heroImage?: (number | null) | Media;
+  contact?: {
+    email?: string | null;
+    phone?: string | null;
+    /**
+     * International format without spaces, for example 15551234567.
+     */
+    whatsapp?: string | null;
+    address?: string | null;
+  };
+  socialLinks?:
+    | {
+        platform: 'instagram' | 'facebook' | 'youtube' | 'vimeo' | 'tiktok' | 'linkedin' | 'x';
+        url: string;
+        id?: string | null;
+      }[]
+    | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -251,6 +314,10 @@ export interface PayloadLockedDocument {
   id: number;
   document?:
     | ({
+        relationTo: 'tenants';
+        value: number | Tenant;
+      } | null)
+    | ({
         relationTo: 'users';
         value: number | User;
       } | null)
@@ -261,6 +328,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'services';
         value: number | Service;
+      } | null)
+    | ({
+        relationTo: 'site-settings';
+        value: number | SiteSetting;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -306,11 +377,31 @@ export interface PayloadMigration {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tenants_select".
+ */
+export interface TenantsSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  domain?: T;
+  languages?: T;
+  defaultLocale?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
   name?: T;
   roles?: T;
+  tenants?:
+    | T
+    | {
+        tenant?: T;
+        roles?: T;
+        id?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
   email?: T;
@@ -334,6 +425,7 @@ export interface UsersSelect<T extends boolean = true> {
  * via the `definition` "media_select".
  */
 export interface MediaSelect<T extends boolean = true> {
+  tenant?: T;
   alt?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -386,12 +478,41 @@ export interface MediaSelect<T extends boolean = true> {
  * via the `definition` "services_select".
  */
 export interface ServicesSelect<T extends boolean = true> {
+  tenant?: T;
   title?: T;
   slug?: T;
   summary?: T;
   image?: T;
   order?: T;
   published?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "site-settings_select".
+ */
+export interface SiteSettingsSelect<T extends boolean = true> {
+  tenant?: T;
+  companyName?: T;
+  tagline?: T;
+  introduction?: T;
+  heroImage?: T;
+  contact?:
+    | T
+    | {
+        email?: T;
+        phone?: T;
+        whatsapp?: T;
+        address?: T;
+      };
+  socialLinks?:
+    | T
+    | {
+        platform?: T;
+        url?: T;
+        id?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
 }
@@ -434,63 +555,6 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
   batch?: T;
   updatedAt?: T;
   createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "site-settings".
- */
-export interface SiteSetting {
-  id: number;
-  companyName: string;
-  tagline?: string | null;
-  introduction?: string | null;
-  heroImage?: (number | null) | Media;
-  contact?: {
-    email?: string | null;
-    phone?: string | null;
-    /**
-     * International format without spaces, for example 15551234567.
-     */
-    whatsapp?: string | null;
-    address?: string | null;
-  };
-  socialLinks?:
-    | {
-        platform: 'instagram' | 'facebook' | 'youtube' | 'vimeo' | 'tiktok' | 'linkedin' | 'x';
-        url: string;
-        id?: string | null;
-      }[]
-    | null;
-  updatedAt?: string | null;
-  createdAt?: string | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "site-settings_select".
- */
-export interface SiteSettingsSelect<T extends boolean = true> {
-  companyName?: T;
-  tagline?: T;
-  introduction?: T;
-  heroImage?: T;
-  contact?:
-    | T
-    | {
-        email?: T;
-        phone?: T;
-        whatsapp?: T;
-        address?: T;
-      };
-  socialLinks?:
-    | T
-    | {
-        platform?: T;
-        url?: T;
-        id?: T;
-      };
-  updatedAt?: T;
-  createdAt?: T;
-  globalType?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

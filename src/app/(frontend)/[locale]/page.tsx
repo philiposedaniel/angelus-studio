@@ -1,25 +1,30 @@
 import { Clapperboard, Film, Mail, MapPin, MessageCircle, Phone, Sparkles } from 'lucide-react'
 import Image from 'next/image'
 
-import { ButtonLink } from '@/components/ButtonLink'
-import { getPublishedServices, getSiteSettings } from '@/lib/site'
-import type { Media } from '@/payload-types'
+import { notFound } from 'next/navigation'
 
-const processSteps = [
-  { title: 'Consultation', text: 'We listen to your story, your audience and what success looks like.' },
-  { title: 'Planning', text: 'Shot lists, schedules, crew and equipment, agreed before the day.' },
-  { title: 'Production', text: 'An experienced crew captures every moment that matters.' },
-  { title: 'Editing', text: 'Careful selection, retouching, colour grading and sound.' },
-  { title: 'Delivery', text: 'Private online galleries and films, ready to share and download.' },
-]
+import { ButtonLink } from '@/components/ButtonLink'
+import { getDictionary } from '@/i18n/dictionaries'
+import { resolveLocale } from '@/lib/locale'
+import { getPublishedServices, getSiteSettings } from '@/lib/site'
+import { getCurrentTenant } from '@/lib/tenant'
+import type { Media } from '@/payload-types'
 
 const asMedia = (value: unknown): Media | null =>
   value && typeof value === 'object' && 'url' in value ? (value as Media) : null
 
-export default async function HomePage() {
-  const [settings, services] = await Promise.all([getSiteSettings(), getPublishedServices()])
-  const hero = asMedia(settings.heroImage)
-  const contact = settings.contact ?? {}
+export default async function HomePage({ params }: PageProps<'/[locale]'>) {
+  const tenant = await getCurrentTenant()
+  if (!tenant) notFound()
+  const locale = await resolveLocale(tenant, (await params).locale)
+  const [settings, services] = await Promise.all([
+    getSiteSettings(tenant.id, locale),
+    getPublishedServices(tenant.id, locale),
+  ])
+  const t = getDictionary(locale)
+  const companyName = settings?.companyName ?? tenant.name
+  const hero = asMedia(settings?.heroImage)
+  const contact = settings?.contact ?? {}
 
   return (
     <>
@@ -47,27 +52,27 @@ export default async function HomePage() {
           className="absolute inset-0 -z-10 bg-gradient-to-t from-ink via-ink/40 to-transparent"
         />
         <div className="mx-auto w-full max-w-7xl px-4 pt-32 pb-20 sm:px-8">
-          <p className="mb-4 text-sm tracking-[0.3em] text-gold uppercase">Media production</p>
+          <p className="mb-4 text-sm tracking-[0.3em] text-gold uppercase">{t.hero.eyebrow}</p>
           <h1
             id="hero-title"
             className="font-display max-w-4xl text-5xl leading-[1.05] font-medium sm:text-7xl"
           >
-            {settings.companyName}
+            {companyName}
           </h1>
-          {settings.tagline && (
+          {settings?.tagline && (
             <p className="mt-6 max-w-2xl text-lg text-mist sm:text-xl">{settings.tagline}</p>
           )}
           <div className="mt-10 flex flex-wrap gap-4">
-            <ButtonLink href="/#contact">Book now</ButtonLink>
-            <ButtonLink href="/#services" variant="outline">
-              Our services
+            <ButtonLink href={`/${locale}#contact`}>{t.nav.bookNow}</ButtonLink>
+            <ButtonLink href={`/${locale}#services`} variant="outline">
+              {t.hero.ourServices}
             </ButtonLink>
           </div>
         </div>
       </section>
 
-      {settings.introduction && (
-        <section aria-label="About us" className="bg-charcoal">
+      {settings?.introduction && (
+        <section aria-label={t.about.label} className="bg-charcoal">
           <div className="mx-auto max-w-4xl px-4 py-20 text-center sm:px-8">
             <Sparkles aria-hidden="true" className="mx-auto mb-6 size-6 text-gold" />
             <p className="font-display text-2xl leading-relaxed sm:text-3xl">
@@ -80,10 +85,10 @@ export default async function HomePage() {
       <section id="services" aria-labelledby="services-title" className="scroll-mt-20">
         <div className="mx-auto max-w-7xl px-4 py-24 sm:px-8">
           <h2 id="services-title" className="font-display text-4xl sm:text-5xl">
-            Services
+            {t.services.title}
           </h2>
           {services.length === 0 ? (
-            <p className="mt-6 text-mist">Our service list is being prepared. Please get in touch.</p>
+            <p className="mt-6 text-mist">{t.services.empty}</p>
           ) : (
             <ul className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {services.map((service) => {
@@ -127,10 +132,10 @@ export default async function HomePage() {
       >
         <div className="mx-auto max-w-7xl px-4 py-24 sm:px-8">
           <h2 id="process-title" className="font-display text-4xl sm:text-5xl">
-            Our creative process
+            {t.process.title}
           </h2>
           <ol className="mt-12 grid gap-8 md:grid-cols-5">
-            {processSteps.map((step, index) => (
+            {t.process.steps.map((step, index) => (
               <li key={step.title}>
                 <span className="font-display text-4xl text-gold">0{index + 1}</span>
                 <h3 className="mt-3 text-lg font-medium">{step.title}</h3>
@@ -145,12 +150,9 @@ export default async function HomePage() {
         <div className="mx-auto max-w-7xl px-4 py-24 sm:px-8">
           <Clapperboard aria-hidden="true" className="mb-6 size-8 text-gold" />
           <h2 id="contact-title" className="font-display text-4xl sm:text-5xl">
-            Tell us about your production
+            {t.contact.title}
           </h2>
-          <p className="mt-4 max-w-2xl text-mist">
-            Weddings, events, corporate films, live streams and more. Get in touch and we will
-            reply with availability and a quote.
-          </p>
+          <p className="mt-4 max-w-2xl text-mist">{t.contact.text}</p>
           <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {contact.email && (
               <ContactItem icon={<Mail className="size-5" />} href={`mailto:${contact.email}`}>
@@ -170,7 +172,7 @@ export default async function HomePage() {
                 icon={<MessageCircle className="size-5" />}
                 href={`https://wa.me/${contact.whatsapp}`}
               >
-                WhatsApp
+                {t.contact.whatsapp}
               </ContactItem>
             )}
             {contact.address && (
@@ -178,7 +180,7 @@ export default async function HomePage() {
             )}
           </ul>
           {!contact.email && !contact.phone && !contact.whatsapp && (
-            <p className="mt-6 text-sm text-mist">Contact details will appear here soon.</p>
+            <p className="mt-6 text-sm text-mist">{t.contact.empty}</p>
           )}
         </div>
       </section>

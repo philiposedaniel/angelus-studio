@@ -1,15 +1,28 @@
-import { APIError, type CollectionConfig } from 'payload'
+import { APIError, type Access, type CollectionConfig, type Where } from 'payload'
 
 import {
-  adminsOnly,
-  adminsOnlyField,
-  adminsOrSelf,
-  canChangeRoles,
-  DEFAULT_ROLE,
-  isStaff,
-  ROLE_LABELS,
-  ROLES,
+  canChangeMemberships,
+  canChangePlatformRoles,
+  isStaffAnywhere,
+  isSuperAdmin,
+  PLATFORM_ROLE_LABELS,
+  PLATFORM_ROLES,
+  superAdminsOnly,
+  superAdminsOnlyField,
+  TENANT_ROLE_LABELS,
+  TENANT_ROLES,
+  tenantIdsWithRole,
 } from '@/access'
+
+/** Super admins: everyone. Studio admins: members of their studios. Everyone: themselves. */
+const readOrManageUsers: Access = ({ req: { user } }) => {
+  if (!user) return false
+  if (isSuperAdmin(user)) return true
+  const self: Where = { id: { equals: user.id } }
+  const administered = tenantIdsWithRole(user, ['admin'])
+  if (administered.length === 0) return self
+  return { or: [self, { 'tenants.tenant': { in: administered } }] }
+}
 
 export const Users: CollectionConfig = {
   slug: 'users',
@@ -26,28 +39,50 @@ export const Users: CollectionConfig = {
     },
   },
   access: {
-    // Only staff can open the admin panel; clients get their own portal later.
-    admin: ({ req: { user } }) => isStaff(user),
-    // Accounts are created by administrators until client self-registration exists.
-    create: adminsOnly,
-    read: adminsOrSelf,
-    update: adminsOrSelf,
-    delete: adminsOnly,
+    // Only platform super admins and studio staff can open the admin panel.
+    admin: ({ req: { user } }) => isStaffAnywhere(user),
+    create: ({ req: { user } }) =>
+      isSuperAdmin(user) || tenantIdsWithRole(user, ['admin']).length > 0,
+    read: readOrManageUsers,
+    update: readOrManageUsers,
+    // Removing someone from a studio is done by editing memberships; deleting the
+    // account affects every studio, so it is reserved for platform super admins.
+    delete: superAdminsOnly,
   },
   hooks: {
     beforeChange: [
       async ({ data, operation, originalDoc, req }) => {
-        // The very first account created through the admin UI becomes the owner.
+        // The very first account created through the admin UI becomes the platform owner.
         if (operation === 'create' && !req.user && req.payloadAPI !== 'local') {
           const { totalDocs } = await req.payload.count({ collection: 'users', req })
-          data.roles = totalDocs === 0 ? ['super-admin'] : [DEFAULT_ROLE]
+          data.roles = totalDocs === 0 ? ['super-admin'] : ['user']
+          data.tenants = []
           return data
         }
 
-        if (req.user && Array.isArray(data.roles)) {
-          const previous: string[] = originalDoc?.roles ?? []
-          if (!canChangeRoles(req.user, previous, data.roles)) {
+        const actor = req.user
+        if (!actor) return data
+
+        if (Array.isArray(data.roles)) {
+          const previous: string[] = originalDoc?.roles ?? ['user']
+          if (!canChangePlatformRoles(actor, previous, data.roles)) {
             throw new APIError('You are not allowed to assign these roles.', 403)
+          }
+        }
+
+        if (Array.isArray(data.tenants)) {
+          const previous = originalDoc?.tenants ?? []
+          if (!canChangeMemberships(actor, originalDoc, previous, data.tenants)) {
+            throw new APIError('You are not allowed to change these studio memberships.', 403)
+          }
+        }
+
+        // Only the account owner or a super admin can change sign-in details.
+        const editingOther = operation === 'update' && String(originalDoc?.id) !== String(actor.id)
+        if (editingOther && !isSuperAdmin(actor)) {
+          const emailChanged = data.email !== undefined && data.email !== originalDoc?.email
+          if (emailChanged || data.password) {
+            throw new APIError('Only the account owner can change sign-in details.', 403)
           }
         }
         return data
@@ -61,16 +96,40 @@ export const Users: CollectionConfig = {
     },
     {
       name: 'roles',
+      label: 'Platform role',
       type: 'select',
       hasMany: true,
       required: true,
-      defaultValue: [DEFAULT_ROLE],
-      options: ROLES.map((value) => ({ label: ROLE_LABELS[value], value })),
+      defaultValue: ['user'],
+      options: PLATFORM_ROLES.map((value) => ({ label: PLATFORM_ROLE_LABELS[value], value })),
       saveToJWT: true,
       access: {
-        create: adminsOnlyField,
-        update: adminsOnlyField,
+        create: superAdminsOnlyField,
+        update: superAdminsOnlyField,
       },
+      admin: { position: 'sidebar' },
+    },
+    {
+      name: 'tenants',
+      label: 'Studio memberships',
+      type: 'array',
+      fields: [
+        {
+          name: 'tenant',
+          type: 'relationship',
+          relationTo: 'tenants',
+          required: true,
+          index: true,
+        },
+        {
+          name: 'roles',
+          type: 'select',
+          hasMany: true,
+          required: true,
+          defaultValue: ['client'],
+          options: TENANT_ROLES.map((value) => ({ label: TENANT_ROLE_LABELS[value], value })),
+        },
+      ],
     },
   ],
 }

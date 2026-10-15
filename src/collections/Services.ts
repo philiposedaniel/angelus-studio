@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
-import { adminsOnly, publishedOrStaff } from '@/access'
+import { publishedOrTenantStaff, tenantContentEditors } from '@/access'
+import { uniqueSlugPerTenant } from '@/hooks/uniqueSlugPerTenant'
 
 export const Services: CollectionConfig = {
   slug: 'services',
@@ -10,23 +11,27 @@ export const Services: CollectionConfig = {
   },
   defaultSort: 'order',
   access: {
-    read: publishedOrStaff,
-    create: adminsOnly,
-    update: adminsOnly,
-    delete: adminsOnly,
+    read: publishedOrTenantStaff,
+    create: tenantContentEditors,
+    update: tenantContentEditors,
+    delete: tenantContentEditors,
+  },
+  hooks: {
+    beforeValidate: [uniqueSlugPerTenant('services')],
   },
   fields: [
-    { name: 'title', type: 'text', required: true },
+    { name: 'title', type: 'text', required: true, localized: true },
     {
       name: 'slug',
       type: 'text',
       required: true,
-      unique: true,
       index: true,
       validate: (value: string | null | undefined) =>
-        !value || /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value) || 'Use lowercase letters, numbers and hyphens.',
+        !value ||
+        /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value) ||
+        'Use lowercase letters, numbers and hyphens.',
     },
-    { name: 'summary', type: 'textarea', required: true, maxLength: 280 },
+    { name: 'summary', type: 'textarea', required: true, maxLength: 280, localized: true },
     { name: 'image', type: 'upload', relationTo: 'media' },
     {
       name: 'order',

@@ -32,6 +32,7 @@ jobs:
       NEXT_PUBLIC_SERVER_URL: http://localhost:3000
       # Tests run against the committed migrations, not dev-mode schema push.
       PAYLOAD_DB_PUSH: "false"
+      DEFAULT_TENANT_SLUG: angelus
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4

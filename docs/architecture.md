@@ -15,11 +15,14 @@ Browser ──> Cloudflare (DNS, CDN, WAF) ──> Coolify proxy ──> app con
 ## Current state (foundation)
 
 - Payload admin at `/admin`, REST API at `/api/*` (GraphQL disabled).
-- Collections: `users` (roles, account lockout), `media` (public website images),
-  `services`. Global: `site-settings` (company details, contact, social links).
-- Roles: Super Administrator, Administrator, Production Manager, Photographer, Videographer,
-  Editor, Finance Manager, Event Organizer, Client. Only staff can open the admin panel.
-- Public homepage reads site settings and published services with public access rules.
+- Multi-tenant (decision 0002): `tenants` are studios. Studio-owned collections: `media`
+  (public website images), `services`, `site-settings` (one per studio). `users` have a
+  platform role plus per-studio memberships with roles. Only super admins and studio staff
+  can open the admin panel.
+- Multilingual (decision 0003): public pages live under `/[locale]`; `src/proxy.ts` adds the
+  language prefix; content fields are localized in Payload with English fallback.
+- The public homepage resolves the studio from the host name and reads its site settings and
+  published services with public access rules.
 
 ## Planned
 

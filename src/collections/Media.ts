@@ -1,6 +1,6 @@
 import type { CollectionConfig } from 'payload'
 
-import { anyone, staffOnly } from '@/access'
+import { anyone, tenantContentEditors } from '@/access'
 
 /**
  * Public website media (hero images, portfolio covers, team photos).
@@ -14,15 +14,16 @@ export const Media: CollectionConfig = {
   },
   access: {
     read: anyone,
-    create: staffOnly,
-    update: staffOnly,
-    delete: staffOnly,
+    create: tenantContentEditors,
+    update: tenantContentEditors,
+    delete: tenantContentEditors,
   },
   fields: [
     {
       name: 'alt',
       type: 'text',
       required: true,
+      localized: true,
     },
   ],
   upload: {

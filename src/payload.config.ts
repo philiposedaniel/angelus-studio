@@ -1,4 +1,5 @@
 import { postgresAdapter } from '@payloadcms/db-postgres'
+import { multiTenantPlugin } from '@payloadcms/plugin-multi-tenant'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import path from 'path'
 import { buildConfig } from 'payload'
@@ -6,10 +7,14 @@ import sharp from 'sharp'
 import { fileURLToPath } from 'url'
 
 import { Media } from './collections/Media'
+import { isSuperAdmin } from './access/roles'
 import { Services } from './collections/Services'
+import { SiteSettings } from './collections/SiteSettings'
+import { Tenants } from './collections/Tenants'
 import { Users } from './collections/Users'
-import { SiteSettings } from './globals/SiteSettings'
+import { DEFAULT_LOCALE, LOCALE_LABELS, LOCALES } from './i18n/config'
 import { migrations } from './migrations'
+import type { Config } from './payload-types'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -27,8 +32,13 @@ export default buildConfig({
     },
   },
   serverURL: process.env.NEXT_PUBLIC_SERVER_URL,
-  collections: [Users, Media, Services],
-  globals: [SiteSettings],
+  collections: [Tenants, Users, Media, Services, SiteSettings],
+  localization: {
+    locales: LOCALES.map((code) => ({ code, label: LOCALE_LABELS[code] })),
+    defaultLocale: DEFAULT_LOCALE,
+    // Untranslated content shows the English version instead of an empty field.
+    fallback: true,
+  },
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET,
   typescript: {
@@ -45,5 +55,20 @@ export default buildConfig({
   }),
   sharp,
   graphQL: { disable: true },
-  plugins: [],
+  plugins: [
+    multiTenantPlugin<Config>({
+      tenantsSlug: 'tenants',
+      collections: {
+        media: {},
+        services: {},
+        'site-settings': { isGlobal: true },
+      },
+      tenantsArrayField: {
+        includeDefaultField: false,
+        arrayFieldName: 'tenants',
+        arrayTenantFieldName: 'tenant',
+      },
+      userHasAccessToAllTenants: (user) => isSuperAdmin(user),
+    }),
+  ],
 })
