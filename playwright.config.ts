@@ -40,8 +40,10 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'pnpm dev',
-    reuseExistingServer: true,
-    url: 'http://localhost:3000',
+    // CI tests the production build (built in an earlier step); locally the dev server.
+    command: process.env.CI ? 'pnpm start' : 'pnpm dev',
+    reuseExistingServer: !process.env.CI,
+    url: 'http://localhost:3000/healthz',
+    timeout: 180_000,
   },
 })
