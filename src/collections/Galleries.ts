@@ -1,7 +1,9 @@
 import type { CollectionConfig } from 'payload'
 
-import { galleryRead, galleryStaff } from '@/access/galleries'
+import { galleryRead, galleryStaff, isGalleryStaffFor } from '@/access/galleries'
 import { uniqueSlugPerTenant } from '@/hooks/uniqueSlugPerTenant'
+import { idOf } from '@/lib/ids'
+import { newShareToken } from '@/lib/shareTokens'
 
 /**
  * A private photo gallery delivered to one or more clients of a studio.
@@ -22,6 +24,16 @@ export const Galleries: CollectionConfig = {
   },
   hooks: {
     beforeValidate: [uniqueSlugPerTenant('galleries')],
+    beforeChange: [
+      // The share token is only ever set here, never taken from the request. Turning sharing
+      // off forgets it, so turning it back on issues a new link and the old one stops working.
+      ({ data, originalDoc }) => {
+        const enabled = data.shareEnabled ?? originalDoc?.shareEnabled ?? false
+        if (!enabled) return { ...data, shareToken: null }
+        const keep = originalDoc?.shareEnabled && originalDoc.shareToken
+        return { ...data, shareToken: keep ? originalDoc.shareToken : newShareToken() }
+      },
+    ],
   },
   fields: [
     { name: 'title', type: 'text', required: true, localized: true },
@@ -64,7 +76,8 @@ export const Galleries: CollectionConfig = {
       type: 'date',
       admin: {
         position: 'sidebar',
-        description: 'After this date clients can no longer open the gallery. Leave empty for no expiry.',
+        description:
+          'After this date clients can no longer open the gallery. Leave empty for no expiry.',
       },
     },
     {
@@ -74,6 +87,36 @@ export const Galleries: CollectionConfig = {
       admin: {
         position: 'sidebar',
         description: 'Let clients download full-resolution originals.',
+      },
+    },
+    {
+      name: 'shareEnabled',
+      type: 'checkbox',
+      label: 'Share by link',
+      defaultValue: false,
+      admin: {
+        position: 'sidebar',
+        description:
+          'Anyone with the link can view web-size copies (never originals), and the album can be embedded on a website. Turn off to revoke the link; turning it on again creates a new one.',
+      },
+    },
+    {
+      name: 'shareToken',
+      type: 'text',
+      index: true,
+      admin: { hidden: true },
+      access: {
+        // Only the studio's staff may see the secret part of the link.
+        read: ({ req: { user }, doc }) => isGalleryStaffFor(user, idOf(doc?.tenant)),
+      },
+    },
+    {
+      name: 'shareLink',
+      type: 'ui',
+      admin: {
+        position: 'sidebar',
+        condition: (data) => Boolean(data?.shareEnabled),
+        components: { Field: '@/components/admin/ShareLinkField#ShareLinkField' },
       },
     },
   ],

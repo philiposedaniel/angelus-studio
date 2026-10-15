@@ -11,13 +11,16 @@ type Props = {
   locale: Locale
   locales: Locale[]
   dictionary: Dictionary
+  /** Pages the studio added to the menu in the admin. */
+  menuPages?: { title: string; slug: string }[]
 }
 
-export function SiteHeader({ companyName, locale, locales, dictionary }: Props) {
+export function SiteHeader({ companyName, locale, locales, dictionary, menuPages = [] }: Props) {
   const t = dictionary.nav
   const navItems = [
     { href: `/${locale}#services`, label: t.services },
     { href: `/${locale}#process`, label: t.process },
+    ...menuPages.map((page) => ({ href: `/${locale}/${page.slug}`, label: page.title })),
     { href: `/${locale}#contact`, label: t.contact },
   ]
 

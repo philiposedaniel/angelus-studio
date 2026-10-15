@@ -63,6 +63,23 @@ export const en = {
     zipFailed: 'We could not prepare that download. Please try again.',
     zipBusy: 'Another download is still being prepared. Please wait for it to finish.',
   },
+  album: {
+    open: 'Open photo',
+    close: 'Close',
+    previous: 'Previous photo',
+    next: 'Next photo',
+    position: '{n} of {total}',
+    photos: 'photos',
+    sharedBy: 'Shared by',
+    empty: 'This album has no photos yet.',
+    morePhotos: 'More photos',
+    unavailableTitle: 'This album is not available',
+    unavailableText: 'The link may have been turned off or expired. Please ask whoever shared it for a new one.',
+  },
+  blocks: {
+    viewOnGooglePhotos: 'View album on Google Photos',
+    openAlbum: 'Open the full album',
+  },
   footer: { rights: 'All rights reserved.' },
 }
 

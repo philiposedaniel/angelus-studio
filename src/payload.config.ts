@@ -13,6 +13,7 @@ import { GalleryPhotos } from './collections/GalleryPhotos'
 import { Media } from './collections/Media'
 import { isSuperAdmin } from './access/roles'
 import { Services } from './collections/Services'
+import { Pages } from './collections/Pages'
 import { SiteSettings } from './collections/SiteSettings'
 import { Tenants } from './collections/Tenants'
 import { Users } from './collections/Users'
@@ -37,7 +38,18 @@ export default buildConfig({
     },
   },
   serverURL: process.env.NEXT_PUBLIC_SERVER_URL,
-  collections: [Tenants, Users, Media, Services, SiteSettings, Galleries, GalleryPhotos, GalleryFavorites, GalleryDownloads],
+  collections: [
+    Tenants,
+    Users,
+    Media,
+    Pages,
+    Services,
+    SiteSettings,
+    Galleries,
+    GalleryPhotos,
+    GalleryFavorites,
+    GalleryDownloads,
+  ],
   localization: {
     locales: LOCALES.map((code) => ({ code, label: LOCALE_LABELS[code] })),
     defaultLocale: DEFAULT_LOCALE,
@@ -73,6 +85,7 @@ export default buildConfig({
       tenantsSlug: 'tenants',
       collections: {
         media: {},
+        pages: {},
         services: {},
         'site-settings': { isGlobal: true },
         galleries: {},

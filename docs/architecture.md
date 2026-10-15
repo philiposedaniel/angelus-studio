@@ -29,6 +29,10 @@ Browser ──> Cloudflare (DNS, CDN, WAF) ──> Coolify proxy ──> app con
   an upload handler in `src/collections/GalleryPhotos.ts`.
 - Whole-gallery ZIP downloads: `gallery-downloads` records plus Payload jobs in `src/jobs/`
   (database-backed queue, run by the app process). See `docs/development.md`.
+- Shared albums (`/s/<token>`, `/s/<token>/embed`): token-based public view of a gallery's
+  web-size copies, outside the `[locale]` routes. Logic in `src/lib/sharedAlbum.ts`.
+- Website pages (`pages` collection, `/[locale]/[slug]`) built from blocks, including video
+  links, sandboxed embed code and Google Photos link cards. See `docs/development.md`.
 - Private photos are on local disk (`PRIVATE_MEDIA_DIR`, a Docker volume in production). Moving
   them to private S3/R2 storage with signed URLs and direct browser uploads is the next storage step.
 

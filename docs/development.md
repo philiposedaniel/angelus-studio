@@ -78,7 +78,7 @@ starts. Every schema change therefore needs `pnpm migrate:create <name>` and a c
   published and not expired, can mark favorites, and can download originals only when the
   gallery allows downloads.
 - Photos are stored outside `public/` and every file request goes through Payload's file route,
-  which checks access first. Resized copies (480px and 1920px WebP) are generated on upload;
+  which checks access first. Resized copies (WebP, fitting inside 720px and 1920px) are generated on upload;
   originals are kept untouched.
 - With downloads allowed, clients can also download the whole gallery or just their favorites
   as one ZIP. The request creates a *Gallery download* record; a background job builds the ZIP
@@ -86,6 +86,34 @@ starts. Every schema change therefore needs `pnpm migrate:create <name>` and a c
   until it is ready. Only its owner and the studio's staff can fetch it, at
   `/api/gallery-downloads/<id>/file`. A ZIP holds up to 2,000 photos, each person has one in
   preparation at a time, and files are deleted after 7 days by an hourly cleanup job.
+
+## Shared albums and embeds
+
+- Staff tick *Share by link* on a gallery; the sidebar then shows the link (`/s/<token>`) and
+  an `<iframe>` embed code for any website. The link uses the studio's domain when it has one.
+- Anyone with the link sees web-size copies (never originals) of a published, unexpired
+  gallery, in a justified grid with a full-screen viewer. Images are served by
+  `src/app/s/[token]/p/[photoId]/[size]/route.ts`, which re-checks the link on every request.
+- Turning sharing off revokes the link; turning it on again issues a new one.
+- Only `/s/<token>/embed` may be framed by other sites (`frame-ancestors *` in
+  `next.config.ts`); everything else keeps `X-Frame-Options: SAMEORIGIN`.
+- Share pages pick the language from `?lang=` or the browser, among the studio's languages.
+
+## Website pages and embeds
+
+Editors build pages under *Website → Pages* (address `/<language>/<slug>`, optional menu link)
+from blocks, defined in `src/blocks/index.ts` and drawn by `src/components/blocks/RenderBlocks.tsx`:
+
+- **Text**: rich text.
+- **Video**: a Vimeo (public or unlisted) or YouTube link. Only those hosts are accepted
+  (`src/lib/embeds.ts`); YouTube uses the no-cookie player and Vimeo `dnt=1`.
+- **Embed code**: any HTML embed (other video hosts, maps, forms). It runs in a sandboxed
+  `srcdoc` frame without `allow-same-origin`, so its scripts cannot read this site's cookies or
+  page. Embeds that need their own storage or cookies may not work there; prefer the Video block.
+- **Google Photos album**: a card with cover and title that opens the album on Google Photos.
+  Google does not allow its albums to be shown inside other sites, so there is no inline embed.
+- **Photo album**: one of our galleries that is shared by link, shown inline with the viewer.
+  It disappears from the page as soon as sharing is turned off.
 
 ## Background jobs
 

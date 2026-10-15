@@ -70,6 +70,7 @@ export interface Config {
     tenants: Tenant;
     users: User;
     media: Media;
+    pages: Page;
     services: Service;
     'site-settings': SiteSetting;
     galleries: Gallery;
@@ -87,6 +88,7 @@ export interface Config {
     tenants: TenantsSelect<false> | TenantsSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    pages: PagesSelect<false> | PagesSelect<true>;
     services: ServicesSelect<false> | ServicesSelect<true>;
     'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
     galleries: GalleriesSelect<false> | GalleriesSelect<true>;
@@ -263,6 +265,138 @@ export interface Media {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pages".
+ */
+export interface Page {
+  id: number;
+  tenant?: (number | null) | Tenant;
+  title: string;
+  /**
+   * The page address, e.g. “portfolio” for /en/portfolio.
+   */
+  slug: string;
+  intro?: string | null;
+  layout?:
+    | (
+        | {
+            content: {
+              root: {
+                type: string;
+                children: {
+                  type: any;
+                  version: number;
+                  [k: string]: unknown;
+                }[];
+                direction: ('ltr' | 'rtl') | null;
+                format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+                indent: number;
+                version: number;
+              };
+              [k: string]: unknown;
+            };
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'text';
+          }
+        | {
+            /**
+             * Paste the Vimeo or YouTube link. Unlisted Vimeo links work too.
+             */
+            url: string;
+            aspect: '16/9' | '4/3' | '1/1' | '9/16' | '21/9';
+            caption?: string | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'video';
+          }
+        | {
+            /**
+             * Paste the embed code from any video or media service. It runs in an isolated frame, so it cannot read visitors’ sessions or change the rest of the page.
+             */
+            code: string;
+            /**
+             * What the embed shows, for screen readers.
+             */
+            title: string;
+            size: '16/9' | '4/3' | '1/1' | '9/16' | '21/9' | 'fixed';
+            /**
+             * Height in pixels.
+             */
+            height?: number | null;
+            caption?: string | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'embedCode';
+          }
+        | {
+            /**
+             * The album’s share link (photos.app.goo.gl/…). Google does not allow its albums inside other websites, so this shows a card that opens the album.
+             */
+            url: string;
+            title: string;
+            description?: string | null;
+            /**
+             * A photo from the album.
+             */
+            cover?: (number | null) | Media;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'googlePhotos';
+          }
+        | {
+            /**
+             * Only galleries with “Share by link” turned on can be shown on the website.
+             */
+            gallery: number | Gallery;
+            caption?: string | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'sharedAlbum';
+          }
+      )[]
+    | null;
+  published?: boolean | null;
+  /**
+   * Add a link to this page in the site menu.
+   */
+  showInMenu?: boolean | null;
+  menuOrder?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "galleries".
+ */
+export interface Gallery {
+  id: number;
+  tenant?: (number | null) | Tenant;
+  title: string;
+  slug: string;
+  description?: string | null;
+  /**
+   * People who can see this gallery in their client portal.
+   */
+  clients?: (number | User)[] | null;
+  status: 'draft' | 'published';
+  /**
+   * After this date clients can no longer open the gallery. Leave empty for no expiry.
+   */
+  expiresAt?: string | null;
+  /**
+   * Let clients download full-resolution originals.
+   */
+  allowDownloads?: boolean | null;
+  /**
+   * Anyone with the link can view web-size copies (never originals), and the album can be embedded on a website. Turn off to revoke the link; turning it on again creates a new one.
+   */
+  shareEnabled?: boolean | null;
+  shareToken?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "services".
  */
 export interface Service {
@@ -307,32 +441,6 @@ export interface SiteSetting {
         id?: string | null;
       }[]
     | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "galleries".
- */
-export interface Gallery {
-  id: number;
-  tenant?: (number | null) | Tenant;
-  title: string;
-  slug: string;
-  description?: string | null;
-  /**
-   * People who can see this gallery in their client portal.
-   */
-  clients?: (number | User)[] | null;
-  status: 'draft' | 'published';
-  /**
-   * After this date clients can no longer open the gallery. Leave empty for no expiry.
-   */
-  expiresAt?: string | null;
-  /**
-   * Let clients download full-resolution originals.
-   */
-  allowDownloads?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -546,6 +654,10 @@ export interface PayloadLockedDocument {
         value: number | Media;
       } | null)
     | ({
+        relationTo: 'pages';
+        value: number | Page;
+      } | null)
+    | ({
         relationTo: 'services';
         value: number | Service;
       } | null)
@@ -711,6 +823,70 @@ export interface MediaSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pages_select".
+ */
+export interface PagesSelect<T extends boolean = true> {
+  tenant?: T;
+  title?: T;
+  slug?: T;
+  intro?: T;
+  layout?:
+    | T
+    | {
+        text?:
+          | T
+          | {
+              content?: T;
+              id?: T;
+              blockName?: T;
+            };
+        video?:
+          | T
+          | {
+              url?: T;
+              aspect?: T;
+              caption?: T;
+              id?: T;
+              blockName?: T;
+            };
+        embedCode?:
+          | T
+          | {
+              code?: T;
+              title?: T;
+              size?: T;
+              height?: T;
+              caption?: T;
+              id?: T;
+              blockName?: T;
+            };
+        googlePhotos?:
+          | T
+          | {
+              url?: T;
+              title?: T;
+              description?: T;
+              cover?: T;
+              id?: T;
+              blockName?: T;
+            };
+        sharedAlbum?:
+          | T
+          | {
+              gallery?: T;
+              caption?: T;
+              id?: T;
+              blockName?: T;
+            };
+      };
+  published?: T;
+  showInMenu?: T;
+  menuOrder?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "services_select".
  */
 export interface ServicesSelect<T extends boolean = true> {
@@ -765,6 +941,8 @@ export interface GalleriesSelect<T extends boolean = true> {
   status?: T;
   expiresAt?: T;
   allowDownloads?: T;
+  shareEnabled?: T;
+  shareToken?: T;
   updatedAt?: T;
   createdAt?: T;
 }

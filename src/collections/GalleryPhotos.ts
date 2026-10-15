@@ -61,9 +61,25 @@ export const GalleryPhotos: CollectionConfig = {
     staticDir: GALLERY_PHOTOS_DIR,
     mimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/tiff'],
     // Originals are kept untouched; these copies are for fast viewing.
+    // Each copy fits inside a square box, so portrait and landscape photos get the same
+    // treatment, and is always generated: smaller originals are kept at their own size.
     imageSizes: [
-      { name: 'thumbnail', width: 480, formatOptions: { format: 'webp', options: { quality: 80 } } },
-      { name: 'web', width: 1920, formatOptions: { format: 'webp', options: { quality: 85 } } },
+      {
+        name: 'thumbnail',
+        width: 720,
+        height: 720,
+        fit: 'inside',
+        withoutEnlargement: true,
+        formatOptions: { format: 'webp', options: { quality: 80 } },
+      },
+      {
+        name: 'web',
+        width: 1920,
+        height: 1920,
+        fit: 'inside',
+        withoutEnlargement: true,
+        formatOptions: { format: 'webp', options: { quality: 85 } },
+      },
     ],
     adminThumbnail: 'thumbnail',
     focalPoint: false,
