@@ -86,6 +86,21 @@ describe('multi-tenant authorization', () => {
     expect(ids).not.toContain(adminB.id)
   })
 
+  it('lets gallery staff see their studio’s members to assign clients, but not edit them', async () => {
+    const ids = await findUserIds(photographerA)
+    expect(ids).toEqual([adminA.id, photographerA.id, clientA1.id, clientA2.id].sort())
+    expect(ids).not.toContain(adminB.id)
+    await expect(
+      payload.update({
+        collection: 'users',
+        id: clientA1.id,
+        data: { name: 'renamed' },
+        overrideAccess: false,
+        user: photographerA,
+      }),
+    ).rejects.toThrow()
+  })
+
   it('refuses a client reading or editing another client', async () => {
     await expect(
       payload.findByID({ collection: 'users', id: clientA2.id, overrideAccess: false, user: clientA1 }),

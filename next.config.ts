@@ -27,7 +27,23 @@ const nextConfig: NextConfig = {
     ],
   },
   async headers() {
-    return [{ source: '/:path*', headers: securityHeaders }]
+    return [
+      { source: '/:path*', headers: securityHeaders },
+      // Share links carry their secret in the URL: never send it on as a referrer.
+      {
+        source: '/s/:path*',
+        headers: [
+          { key: 'Referrer-Policy', value: 'no-referrer' },
+          { key: 'X-Robots-Tag', value: 'noindex' },
+        ],
+      },
+      // Embedded albums may be framed by any site. Browsers ignore X-Frame-Options when
+      // frame-ancestors is present, so this opens framing for this path only.
+      {
+        source: '/s/:token/embed',
+        headers: [{ key: 'Content-Security-Policy', value: 'frame-ancestors *' }],
+      },
+    ]
   },
   webpack: (webpackConfig) => {
     webpackConfig.resolve.extensionAlias = {

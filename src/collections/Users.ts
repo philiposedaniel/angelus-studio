@@ -13,6 +13,7 @@ import {
   TENANT_ROLES,
   tenantIdsWithRole,
 } from '@/access'
+import { GALLERY_STAFF_ROLES } from '@/access/galleries'
 
 /** Super admins: everyone. Studio admins: members of their studios. Everyone: themselves. */
 const readOrManageUsers: Access = ({ req: { user } }) => {
@@ -22,6 +23,24 @@ const readOrManageUsers: Access = ({ req: { user } }) => {
   const administered = tenantIdsWithRole(user, ['admin'])
   if (administered.length === 0) return self
   return { or: [self, { 'tenants.tenant': { in: administered } }] }
+}
+
+/**
+ * Reading also covers gallery staff (photographers, editors…), who need to see their studio's
+ * members to assign clients to galleries. Changing accounts stays with studio admins.
+ */
+const readUsers: Access = ({ req: { user } }) => {
+  if (!user) return false
+  if (isSuperAdmin(user)) return true
+  const self: Where = { id: { equals: user.id } }
+  const studios = [
+    ...new Set([
+      ...tenantIdsWithRole(user, ['admin']),
+      ...tenantIdsWithRole(user, GALLERY_STAFF_ROLES),
+    ]),
+  ]
+  if (studios.length === 0) return self
+  return { or: [self, { 'tenants.tenant': { in: studios } }] }
 }
 
 export const Users: CollectionConfig = {
@@ -43,7 +62,7 @@ export const Users: CollectionConfig = {
     admin: ({ req: { user } }) => isStaffAnywhere(user),
     create: ({ req: { user } }) =>
       isSuperAdmin(user) || tenantIdsWithRole(user, ['admin']).length > 0,
-    read: readOrManageUsers,
+    read: readUsers,
     update: readOrManageUsers,
     // Removing someone from a studio is done by editing memberships; deleting the
     // account affects every studio, so it is reserved for platform super admins.

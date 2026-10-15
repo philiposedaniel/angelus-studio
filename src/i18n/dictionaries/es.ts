@@ -65,5 +65,18 @@ export const es: Dictionary = {
     zipFailed: 'No pudimos preparar esa descarga. Inténtelo de nuevo.',
     zipBusy: 'Otra descarga aún se está preparando. Espere a que termine.',
   },
+  album: {
+    open: 'Abrir foto',
+    close: 'Cerrar',
+    previous: 'Foto anterior',
+    next: 'Foto siguiente',
+    position: '{n} de {total}',
+    photos: 'fotos',
+    sharedBy: 'Compartido por',
+    empty: 'Este álbum aún no tiene fotos.',
+    morePhotos: 'Más fotos',
+    unavailableTitle: 'Este álbum no está disponible',
+    unavailableText: 'Es posible que el enlace se haya desactivado o haya caducado. Pida uno nuevo a quien lo compartió.',
+  },
   footer: { rights: 'Todos los derechos reservados.' },
 }

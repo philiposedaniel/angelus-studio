@@ -333,6 +333,11 @@ export interface Gallery {
    * Let clients download full-resolution originals.
    */
   allowDownloads?: boolean | null;
+  /**
+   * Anyone with the link can view web-size copies (never originals), and the album can be embedded on a website. Turn off to revoke the link; turning it on again creates a new one.
+   */
+  shareEnabled?: boolean | null;
+  shareToken?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -765,6 +770,8 @@ export interface GalleriesSelect<T extends boolean = true> {
   status?: T;
   expiresAt?: T;
   allowDownloads?: T;
+  shareEnabled?: T;
+  shareToken?: T;
   updatedAt?: T;
   createdAt?: T;
 }
