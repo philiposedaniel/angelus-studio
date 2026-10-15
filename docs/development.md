@@ -99,6 +99,22 @@ starts. Every schema change therefore needs `pnpm migrate:create <name>` and a c
   `next.config.ts`); everything else keeps `X-Frame-Options: SAMEORIGIN`.
 - Share pages pick the language from `?lang=` or the browser, among the studio's languages.
 
+## Website pages and embeds
+
+Editors build pages under *Website → Pages* (address `/<language>/<slug>`, optional menu link)
+from blocks, defined in `src/blocks/index.ts` and drawn by `src/components/blocks/RenderBlocks.tsx`:
+
+- **Text**: rich text.
+- **Video**: a Vimeo (public or unlisted) or YouTube link. Only those hosts are accepted
+  (`src/lib/embeds.ts`); YouTube uses the no-cookie player and Vimeo `dnt=1`.
+- **Embed code**: any HTML embed (other video hosts, maps, forms). It runs in a sandboxed
+  `srcdoc` frame without `allow-same-origin`, so its scripts cannot read this site's cookies or
+  page. Embeds that need their own storage or cookies may not work there; prefer the Video block.
+- **Google Photos album**: a card with cover and title that opens the album on Google Photos.
+  Google does not allow its albums to be shown inside other sites, so there is no inline embed.
+- **Photo album**: one of our galleries that is shared by link, shown inline with the viewer.
+  It disappears from the page as soon as sharing is turned off.
+
 ## Background jobs
 
 Payload's job queue stores jobs in Postgres, so no Redis is needed yet. The web server runs

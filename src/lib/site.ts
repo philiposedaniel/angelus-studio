@@ -35,3 +35,45 @@ export const getPublishedServices = cache(async (tenantId: number, locale: Local
   })
   return docs
 })
+
+/** Published pages the studio chose to list in the site menu. */
+export const getMenuPages = cache(async (tenantId: number, locale: Locale) => {
+  const payload = await getPayload({ config })
+  const { docs } = await payload.find({
+    collection: 'pages',
+    overrideAccess: false,
+    where: {
+      and: [
+        { published: { equals: true } },
+        { showInMenu: { equals: true } },
+        { tenant: { equals: tenantId } },
+      ],
+    },
+    sort: 'menuOrder',
+    limit: 8,
+    depth: 0,
+    locale,
+    select: { title: true, slug: true },
+  })
+  return docs.map((page) => ({ title: page.title, slug: page.slug }))
+})
+
+export const getPublishedPage = cache(async (tenantId: number, slug: string, locale: Locale) => {
+  const payload = await getPayload({ config })
+  const { docs } = await payload.find({
+    collection: 'pages',
+    overrideAccess: false,
+    where: {
+      and: [
+        { published: { equals: true } },
+        { tenant: { equals: tenantId } },
+        { slug: { equals: slug } },
+      ],
+    },
+    limit: 1,
+    // Depth 1 brings in cover images; galleries are re-checked separately (see SharedAlbumBlock).
+    depth: 1,
+    locale,
+  })
+  return docs[0] ?? null
+})

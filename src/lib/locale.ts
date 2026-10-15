@@ -17,9 +17,10 @@ export async function resolveLocale(tenant: Tenant, requested: string): Promise<
   if (!isLocale(requested)) notFound()
   const offered = tenantLocales(tenant)
   if (offered.includes(requested)) return requested
-  const fallback = isLocale(tenant.defaultLocale) && offered.includes(tenant.defaultLocale)
-    ? tenant.defaultLocale
-    : offered[0]!
+  const fallback =
+    isLocale(tenant.defaultLocale) && offered.includes(tenant.defaultLocale)
+      ? tenant.defaultLocale
+      : offered[0]!
   const best = negotiateLocale((await headers()).get('accept-language'), offered, fallback)
   redirect(`/${best}`)
 }

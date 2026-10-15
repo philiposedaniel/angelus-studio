@@ -89,3 +89,30 @@ export async function findSharedPhotos(
   })
   return { ...result, photos: result.docs.map((photo) => toSharedPhoto(token, photo)) }
 }
+
+/** A gallery chosen for a website page: shown only while it is shared, published and unexpired. */
+export async function findSharedGalleryById(tenant: Tenant, id: number, locale?: string) {
+  const payload = await getPayload({ config })
+  const { docs } = await payload.find({
+    collection: 'galleries',
+    where: {
+      and: [
+        { id: { equals: id } },
+        { tenant: { equals: tenant.id } },
+        { shareEnabled: { equals: true } },
+        { status: { equals: 'published' } },
+        {
+          or: [
+            { expiresAt: { exists: false } },
+            { expiresAt: { greater_than: new Date().toISOString() } },
+          ],
+        },
+      ],
+    },
+    limit: 1,
+    depth: 0,
+    locale: locale as never,
+  })
+  const gallery = docs[0]
+  return gallery && isShareToken(gallery.shareToken) ? { gallery, token: gallery.shareToken } : null
+}
