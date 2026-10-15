@@ -1,0 +1,50 @@
+@import 'tailwindcss';
+
+/*
+ * Angelus design tokens: cinematic black, charcoal and graphite with ivory text
+ * and champagne gold / warm copper accents. Brand colours will become editable
+ * from the admin later; these are the defaults.
+ */
+@theme {
+  --color-ink: #0b0b0c;
+  --color-charcoal: #17171a;
+  --color-graphite: #2a2a2f;
+  --color-ivory: #f5f1e8;
+  --color-mist: #b9b4aa;
+  --color-gold: #d4b77a;
+  --color-copper: #b87333;
+
+  --font-display: var(--font-cormorant), 'Times New Roman', serif;
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--color-ink);
+    color: var(--color-ivory);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-gold);
+    outline-offset: 3px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
