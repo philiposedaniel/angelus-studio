@@ -58,6 +58,7 @@ starts. Every schema change therefore needs `pnpm migrate:create <name>` and a c
 | `PAYLOAD_DB_PUSH` | Set to `false` to disable dev schema push. |
 | `DEFAULT_TENANT_SLUG` | Studio shown when the host name matches no studio domain. |
 | `PRIVATE_MEDIA_DIR` | Folder for private client photos. Defaults to `./private-media`. |
+| `PAYLOAD_JOBS_AUTORUN` | Set to `false` to stop this process running background jobs (tests set it). |
 
 ## Studios and languages
 
@@ -79,5 +80,20 @@ starts. Every schema change therefore needs `pnpm migrate:create <name>` and a c
 - Photos are stored outside `public/` and every file request goes through Payload's file route,
   which checks access first. Resized copies (480px and 1920px WebP) are generated on upload;
   originals are kept untouched.
+- With downloads allowed, clients can also download the whole gallery or just their favorites
+  as one ZIP. The request creates a *Gallery download* record; a background job builds the ZIP
+  in `PRIVATE_MEDIA_DIR/gallery-zips` (photos stored, not recompressed) and the portal polls
+  until it is ready. Only its owner and the studio's staff can fetch it, at
+  `/api/gallery-downloads/<id>/file`. A ZIP holds up to 2,000 photos, each person has one in
+  preparation at a time, and files are deleted after 7 days by an hourly cleanup job.
+
+## Background jobs
+
+Payload's job queue stores jobs in Postgres, so no Redis is needed yet. The web server runs
+queued jobs every 5 seconds and the scheduled ones (ZIP cleanup, hourly) itself, configured in
+`jobs` in `src/payload.config.ts`; task code lives in `src/jobs/`. If more than one app instance
+is ever run, leave autorun on in one and set `PAYLOAD_JOBS_AUTORUN=false` in the others, or move
+jobs to a separate worker process.
+
 - Cookie sessions are only accepted from the site itself (Payload's CSRF rules), so tools like
   curl cannot reuse a browser cookie to fetch private files.

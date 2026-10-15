@@ -1,25 +1,11 @@
-import path from 'path'
 import type { CollectionConfig, PayloadRequest } from 'payload'
 
 import { galleryRead, galleryStaff, isGalleryStaffFor } from '@/access/galleries'
-
-/**
- * Where private originals and their resized copies are stored on disk. It is outside
- * `public/` and files are only served through Payload's file route, which checks read
- * access for every request. Production should move this to private object storage.
- */
-export const PRIVATE_MEDIA_DIR = path.resolve(
-  process.env.PRIVATE_MEDIA_DIR || path.join(process.cwd(), 'private-media'),
-  'gallery-photos',
-)
+import { idOf } from '@/lib/ids'
+import { GALLERY_PHOTOS_DIR } from '@/lib/storage'
 
 const forbidden = () =>
   Response.json({ errors: [{ message: 'You are not allowed to download this file.' }] }, { status: 403 })
-
-const idOf = (value: unknown): number | string | undefined =>
-  value && typeof value === 'object' && 'id' in value
-    ? (value as { id: number | string }).id
-    : (value as number | string | undefined)
 
 /**
  * Clients may view the resized copies of photos they can see, but only download the
@@ -71,7 +57,8 @@ export const GalleryPhotos: CollectionConfig = {
     { name: 'sortOrder', type: 'number', defaultValue: 0, index: true },
   ],
   upload: {
-    staticDir: PRIVATE_MEDIA_DIR,
+    // Outside public/; files are only served through Payload's access-checked file route.
+    staticDir: GALLERY_PHOTOS_DIR,
     mimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/tiff'],
     // Originals are kept untouched; these copies are for fast viewing.
     imageSizes: [

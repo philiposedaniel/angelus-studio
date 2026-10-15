@@ -7,6 +7,7 @@ import sharp from 'sharp'
 import { fileURLToPath } from 'url'
 
 import { Galleries } from './collections/Galleries'
+import { GalleryDownloads } from './collections/GalleryDownloads'
 import { GalleryFavorites } from './collections/GalleryFavorites'
 import { GalleryPhotos } from './collections/GalleryPhotos'
 import { Media } from './collections/Media'
@@ -16,6 +17,7 @@ import { SiteSettings } from './collections/SiteSettings'
 import { Tenants } from './collections/Tenants'
 import { Users } from './collections/Users'
 import { DEFAULT_LOCALE, LOCALE_LABELS, LOCALES } from './i18n/config'
+import { buildGalleryZip, cleanupGalleryZips } from './jobs/galleryZips'
 import { migrations } from './migrations'
 import type { Config } from './payload-types'
 
@@ -35,12 +37,20 @@ export default buildConfig({
     },
   },
   serverURL: process.env.NEXT_PUBLIC_SERVER_URL,
-  collections: [Tenants, Users, Media, Services, SiteSettings, Galleries, GalleryPhotos, GalleryFavorites],
+  collections: [Tenants, Users, Media, Services, SiteSettings, Galleries, GalleryPhotos, GalleryFavorites, GalleryDownloads],
   localization: {
     locales: LOCALES.map((code) => ({ code, label: LOCALE_LABELS[code] })),
     defaultLocale: DEFAULT_LOCALE,
     // Untranslated content shows the English version instead of an empty field.
     fallback: true,
+  },
+  jobs: {
+    tasks: [buildGalleryZip, cleanupGalleryZips],
+    // Background jobs (ZIP building, cleanup) run inside the app process every few seconds.
+    // Set PAYLOAD_JOBS_AUTORUN=false where another process runs them, and in tests.
+    autoRun: [{ cron: '*/5 * * * * *', queue: 'default', limit: 2 }],
+    shouldAutoRun: () => process.env.PAYLOAD_JOBS_AUTORUN !== 'false',
+    deleteJobOnComplete: true,
   },
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET,
@@ -68,6 +78,7 @@ export default buildConfig({
         galleries: {},
         'gallery-photos': {},
         'gallery-favorites': {},
+        'gallery-downloads': {},
       },
       tenantsArrayField: {
         includeDefaultField: false,

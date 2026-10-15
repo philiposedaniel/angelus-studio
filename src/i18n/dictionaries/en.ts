@@ -56,6 +56,12 @@ export const en = {
     viewLarge: 'View larger',
     emptyGallery: 'Photos will appear here soon.',
     favoriteError: 'Could not save your favorite. Please try again.',
+    downloadAll: 'Download all as ZIP',
+    downloadFavorites: 'Download favorites as ZIP',
+    zipPreparing: 'Preparing your download…',
+    zipReady: 'Your ZIP is ready: download it',
+    zipFailed: 'We could not prepare that download. Please try again.',
+    zipBusy: 'Another download is still being prepared. Please wait for it to finish.',
   },
   footer: { rights: 'All rights reserved.' },
 }

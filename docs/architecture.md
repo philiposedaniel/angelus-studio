@@ -27,6 +27,8 @@ Browser ──> Cloudflare (DNS, CDN, WAF) ──> Coolify proxy ──> app con
   downloads. Collections `galleries`, `gallery-photos` (private uploads), `gallery-favorites`,
   all studio-scoped. Rules live in `src/access/galleries.ts`; original downloads are guarded by
   an upload handler in `src/collections/GalleryPhotos.ts`.
+- Whole-gallery ZIP downloads: `gallery-downloads` records plus Payload jobs in `src/jobs/`
+  (database-backed queue, run by the app process). See `docs/development.md`.
 - Private photos are on local disk (`PRIVATE_MEDIA_DIR`, a Docker volume in production). Moving
   them to private S3/R2 storage with signed URLs and direct browser uploads is the next storage step.
 

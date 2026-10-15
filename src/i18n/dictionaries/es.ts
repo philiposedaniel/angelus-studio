@@ -58,6 +58,12 @@ export const es: Dictionary = {
     viewLarge: 'Ver más grande',
     emptyGallery: 'Las fotos aparecerán aquí pronto.',
     favoriteError: 'No se pudo guardar su favorita. Inténtelo de nuevo.',
+    downloadAll: 'Descargar todo en ZIP',
+    downloadFavorites: 'Descargar favoritas en ZIP',
+    zipPreparing: 'Preparando su descarga…',
+    zipReady: 'Su ZIP está listo: descárguelo',
+    zipFailed: 'No pudimos preparar esa descarga. Inténtelo de nuevo.',
+    zipBusy: 'Otra descarga aún se está preparando. Espere a que termine.',
   },
   footer: { rights: 'Todos los derechos reservados.' },
 }

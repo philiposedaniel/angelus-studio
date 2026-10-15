@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { FavoriteButton } from '@/components/portal/FavoriteButton'
+import { GalleryZipButton } from '@/components/portal/GalleryZipButton'
 import { getDictionary } from '@/i18n/dictionaries'
 import { requirePortalUser } from '@/lib/auth'
 import { cn } from '@/lib/cn'
@@ -106,6 +107,27 @@ export default async function GalleryPage({
           {t.favorites} ({favoriteByPhoto.size})
         </Link>
       </nav>
+
+      {gallery.allowDownloads && photos.totalDocs > 0 && (
+        <div className="mt-6 flex flex-wrap items-start gap-3">
+          {(['all', 'favorites'] as const)
+            .filter((scope) => scope === 'all' || favoriteByPhoto.size > 0)
+            .map((scope) => (
+              <GalleryZipButton
+                key={scope}
+                galleryId={gallery.id}
+                scope={scope}
+                labels={{
+                  request: scope === 'all' ? t.downloadAll : t.downloadFavorites,
+                  preparing: t.zipPreparing,
+                  ready: t.zipReady,
+                  failed: t.zipFailed,
+                  busy: t.zipBusy,
+                }}
+              />
+            ))}
+        </div>
+      )}
 
       {photos.docs.length === 0 ? (
         <p className="mt-10 text-mist">{t.emptyGallery}</p>

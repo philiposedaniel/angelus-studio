@@ -19,6 +19,13 @@ async function seed(): Promise<Seeded> {
   const payload = await getPayload({ config })
   const { docs } = await payload.find({ collection: 'tenants', where: { slug: { equals: E2E_TENANT.slug } } })
   const tenant = docs[0]!
+  const oldDownloads = await payload.find({
+    collection: 'gallery-downloads',
+    where: { 'gallery.slug': { like: PREFIX } },
+    pagination: false,
+    depth: 0,
+  })
+  await payload.delete({ collection: 'gallery-downloads', where: { id: { in: oldDownloads.docs.map((d) => d.id) } } })
   await payload.delete({ collection: 'gallery-favorites', where: { 'gallery.slug': { like: PREFIX } } })
   await payload.delete({ collection: 'gallery-photos', where: { filename: { like: PREFIX } } })
   await payload.delete({ collection: 'galleries', where: { slug: { like: PREFIX } } })
@@ -48,16 +55,37 @@ async function seed(): Promise<Seeded> {
     data: { gallery: gallery.id },
     file: await testJpeg(`${PREFIX}first-dance.jpg`),
   })
+  const delivered = await payload.create({
+    collection: 'galleries',
+    data: {
+      tenant: tenant.id,
+      title: 'Jones engagement',
+      slug: `${PREFIX}jones-engagement`,
+      status: 'published',
+      clients: [a.id],
+      allowDownloads: true,
+    },
+  })
+  for (const name of ['ring', 'sunset']) {
+    await payload.create({
+      collection: 'gallery-photos',
+      data: { gallery: delivered.id },
+      file: await testJpeg(`${PREFIX}${name}.jpg`),
+    })
+  }
   return { originalUrl: photo.url!, thumbUrl: photo.sizes!.thumbnail!.url! }
 }
 
 /** Signs in through the login form, so later requests carry the browser's session cookie. */
 const signIn = async (page: Page, user: typeof clientA) => {
   await page.goto(`${BASE}/en/portal/login`)
+  // Let the form hydrate first, or the dev server's reload can wipe what was typed.
+  await page.waitForLoadState('networkidle')
   await page.getByLabel('Email').fill(user.email)
   await page.getByLabel('Password').fill(user.password)
   await page.getByRole('button', { name: 'Sign in' }).click()
-  await expect(page).toHaveURL(/\/en\/portal$/)
+  // The first sign-in can wait on the dev server compiling the route.
+  await expect(page).toHaveURL(/\/en\/portal$/, { timeout: 20_000 })
 }
 
 /** Opens a file URL as a browser navigation and returns the HTTP status. */
@@ -109,5 +137,37 @@ test.describe('Client portal', () => {
     await signIn(page, clientA)
     expect(await openFile(page, seeded.thumbUrl)).toBe(200)
     expect(await openFile(page, seeded.originalUrl)).toBe(403)
+  })
+
+  test('a client downloads a whole gallery as one ZIP', async ({ page }) => {
+    await signIn(page, clientA)
+    await page.getByRole('link', { name: /Jones engagement/ }).click()
+    await page.getByRole('button', { name: 'Download all as ZIP' }).click()
+    await expect(page.getByRole('button', { name: 'Preparing your download…' })).toBeVisible()
+
+    // The ZIP is built by the server's background job, which runs every few seconds.
+    const ready = page.getByRole('link', { name: 'Your ZIP is ready: download it' })
+    await expect(ready).toBeVisible({ timeout: 30_000 })
+    const [download] = await Promise.all([page.waitForEvent('download'), ready.click()])
+    expect(download.suggestedFilename()).toBe(`${PREFIX}jones-engagement.zip`)
+    const zip = await download.createReadStream().then(async (stream) => {
+      const chunks: Buffer[] = []
+      for await (const chunk of stream) chunks.push(chunk as Buffer)
+      return Buffer.concat(chunks)
+    })
+    expect(zip.subarray(0, 2).toString()).toBe('PK')
+  })
+
+  test('another client cannot fetch someone else’s ZIP', async ({ page }) => {
+    const payload = await getPayload({ config })
+    const { docs } = await payload.find({
+      collection: 'gallery-downloads',
+      where: { 'gallery.slug': { equals: `${PREFIX}jones-engagement` } },
+      limit: 1,
+      depth: 0,
+    })
+    test.skip(!docs[0], 'needs the ZIP from the previous test')
+    await signIn(page, clientB)
+    expect(await openFile(page, `/api/gallery-downloads/${docs[0]!.id}/file`)).toBe(404)
   })
 })
