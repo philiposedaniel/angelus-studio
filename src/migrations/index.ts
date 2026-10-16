@@ -10,6 +10,7 @@ import * as migration_20261016_004415_event_guests_rsvp from './20261016_004415_
 import * as migration_20261016_013642_projects_crew_tasks from './20261016_013642_projects_crew_tasks';
 import * as migration_20261016_023702_projects_client_user from './20261016_023702_projects_client_user';
 import * as migration_20261016_064009_call_sheets from './20261016_064009_call_sheets';
+import * as migration_20261016_070048_guest_check_in from './20261016_070048_guest_check_in';
 
 export const migrations = [
   {
@@ -70,6 +71,11 @@ export const migrations = [
   {
     up: migration_20261016_064009_call_sheets.up,
     down: migration_20261016_064009_call_sheets.down,
-    name: '20261016_064009_call_sheets'
+    name: '20261016_064009_call_sheets',
+  },
+  {
+    up: migration_20261016_070048_guest_check_in.up,
+    down: migration_20261016_070048_guest_check_in.down,
+    name: '20261016_070048_guest_check_in'
   },
 ];

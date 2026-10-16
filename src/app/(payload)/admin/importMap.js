@@ -28,6 +28,7 @@ import { ShareLinkField as ShareLinkField_2e5df494bd78670e2c10ffd7678d4d11 } fro
 import { QuoteLinkField as QuoteLinkField_adbf6fc446fd4f10c087ddb04a0991a9 } from '@/components/admin/QuoteLinkField'
 import { EventGuestLinkField as EventGuestLinkField_c42b0564f688527b531f8eefb3d23a44 } from '@/components/admin/EventGuestLinkField'
 import { RsvpSummaryField as RsvpSummaryField_b02b2a46c354feb218eda568fb94637c } from '@/components/admin/RsvpSummaryField'
+import { GuestImportField as GuestImportField_c812d960eba5e92393703c36e9e28849 } from '@/components/admin/GuestImportField'
 import { InvitationLinkField as InvitationLinkField_a662a60c3fc05b58c41797d06a0edec6 } from '@/components/admin/InvitationLinkField'
 import { GlobalViewRedirect as GlobalViewRedirect_d6d5f193a167989e2ee7d14202901e62 } from '@payloadcms/plugin-multi-tenant/rsc'
 import { TenantSelector as TenantSelector_d6d5f193a167989e2ee7d14202901e62 } from '@payloadcms/plugin-multi-tenant/rsc'
@@ -66,6 +67,7 @@ export const importMap = {
   "@/components/admin/QuoteLinkField#QuoteLinkField": QuoteLinkField_adbf6fc446fd4f10c087ddb04a0991a9,
   "@/components/admin/EventGuestLinkField#EventGuestLinkField": EventGuestLinkField_c42b0564f688527b531f8eefb3d23a44,
   "@/components/admin/RsvpSummaryField#RsvpSummaryField": RsvpSummaryField_b02b2a46c354feb218eda568fb94637c,
+  "@/components/admin/GuestImportField#GuestImportField": GuestImportField_c812d960eba5e92393703c36e9e28849,
   "@/components/admin/InvitationLinkField#InvitationLinkField": InvitationLinkField_a662a60c3fc05b58c41797d06a0edec6,
   "@payloadcms/plugin-multi-tenant/rsc#GlobalViewRedirect": GlobalViewRedirect_d6d5f193a167989e2ee7d14202901e62,
   "@payloadcms/plugin-multi-tenant/rsc#TenantSelector": TenantSelector_d6d5f193a167989e2ee7d14202901e62,
