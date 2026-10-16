@@ -26,7 +26,7 @@ depends on it.
 1. **Guest list and RSVP** (done, PR #11). Guests per event, each with a personal invitation link;
    guests answer attending or not, how many of their party, dietary needs and a note, and can
    change the answer until the deadline. Staff see the headcount on the event. *Needs nothing.*
-2. **Guest list import, export and check-in** (PR #12). CSV import with a preview, CSV export, and a
+2. **Guest list import, export and check-in** (PR #13). CSV import with a preview, CSV export, and a
    staff check-in page that scans the QR code on the invitation. *Needs nothing.*
 3. **Event registration and tickets.** Ticket types with price, capacity and sales window;
    free registration; paid tickets through Stripe Checkout reusing the signed webhook; orders
