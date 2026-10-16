@@ -90,8 +90,9 @@ test.describe('Shared albums', () => {
 
     await page.setContent(`<iframe src="${BASE}/s/${token}/embed" width="800" height="600"></iframe>`)
     const frame = page.frameLocator('iframe')
-    await expect(frame.getByRole('link', { name: 'Garden party' })).toBeVisible()
-    await expect(frame.getByRole('button', { name: /Open photo/ })).toHaveCount(2)
+    // The iframe is a separate page load, so allow it longer than the default wait.
+    await expect(frame.getByRole('link', { name: 'Garden party' })).toBeVisible({ timeout: 15_000 })
+    await expect(frame.getByRole('button', { name: /Open photo/ })).toHaveCount(2, { timeout: 15_000 })
   })
 
   test('turning sharing off stops the link working', async ({ page }) => {

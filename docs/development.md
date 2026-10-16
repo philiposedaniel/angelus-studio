@@ -227,6 +227,12 @@ for the order of the next steps.
   same studio on the same day. Pick another person or day.
 - Crew must be members of the project's studio; the API refuses anyone else.
 
-Not built yet: crew and client access to their own projects, call sheets and run-of-show, equipment
-reservations, and calendar views. Only admins and production managers can open projects for now.
+- **Call sheet** (on the project): a meeting point, notes for the crew, and a schedule of times, items
+  and places. Times are 24-hour *HH:MM*, and saving fails on anything else. Only admins and
+  production managers can see or change the call sheet for now; crew will see it once their access
+  to their own projects is merged.
+
+Not built yet: crew and client access to their own projects in the portal (in review), run-of-show
+timing and printing, equipment reservations, and calendar views. Only admins and production
+managers can open projects for now.
 
