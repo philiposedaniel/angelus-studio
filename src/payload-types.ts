@@ -598,6 +598,23 @@ export interface Quote {
   validUntil?: string | null;
   publicToken?: string | null;
   /**
+   * Optional. With terms, the client must sign them on the quote page before paying the deposit.
+   */
+  contract?: {
+    /**
+     * Shown to the client in full. Locked once they sign.
+     */
+    terms?: string | null;
+    signedName?: string | null;
+    signedAt?: string | null;
+    signedIp?: string | null;
+    signedUserAgent?: string | null;
+    /**
+     * Fingerprint of the terms the client signed.
+     */
+    termsFingerprint?: string | null;
+  };
+  /**
    * Internal notes. Not shown to the client.
    */
   notes?: string | null;
@@ -1349,6 +1366,16 @@ export interface QuotesSelect<T extends boolean = true> {
   status?: T;
   validUntil?: T;
   publicToken?: T;
+  contract?:
+    | T
+    | {
+        terms?: T;
+        signedName?: T;
+        signedAt?: T;
+        signedIp?: T;
+        signedUserAgent?: T;
+        termsFingerprint?: T;
+      };
   notes?: T;
   updatedAt?: T;
   createdAt?: T;
