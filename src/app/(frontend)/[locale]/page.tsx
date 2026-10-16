@@ -8,6 +8,7 @@ import { InquiryForm } from '@/components/InquiryForm'
 import { getDictionary } from '@/i18n/dictionaries'
 import { issueFormToken } from '@/lib/inquiries'
 import { resolveLocale } from '@/lib/locale'
+import { mediaSrc } from '@/lib/media'
 import { getPublishedServices, getSiteSettings } from '@/lib/site'
 import { getCurrentTenant } from '@/lib/tenant'
 import type { Media } from '@/payload-types'
@@ -36,7 +37,7 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
       >
         {hero?.url ? (
           <Image
-            src={hero.url}
+            src={mediaSrc(hero.url)}
             alt={hero.alt}
             fill
             priority
@@ -103,7 +104,7 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
                     {image?.url ? (
                       <div className="relative aspect-[4/3]">
                         <Image
-                          src={image.sizes?.card?.url ?? image.url}
+                          src={mediaSrc(image.sizes?.card?.url ?? image.url)}
                           alt={image.alt}
                           fill
                           sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
