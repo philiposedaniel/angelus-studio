@@ -1,9 +1,22 @@
-import { APIError, type CollectionConfig } from 'payload'
+import { APIError, type Access, type CollectionConfig, type Where } from 'payload'
 
-import { isStaffAnywhere, publishedOrTenantStaff, tenantContentEditors } from '@/access'
+import { isStaffAnywhere, isSuperAdmin, tenantContentEditors, tenantIdsWithRole } from '@/access'
 import { uniqueSlugPerTenant } from '@/hooks/uniqueSlugPerTenant'
 import { parseVideoUrl } from '@/lib/embeds'
 import { newShareToken } from '@/lib/shareTokens'
+
+/**
+ * The public sees published events that are listed on the website; studio staff also see their
+ * drafts and private events. Private (unlisted) events are reached only through invitation and
+ * guest links, which look them up on the server.
+ */
+const listedOrTenantStaff: Access = ({ req: { user } }) => {
+  if (isSuperAdmin(user)) return true
+  const ids = tenantIdsWithRole(user, ['admin', 'production-manager', 'editor'])
+  const listed: Where = { and: [{ published: { equals: true } }, { listed: { equals: true } }] }
+  if (ids.length === 0) return listed
+  return { or: [listed, { tenant: { in: ids } }] }
+}
 
 /**
  * An event a studio hosts or covers, with a page for the public and a private guest album.
@@ -15,12 +28,12 @@ export const Events: CollectionConfig = {
   labels: { singular: 'Event', plural: 'Events' },
   admin: {
     useAsTitle: 'title',
-    defaultColumns: ['title', 'startsAt', 'published', 'updatedAt'],
-    group: 'Website',
+    defaultColumns: ['title', 'startsAt', 'published', 'listed', 'updatedAt'],
+    group: 'Events',
   },
   defaultSort: 'startsAt',
   access: {
-    read: publishedOrTenantStaff,
+    read: listedOrTenantStaff,
     create: tenantContentEditors,
     update: tenantContentEditors,
     delete: tenantContentEditors,
@@ -36,6 +49,17 @@ export const Events: CollectionConfig = {
           throw new APIError('The event must end after it starts.', 400)
         }
         return { ...data, guestToken }
+      },
+    ],
+    beforeDelete: [
+      // An event's guest list goes with it.
+      async ({ id, req }) => {
+        await req.payload.delete({
+          collection: 'event-guests',
+          where: { event: { equals: id } },
+          req,
+          overrideAccess: true,
+        })
       },
     ],
   },
@@ -114,11 +138,50 @@ export const Events: CollectionConfig = {
       admin: { components: { Field: '@/components/admin/EventGuestLinkField#EventGuestLinkField' } },
     },
     {
+      type: 'collapsible',
+      label: 'Invitations and RSVP',
+      fields: [
+        {
+          name: 'rsvpSummary',
+          type: 'ui',
+          admin: { components: { Field: '@/components/admin/RsvpSummaryField#RsvpSummaryField' } },
+        },
+        {
+          name: 'rsvpOpen',
+          label: 'Guests can reply',
+          type: 'checkbox',
+          defaultValue: true,
+          admin: { description: 'Untick to close replies. Guests then see their answer but cannot change it.' },
+        },
+        {
+          name: 'rsvpDeadline',
+          label: 'Reply by',
+          type: 'date',
+          admin: {
+            date: { pickerAppearance: 'dayAndTime' },
+            description: 'Optional. Replies close automatically after this moment.',
+          },
+        },
+      ],
+    },
+    {
       name: 'published',
       type: 'checkbox',
       defaultValue: false,
       index: true,
       admin: { position: 'sidebar' },
+    },
+    {
+      name: 'listed',
+      label: 'Show on the website',
+      type: 'checkbox',
+      defaultValue: true,
+      index: true,
+      admin: {
+        position: 'sidebar',
+        description:
+          'Untick for private events such as weddings: only people with an invitation or guest link can open them.',
+      },
     },
   ],
 }

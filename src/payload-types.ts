@@ -81,6 +81,7 @@ export interface Config {
     quotes: Quote;
     payments: Payment;
     events: Event;
+    'event-guests': EventGuest;
     'payload-kv': PayloadKv;
     'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
@@ -103,6 +104,7 @@ export interface Config {
     quotes: QuotesSelect<false> | QuotesSelect<true>;
     payments: PaymentsSelect<false> | PaymentsSelect<true>;
     events: EventsSelect<false> | EventsSelect<true>;
+    'event-guests': EventGuestsSelect<false> | EventGuestsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -647,7 +649,61 @@ export interface Event {
    */
   gallery?: (number | null) | Gallery;
   guestToken?: string | null;
+  /**
+   * Untick to close replies. Guests then see their answer but cannot change it.
+   */
+  rsvpOpen?: boolean | null;
+  /**
+   * Optional. Replies close automatically after this moment.
+   */
+  rsvpDeadline?: string | null;
   published?: boolean | null;
+  /**
+   * Untick for private events such as weddings: only people with an invitation or guest link can open them.
+   */
+  listed?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "event-guests".
+ */
+export interface EventGuest {
+  id: number;
+  tenant?: (number | null) | Tenant;
+  event: number | Event;
+  name: string;
+  email?: string | null;
+  phone?: string | null;
+  /**
+   * Optional, to sort the list, e.g. "Bride's family" or "Sponsors".
+   */
+  group?: string | null;
+  /**
+   * Seats on this invitation, the guest included. 2 lets them bring one person.
+   */
+  partySize: number;
+  /**
+   * The language the invitation link opens in.
+   */
+  language: 'en' | 'es' | 'fr' | 'pt' | 'de' | 'it';
+  /**
+   * Guests answer from their link. Staff can also record an answer given by phone.
+   */
+  rsvpStatus: 'pending' | 'attending' | 'declined';
+  /**
+   * How many of the party are coming.
+   */
+  attendingCount?: number | null;
+  dietaryNotes?: string | null;
+  guestMessage?: string | null;
+  respondedAt?: string | null;
+  /**
+   * Only staff see this.
+   */
+  staffNotes?: string | null;
+  inviteToken?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -831,6 +887,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'events';
         value: number | Event;
+      } | null)
+    | ({
+        relationTo: 'event-guests';
+        value: number | EventGuest;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -1254,7 +1314,33 @@ export interface EventsSelect<T extends boolean = true> {
   livestreamUrl?: T;
   gallery?: T;
   guestToken?: T;
+  rsvpOpen?: T;
+  rsvpDeadline?: T;
   published?: T;
+  listed?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "event-guests_select".
+ */
+export interface EventGuestsSelect<T extends boolean = true> {
+  tenant?: T;
+  event?: T;
+  name?: T;
+  email?: T;
+  phone?: T;
+  group?: T;
+  partySize?: T;
+  language?: T;
+  rsvpStatus?: T;
+  attendingCount?: T;
+  dietaryNotes?: T;
+  guestMessage?: T;
+  respondedAt?: T;
+  staffNotes?: T;
+  inviteToken?: T;
   updatedAt?: T;
   createdAt?: T;
 }
