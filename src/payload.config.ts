@@ -16,6 +16,7 @@ import { Quotes } from './collections/Quotes'
 import { isSuperAdmin } from './access/roles'
 import { EventGuests } from './collections/EventGuests'
 import { Events } from './collections/Events'
+import { Projects } from './collections/Projects'
 import { Services } from './collections/Services'
 import { Pages } from './collections/Pages'
 import { Inquiries } from './collections/Inquiries'
@@ -59,6 +60,7 @@ export default buildConfig({
     Payments,
     Events,
     EventGuests,
+    Projects,
   ],
   localization: {
     locales: LOCALES.map((code) => ({ code, label: LOCALE_LABELS[code] })),
@@ -106,6 +108,7 @@ export default buildConfig({
         quotes: {},
         payments: {},
         events: {},
+        projects: {},
         'event-guests': {},
       },
       tenantsArrayField: {
