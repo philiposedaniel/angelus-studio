@@ -59,6 +59,8 @@ starts. Every schema change therefore needs `pnpm migrate:create <name>` and a c
 | `DEFAULT_TENANT_SLUG` | Studio shown when the host name matches no studio domain. |
 | `PRIVATE_MEDIA_DIR` | Folder for private client photos. Defaults to `./private-media`. |
 | `PAYLOAD_JOBS_AUTORUN` | Set to `false` to stop this process running background jobs (tests set it). |
+| `STRIPE_SECRET_KEY` | Stripe API key for Checkout deposits. Leave empty to keep online payment off. |
+| `STRIPE_WEBHOOK_SECRET` | Signing secret of the Stripe webhook endpoint `/api/stripe/webhook`. |
 
 ## Studios and languages
 
@@ -140,3 +142,34 @@ jobs to a separate worker process.
 
 - Cookie sessions are only accepted from the site itself (Payload's CSRF rules), so tools like
   curl cannot reuse a browser cookie to fetch private files.
+
+## Quotes and deposits
+
+- Staff create a quote under *Sales → Quotes*: title, client, currency, line items (quantity and
+  unit price in minor units, so 12550 means 125.50), and the deposit percentage. Totals and the
+  deposit are calculated when saved. The *Client link* box shows the link to copy and send.
+- A quote can be sent (*Sent to client*) only when its deposit is at least 0.50 in its currency.
+  The client's link works only while the quote is sent and not past its valid-until day.
+- Payments appear under *Sales → Payments*. Only admins and finance managers see them. Nobody
+  creates or edits them by hand.
+
+### Stripe setup
+
+1. In the Stripe dashboard, copy the secret key into `STRIPE_SECRET_KEY`.
+2. Add a webhook endpoint at `https://<studio domain>/api/stripe/webhook`, listening for
+   `checkout.session.completed` and `checkout.session.async_payment_succeeded`. Copy its
+   signing secret into `STRIPE_WEBHOOK_SECRET`.
+3. Restart the app. Sent quotes now show *Pay deposit securely*.
+
+Use Stripe test keys first. The webhook is covered by tests with signed events; a live
+Stripe round trip has not been run yet.
+
+### Known limits
+
+- Each click on *Pay deposit* starts a new Checkout session. A client who pays two sessions is
+  charged twice; refund the extra payment in Stripe and note it on the quote.
+- The quote's text is entered once and is not translated; the interface around it is.
+- No email goes out yet. Staff copy the client link into their own email.
+- Only deposits are taken online. Balance payments and contract signing come later.
+- The admin *Client link* box points at the English page; the client can change language on the site.
+
