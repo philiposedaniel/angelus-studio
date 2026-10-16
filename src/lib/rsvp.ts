@@ -148,12 +148,13 @@ export async function submitRsvp({
 
 /** Headcount for an event's guest list. */
 export function summarizeRsvps(
-  guests: readonly Pick<EventGuest, 'rsvpStatus' | 'attendingCount' | 'partySize'>[],
+  guests: readonly Pick<EventGuest, 'rsvpStatus' | 'attendingCount' | 'partySize' | 'checkedInCount'>[],
 ) {
-  const summary = { invitations: 0, seats: 0, attending: 0, declined: 0, pending: 0, headcount: 0 }
+  const summary = { invitations: 0, seats: 0, attending: 0, declined: 0, pending: 0, headcount: 0, arrived: 0 }
   for (const guest of guests) {
     summary.invitations += 1
     summary.seats += guest.partySize ?? 1
+    summary.arrived += guest.checkedInCount ?? 0
     if (guest.rsvpStatus === 'attending') {
       summary.attending += 1
       summary.headcount += guest.attendingCount ?? 0

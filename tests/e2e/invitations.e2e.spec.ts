@@ -3,7 +3,8 @@ import { getPayload } from 'payload'
 
 import config from '../../src/payload.config.js'
 import { waitForHydration } from '../helpers/hydration'
-import { E2E_TENANT, seedE2ETenant } from '../helpers/seedUser'
+import { login } from '../helpers/login'
+import { E2E_TENANT, seedTestUser, testUser } from '../helpers/seedUser'
 
 const BASE = 'http://localhost:3000'
 const PREFIX = 'e2e-invite-'
@@ -14,7 +15,8 @@ let guestId: number
 
 test.describe('Invitations and RSVP', () => {
   test.beforeAll(async () => {
-    await seedE2ETenant()
+    // Seeds the studio and a studio administrator, who checks guests in.
+    await seedTestUser()
     const payload = await getPayload({ config })
     const { docs } = await payload.find({ collection: 'tenants', where: { slug: { equals: E2E_TENANT.slug } } })
     const tenant = docs[0]!
@@ -96,5 +98,29 @@ test.describe('Invitations and RSVP', () => {
 
     const response = await page.goto(`${BASE}/en/invite/${'A'.repeat(32)}`)
     expect(response?.status()).toBe(404)
+  })
+
+  test('the entry code leads staff to check the guest in, and tells anyone else to show it', async ({ page }) => {
+    const payload = await getPayload({ config })
+    // The reply test above ended with a decline, and guests who decline get no entry code.
+    await payload.update({ collection: 'event-guests', id: guestId, data: { rsvpStatus: 'attending', attendingCount: 2 } })
+    await page.goto(`${BASE}/en/invite/${openToken}`)
+    await expect(page.getByRole('img', { name: 'Your entry code' })).toBeVisible()
+
+    await page.goto(`${BASE}/en/invite/${openToken}/check-in`)
+    await expect(page.getByRole('heading', { name: 'Show this code at the entrance' })).toBeVisible()
+    await expect(page.getByText('Maria Silva')).toHaveCount(0)
+
+    // Staff sign in on the same site, then open the code.
+    await login({ page, user: testUser })
+    await page.goto(`${BASE}/en/invite/${openToken}/check-in`)
+    await expect(page.getByRole('heading', { name: 'Maria Silva' })).toBeVisible()
+    await waitForHydration(page)
+    await page.getByLabel('How many have arrived?').selectOption('2')
+    await page.getByRole('button', { name: 'Check in' }).click()
+    await expect(page.getByText('Checked in.')).toBeVisible()
+
+    const saved = await payload.findByID({ collection: 'event-guests', id: guestId })
+    expect(saved.checkedInCount).toBe(2)
   })
 })
