@@ -226,7 +226,12 @@ for the order of the next steps.
 - **Crew conflicts:** saving a project fails if one of its crew is already on another project of the
   same studio on the same day. Pick another person or day.
 - Crew must be members of the project's studio; the API refuses anyone else.
+- **Crew and client access:** a crew member sees their projects in the portal (*Your productions*),
+  with the crew list and tasks. The client assigned on the project (*Client user*, a member of the
+  same studio) sees the title, status, shoot day and location. Neither can change a project. Internal
+  notes, the quote, the client's email and the client user are for production staff only. Anyone else
+  sees an empty list.
 
-Not built yet: crew and client access to their own projects, call sheets and run-of-show, equipment
-reservations, and calendar views. Only admins and production managers can open projects for now.
+Not built yet: call sheets and run-of-show, equipment reservations, calendar views, and clients
+uploading or approving anything on their project.
 
