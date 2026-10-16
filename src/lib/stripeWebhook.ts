@@ -5,6 +5,7 @@ import { getPayload, type Payload } from 'payload'
 import { STRIPE_PAYMENT_CONTEXT } from '@/collections/Quotes'
 import { idOf } from '@/lib/ids'
 import { getStripe, stripeConfigured } from '@/lib/stripe'
+import { balanceAmount, PAID_QUOTE_STATUSES } from '@/lib/quotes'
 
 /** Events that can mean a deposit has been paid. Other events are acknowledged and ignored. */
 const PAID_EVENTS = new Set(['checkout.session.completed', 'checkout.session.async_payment_succeeded'])
@@ -21,12 +22,14 @@ async function recordMissingPayment(payload: Payload, session: Stripe.Checkout.S
     .findByID({ collection: 'quotes', id: quoteId, depth: 0, overrideAccess: true })
     .catch(() => null)
   if (!quote || String(idOf(quote.tenant)) !== tenantId) return null
+  const kind = session.metadata?.kind === 'balance' ? 'balance' : 'deposit'
   return payload.create({
     collection: 'payments',
     data: {
       tenant: Number(tenantId),
       quote: quote.id,
-      amount: quote.depositAmount ?? 0,
+      kind,
+      amount: kind === 'balance' ? balanceAmount(quote) : (quote.depositAmount ?? 0),
       currency: quote.currency,
       status: 'pending',
       stripeSessionId: session.id,
@@ -92,13 +95,34 @@ export async function handleStripeWebhook(request: Request): Promise<Response> {
     }
 
     // Quote first: if this fails, Stripe retries the event and the payment is still pending.
-    await payload.update({
-      collection: 'quotes',
-      id: idOf(payment.quote)!,
-      data: { status: 'deposit-paid' },
-      context: STRIPE_PAYMENT_CONTEXT,
-      overrideAccess: true,
-    })
+    const quoteId = idOf(payment.quote)!
+    const quote = await payload.findByID({ collection: 'quotes', id: quoteId, depth: 0, overrideAccess: true })
+    if (payment.kind === 'balance') {
+      if (quote.status === 'deposit-paid') {
+        await payload.update({
+          collection: 'quotes',
+          id: quoteId,
+          data: { status: 'paid-in-full' },
+          context: STRIPE_PAYMENT_CONTEXT,
+          overrideAccess: true,
+        })
+      } else if (quote.status !== 'paid-in-full') {
+        // The balance is only offered after the deposit, so this should not happen. Keep the money record.
+        payload.logger.error({
+          msg: 'Balance payment received before the deposit was recorded',
+          paymentId: payment.id,
+          quoteId,
+        })
+      }
+    } else if (!(PAID_QUOTE_STATUSES as readonly string[]).includes(quote.status)) {
+      await payload.update({
+        collection: 'quotes',
+        id: quoteId,
+        data: { status: 'deposit-paid' },
+        context: STRIPE_PAYMENT_CONTEXT,
+        overrideAccess: true,
+      })
+    }
     await payload.update({
       collection: 'payments',
       id: payment.id,

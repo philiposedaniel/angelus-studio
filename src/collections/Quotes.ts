@@ -4,12 +4,13 @@ import { tenantAdmins, tenantRoles } from '@/access'
 import { INQUIRY_STAFF_ROLES } from '@/collections/Inquiries'
 import { CURRENCIES, CURRENCY_LABELS, MAX_AMOUNT, MAX_QUANTITY, quoteTotals } from '@/lib/money'
 import { openProjectForQuote } from '@/lib/projects'
+import { PAID_QUOTE_STATUSES } from '@/lib/quotes'
 import { newShareToken } from '@/lib/shareTokens'
 
 /** Smallest amount Stripe will charge; a deposit below it cannot be paid online. */
 export const MIN_DEPOSIT = 50
 
-export const QUOTE_STATUSES = ['draft', 'sent', 'deposit-paid', 'cancelled'] as const
+export const QUOTE_STATUSES = ['draft', 'sent', 'deposit-paid', 'paid-in-full', 'cancelled'] as const
 
 /** Context flag set only by the verified Stripe webhook. The only way a quote becomes paid. */
 export const STRIPE_PAYMENT_CONTEXT = { stripePayment: true } as const
@@ -19,7 +20,8 @@ const isWholeNumber = (value: unknown, min: number, max: number) =>
 
 /**
  * A priced offer sent to a client. The client opens it through a private link
- * (`/<language>/quote/<publicToken>`), pays the deposit and the status moves to deposit-paid.
+ * (`/<language>/quote/<publicToken>`), pays the deposit and the status moves to deposit-paid, then
+ * the balance and it moves to paid-in-full.
  * Totals are always computed here, never taken from the request.
  */
 export const Quotes: CollectionConfig = {
@@ -39,9 +41,11 @@ export const Quotes: CollectionConfig = {
   },
   hooks: {
     afterChange: [
-      // A paid deposit opens the production. Only the change to paid does this.
+      // A paid deposit opens the production. Only the first change to a paid status does this.
       async ({ doc, previousDoc, req }) => {
-        if (doc.status === 'deposit-paid' && previousDoc?.status !== 'deposit-paid') {
+        const isPaid = (PAID_QUOTE_STATUSES as readonly string[]).includes(doc.status)
+        const wasPaid = (PAID_QUOTE_STATUSES as readonly string[]).includes(previousDoc?.status ?? '')
+        if (isPaid && !wasPaid) {
           await openProjectForQuote(req.payload, doc, req)
         }
         return doc
@@ -49,15 +53,19 @@ export const Quotes: CollectionConfig = {
     ],
     beforeChange: [
       ({ data, originalDoc, operation, req }) => {
-        const paidBefore = originalDoc?.status === 'deposit-paid'
+        const paidBefore = (PAID_QUOTE_STATUSES as readonly string[]).includes(originalDoc?.status ?? '')
         const fromStripe = req.context?.stripePayment === true
         const nextStatus = data.status ?? originalDoc?.status ?? 'draft'
+        const nextIsPaid = (PAID_QUOTE_STATUSES as readonly string[]).includes(nextStatus)
 
         // Payment state is owned by the webhook: staff cannot mark a quote paid or undo it.
         if (nextStatus === 'deposit-paid' && !paidBefore && !fromStripe) {
           throw new APIError('A quote is marked as paid only when its deposit payment arrives.', 400)
         }
-        if (paidBefore && nextStatus !== 'deposit-paid' && !fromStripe) {
+        if (nextStatus === 'paid-in-full' && originalDoc?.status !== 'paid-in-full' && !fromStripe) {
+          throw new APIError('A quote is marked as paid in full only when its balance payment arrives.', 400)
+        }
+        if (paidBefore && !nextIsPaid && !fromStripe) {
           throw new APIError('A paid quote cannot change status. Create a new quote instead.', 400)
         }
 
@@ -163,6 +171,7 @@ export const Quotes: CollectionConfig = {
         { label: 'Draft (staff only)', value: 'draft' },
         { label: 'Sent to client', value: 'sent' },
         { label: 'Deposit paid', value: 'deposit-paid' },
+        { label: 'Paid in full', value: 'paid-in-full' },
         { label: 'Cancelled', value: 'cancelled' },
       ],
     },

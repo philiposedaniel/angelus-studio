@@ -9,10 +9,10 @@ import { getDictionary } from '@/i18n/dictionaries'
 import { isLocale } from '@/i18n/config'
 import { isShareToken } from '@/lib/shareTokens'
 import { getStripe, stripeConfigured } from '@/lib/stripe'
-import { isQuoteExpired } from '@/lib/quotes'
+import { balanceAmount, isQuoteExpired } from '@/lib/quotes'
 import { getCurrentTenant } from '@/lib/tenant'
 
-export type DepositState = { status: 'idle' } | { status: 'error'; message: 'failed' | 'unavailable' }
+export type PaymentState = { status: 'idle' } | { status: 'error'; message: 'failed' | 'unavailable' }
 
 /** The address the visitor is on, so Stripe sends them back to the same studio site. */
 async function siteOrigin() {
@@ -22,12 +22,14 @@ async function siteOrigin() {
   return `${proto}://${host}`
 }
 
+type PaymentKind = 'deposit' | 'balance'
+
 /**
- * Starts a Stripe Checkout session for a quote's deposit, then sends the client to Stripe.
+ * Starts a Stripe Checkout session for the deposit, or for the balance once the deposit is paid.
  * The amount comes from the stored quote, never from the form; the form only names the quote.
- * The quote is then marked paid by the webhook, not here.
+ * The quote is marked paid by the verified webhook, not here.
  */
-export async function payDeposit(_previous: DepositState, form: FormData): Promise<DepositState> {
+async function startPayment(form: FormData, kind: PaymentKind): Promise<PaymentState> {
   const token = form.get('token')
   const requested = form.get('locale')
   if (!isShareToken(token) || typeof requested !== 'string' || !isLocale(requested)) {
@@ -46,7 +48,7 @@ export async function payDeposit(_previous: DepositState, form: FormData): Promi
       and: [
         { tenant: { equals: tenant.id } },
         { publicToken: { equals: token } },
-        { status: { equals: 'sent' } },
+        { status: { in: kind === 'deposit' ? ['sent'] : ['deposit-paid'] } },
       ],
     },
     limit: 1,
@@ -54,10 +56,11 @@ export async function payDeposit(_previous: DepositState, form: FormData): Promi
     overrideAccess: true,
   })
   const quote = docs[0]
-  const depositAmount = quote?.depositAmount ?? 0
-  if (!quote || isQuoteExpired(quote.validUntil) || depositAmount <= 0) {
-    return { status: 'error', message: 'failed' }
-  }
+  if (!quote) return { status: 'error', message: 'failed' }
+  // The deposit may expire; the balance is due after a deposit that was already accepted.
+  if (kind === 'deposit' && isQuoteExpired(quote.validUntil)) return { status: 'error', message: 'failed' }
+  const amount = kind === 'deposit' ? (quote.depositAmount ?? 0) : balanceAmount(quote)
+  if (amount <= 0) return { status: 'error', message: 'failed' }
 
   const origin = await siteOrigin()
   const back = `${origin}/${requested}/quote/${token}`
@@ -70,12 +73,14 @@ export async function payDeposit(_previous: DepositState, form: FormData): Promi
         quantity: 1,
         price_data: {
           currency: quote.currency,
-          unit_amount: depositAmount,
-          product_data: { name: `${t.depositName}: ${quote.title}`.slice(0, 250) },
+          unit_amount: amount,
+          product_data: {
+            name: `${kind === 'deposit' ? t.depositName : t.balanceName}: ${quote.title}`.slice(0, 250),
+          },
         },
       },
     ],
-    metadata: { quoteId: String(quote.id), tenantId: String(tenant.id) },
+    metadata: { quoteId: String(quote.id), tenantId: String(tenant.id), kind },
     success_url: `${back}?payment=success`,
     cancel_url: `${back}?payment=cancelled`,
   })
@@ -86,7 +91,8 @@ export async function payDeposit(_previous: DepositState, form: FormData): Promi
     data: {
       tenant: tenant.id,
       quote: quote.id,
-      amount: depositAmount,
+      kind,
+      amount,
       currency: quote.currency,
       status: 'pending',
       stripeSessionId: session.id,
@@ -96,4 +102,12 @@ export async function payDeposit(_previous: DepositState, form: FormData): Promi
 
   // Outside the try-free path on purpose: redirect() works by throwing.
   redirect(session.url)
+}
+
+export async function payDeposit(_previous: PaymentState, form: FormData): Promise<PaymentState> {
+  return startPayment(form, 'deposit')
+}
+
+export async function payBalance(_previous: PaymentState, form: FormData): Promise<PaymentState> {
+  return startPayment(form, 'balance')
 }

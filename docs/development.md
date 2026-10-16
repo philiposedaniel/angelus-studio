@@ -152,6 +152,10 @@ jobs to a separate worker process.
   The client's link works only while the quote is sent and not past its valid-until day.
 - Payments appear under *Sales → Payments*. Only admins and finance managers see them. Nobody
   creates or edits them by hand.
+- After the deposit is paid, the quote shows *Pay the balance securely* for the rest of the total.
+  The balance is a second Checkout session (kind *balance*). Its webhook marks the quote
+  *Paid in full*. A balance that arrives before its deposit is recorded is kept on the payment
+  and logged, and the quote is not moved.
 
 ### Stripe setup
 
@@ -166,11 +170,11 @@ Stripe round trip has not been run yet.
 
 ### Known limits
 
-- Each click on *Pay deposit* starts a new Checkout session. A client who pays two sessions is
-  charged twice; refund the extra payment in Stripe and note it on the quote.
+- Each click on *Pay deposit* or *Pay the balance* starts a new Checkout session. A client who pays two
+  sessions for the same payment is charged twice; refund the extra payment in Stripe and note it on the quote.
 - The quote's text is entered once and is not translated; the interface around it is.
 - No email goes out yet. Staff copy the client link into their own email.
-- Only deposits are taken online. Balance payments and contract signing come later.
+- Contract signing is not built yet. Balance payments are taken online the same way as the deposit.
 - The admin *Client link* box points at the English page; the client can change language on the site.
 
 ## Events and guest albums

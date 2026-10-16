@@ -2,18 +2,22 @@
 
 import { useActionState } from 'react'
 
-import { payDeposit, type DepositState } from '@/app/(frontend)/[locale]/quote/[token]/actions'
+import { payBalance, payDeposit, type PaymentState } from '@/app/(frontend)/[locale]/quote/[token]/actions'
 import type { Dictionary } from '@/i18n/dictionaries'
 
 type Props = {
+  kind: 'deposit' | 'balance'
   token: string
   locale: string
   t: Dictionary['quote']
 }
 
-/** Starts the deposit payment. The server decides the amount; this only sends the quote's token. */
-export function DepositButton({ token, locale, t }: Props) {
-  const [state, action, pending] = useActionState<DepositState, FormData>(payDeposit, { status: 'idle' })
+/** Starts a payment. The server decides the amount; this only sends the quote's token. */
+export function PaymentButton({ kind, token, locale, t }: Props) {
+  const [state, action, pending] = useActionState<PaymentState, FormData>(
+    kind === 'deposit' ? payDeposit : payBalance,
+    { status: 'idle' },
+  )
 
   return (
     <form action={action} className="grid gap-3">
@@ -24,7 +28,7 @@ export function DepositButton({ token, locale, t }: Props) {
         disabled={pending}
         className="w-fit rounded-full bg-gold px-6 py-3 font-medium text-charcoal disabled:opacity-60"
       >
-        {pending ? t.paying : t.payDeposit}
+        {pending ? t.paying : kind === 'deposit' ? t.payDeposit : t.payBalance}
       </button>
       {state.status === 'error' && (
         <p role="alert" className="text-copper">

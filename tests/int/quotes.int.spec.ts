@@ -190,6 +190,7 @@ describe('quotes and payments', () => {
       quote: quote.id,
       amount: 3765,
       currency: 'eur' as const,
+      kind: 'deposit' as const,
       status: 'paid' as const,
       stripeSessionId: `${PREFIX}manual`,
     }
