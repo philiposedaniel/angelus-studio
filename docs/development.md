@@ -232,7 +232,22 @@ for the order of the next steps.
   production managers can see or change the call sheet for now; crew will see it once their access
   to their own projects is merged.
 
+## Equipment and reservations
+
+- **Equipment** (*Production → Equipment*): the kit the studio owns, with a name, category, serial
+  number and notes. Untick *Active* to retire a piece; retired kit cannot be reserved.
+- **Equipment reservations** (*Production → Equipment reservations*): one piece of kit, one production,
+  and a start and end time. The end is not included, so one reservation can start the moment another
+  ends. The server refuses a reservation that overlaps another for the same kit, that ends before it
+  starts, or that uses kit or a production from another studio.
+- The database also refuses overlaps, with an exclusion constraint on `equipment_reservations`
+  (migration `20261016_120136_equipment_reservations`). It needs the `btree_gist` extension, which
+  the migration creates. Two requests at the same moment cannot both book the same kit.
+- Only production staff can read or change equipment and reservations. Other studios and clients
+  see nothing.
+- Not built yet: kit check-out and return, kit lists per production, and a calendar of kit use.
+
 Not built yet: crew and client access to their own projects in the portal (in review), run-of-show
-timing and printing, equipment reservations, and calendar views. Only admins and production
+timing and printing, and calendar views. Only admins and production
 managers can open projects for now.
 
