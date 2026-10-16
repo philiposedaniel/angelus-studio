@@ -188,6 +188,12 @@ export const en = {
     closed: 'Replies are closed. Please contact the hosts if anything has changed.',
     entryCode: 'Your entry code',
     entryCodeHelp: 'Show this code at the entrance. Keep it to yourself: it is your personal invitation.',
+    programme: 'Programme',
+    dressCode: 'Dress code',
+    openMap: 'Open the map',
+    previewNote: 'Preview for studio staff. Each guest sees their own name, reply form and entry code.',
+    sampleGuest: 'Guest name',
+    previewReply: 'The guest answers here: attending or not, how many are coming, dietary needs and a note.',
     openAlbum: 'Open the event album',
     watchLive: 'Watch live',
     errors: {

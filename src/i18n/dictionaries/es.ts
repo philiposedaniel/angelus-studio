@@ -190,6 +190,12 @@ export const es: Dictionary = {
     closed: 'Las respuestas están cerradas. Contacta con los anfitriones si algo ha cambiado.',
     entryCode: 'Tu código de entrada',
     entryCodeHelp: 'Muestra este código en la entrada. No lo compartas: es tu invitación personal.',
+    programme: 'Programa',
+    dressCode: 'Código de vestimenta',
+    openMap: 'Abrir el mapa',
+    previewNote: 'Vista previa para el personal del estudio. Cada invitado ve su nombre, su formulario de respuesta y su código de entrada.',
+    sampleGuest: 'Nombre del invitado',
+    previewReply: 'Aquí responde el invitado: si asiste o no, cuántos vienen, necesidades alimentarias y una nota.',
     openAlbum: 'Abrir el álbum del evento',
     watchLive: 'Ver en directo',
     errors: {

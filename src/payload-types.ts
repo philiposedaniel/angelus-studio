@@ -679,6 +679,41 @@ export interface Event {
   gallery?: (number | null) | Gallery;
   guestToken?: string | null;
   /**
+   * How the invitation page looks. Every guest sees this design above their own reply form and entry code.
+   */
+  invitation?: {
+    style?: ('classic' | 'garden' | 'modern') | null;
+    /**
+     * Shown at the top. Website media is public, so use a picture meant to be shared.
+     */
+    coverImage?: (number | null) | Media;
+    /**
+     * e.g. "Together with their families, Ana and João invite you". Empty shows "You are invited".
+     */
+    headline?: string | null;
+    message?: string | null;
+    schedule?:
+      | {
+          /**
+           * e.g. 16:00
+           */
+          time: string;
+          title: string;
+          place?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+    dressCode?: string | null;
+    /**
+     * Optional link to the place on a map, starting with https://
+     */
+    mapUrl?: string | null;
+    /**
+     * Closing line, e.g. "With love, Ana and João".
+     */
+    signature?: string | null;
+  };
+  /**
    * Untick to close replies. Guests then see their answer but cannot change it.
    */
   rsvpOpen?: boolean | null;
@@ -1552,6 +1587,25 @@ export interface EventsSelect<T extends boolean = true> {
   livestreamUrl?: T;
   gallery?: T;
   guestToken?: T;
+  invitation?:
+    | T
+    | {
+        style?: T;
+        coverImage?: T;
+        headline?: T;
+        message?: T;
+        schedule?:
+          | T
+          | {
+              time?: T;
+              title?: T;
+              place?: T;
+              id?: T;
+            };
+        dressCode?: T;
+        mapUrl?: T;
+        signature?: T;
+      };
   rsvpOpen?: T;
   rsvpDeadline?: T;
   published?: T;

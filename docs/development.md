@@ -318,3 +318,22 @@ amounts paid are recorded by hand. Vendors are not emailed until the email accou
 
 Known limits: seating is a list of tables, not a drawn floor plan, and the guest import does not
 assign tables.
+
+## Invitation design
+
+- Each event has an *Invitation design* section: a style (Classic black and gold, Garden ivory
+  and sage, Modern white and black), a cover picture, a headline, a message, a programme of
+  moments (time, title, place), a dress code, a map link and a closing line. Text fields are
+  translated per language like the rest of the event. Whoever may edit the event designs it.
+- Every guest's invitation page shows the design above their own greeting, reply form and entry
+  code. When the design has a message, the event summary is not repeated on the invitation.
+- *Preview the invitation* on the event opens `/<language>/invite/preview/<event id>` on the
+  studio's site, one link per site language, with a sample guest and no reply form. Only the
+  studio's admins, production managers and editors, signed in on that site, get the preview;
+  everyone else gets a 404. Save the event before previewing.
+- Styles live in `src/app/(frontend)/[locale]/styles.css` as `invite-theme-*` classes that
+  redefine the colour tokens inside the invitation, so new styles are a CSS block plus an entry
+  in `src/lib/invitationDesign.ts`.
+
+Known limits: the cover picture comes from website media, which is public. Styles are a fixed
+set; there is no per-event colour or font picker yet.

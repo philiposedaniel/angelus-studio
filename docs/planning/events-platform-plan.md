@@ -31,7 +31,7 @@ depends on it.
 3. **Event registration and tickets.** Ticket types with price, capacity and sales window;
    free registration; paid tickets through Stripe Checkout reusing the signed webhook; orders
    and attendee tickets with QR codes that the check-in page also accepts. *Needs Stripe test keys.*
-4. **Vendors** (built; private documents come with R2 storage, step 8). Directory, per-event assignments, amounts due and paid, private documents,
+4. **Vendors** (PR #22; private documents come with R2 storage, step 8). Directory, per-event assignments, amounts due and paid, private documents,
    and a vendor link with their event details. *Needs nothing; documents stay on local disk
    until R2.*
 5. **Email.** Invitations, RSVP and ticket confirmations, reminders, vendor notices and
@@ -46,8 +46,9 @@ depends on it.
    uploads and short-lived signed URLs. *Needs Cloudflare.*
 9. **Organizer self-service.** Clients with the existing *Event organizer* role manage their
    own guest lists, vendors and tickets from the portal instead of through the studio.
-10. **Seating and invitation design.** Tables and seating chart (seating built: tables per
-    event, guests seated at them, table shown at check-in); designed invitation pages per event.
+10. **Seating and invitation design** (both built). Tables per event with guests seated at them
+    and the table shown at check-in; invitation pages in a chosen style with cover, programme,
+    dress code and map, and a staff preview.
 
 Steps 1, 2 and 4 need nothing from Daniel and can go back to back. Steps 3, 5, 7 and 8 start
 as soon as the account each needs exists.

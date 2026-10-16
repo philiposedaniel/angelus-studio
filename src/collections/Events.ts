@@ -4,6 +4,7 @@ import { hasTenantRole, isSuperAdmin, TENANT_STAFF_ROLES, tenantContentEditors, 
 import { uniqueSlugPerTenant } from '@/hooks/uniqueSlugPerTenant'
 import { parseVideoUrl } from '@/lib/embeds'
 import { idOf } from '@/lib/ids'
+import { INVITATION_STYLE_LABELS, INVITATION_STYLES, isWebAddress, MAX_SCHEDULE_ITEMS } from '@/lib/invitationDesign'
 import { newShareToken } from '@/lib/shareTokens'
 
 /**
@@ -153,6 +154,75 @@ export const Events: CollectionConfig = {
       name: 'guestLink',
       type: 'ui',
       admin: { components: { Field: '@/components/admin/EventGuestLinkField#EventGuestLinkField' } },
+    },
+    {
+      name: 'invitation',
+      label: 'Invitation design',
+      type: 'group',
+      admin: {
+        description:
+          'How the invitation page looks. Every guest sees this design above their own reply form and entry code.',
+      },
+      fields: [
+        {
+          name: 'style',
+          type: 'select',
+          defaultValue: 'classic',
+          options: INVITATION_STYLES.map((value) => ({ value, label: INVITATION_STYLE_LABELS[value] })),
+        },
+        {
+          name: 'coverImage',
+          type: 'upload',
+          relationTo: 'media',
+          admin: { description: 'Shown at the top. Website media is public, so use a picture meant to be shared.' },
+        },
+        {
+          name: 'headline',
+          type: 'text',
+          localized: true,
+          maxLength: 200,
+          admin: { description: 'e.g. "Together with their families, Ana and João invite you". Empty shows "You are invited".' },
+        },
+        { name: 'message', type: 'textarea', localized: true, maxLength: 2000 },
+        {
+          name: 'schedule',
+          label: 'Programme',
+          type: 'array',
+          maxRows: MAX_SCHEDULE_ITEMS,
+          labels: { singular: 'Moment', plural: 'Moments' },
+          fields: [
+            {
+              type: 'row',
+              fields: [
+                { name: 'time', type: 'text', required: true, maxLength: 20, admin: { width: '20%', description: 'e.g. 16:00' } },
+                { name: 'title', type: 'text', required: true, localized: true, maxLength: 120, admin: { width: '40%' } },
+                { name: 'place', type: 'text', localized: true, maxLength: 200, admin: { width: '40%' } },
+              ],
+            },
+          ],
+        },
+        { name: 'dressCode', type: 'text', localized: true, maxLength: 200 },
+        {
+          name: 'mapUrl',
+          label: 'Map link',
+          type: 'text',
+          maxLength: 500,
+          admin: { description: 'Optional link to the place on a map, starting with https://' },
+          validate: isWebAddress,
+        },
+        {
+          name: 'signature',
+          type: 'text',
+          localized: true,
+          maxLength: 200,
+          admin: { description: 'Closing line, e.g. "With love, Ana and João".' },
+        },
+        {
+          name: 'previewLink',
+          type: 'ui',
+          admin: { components: { Field: '@/components/admin/InvitationPreviewField#InvitationPreviewField' } },
+        },
+      ],
     },
     {
       type: 'collapsible',
