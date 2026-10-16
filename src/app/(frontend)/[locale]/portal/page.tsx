@@ -52,7 +52,12 @@ export default async function PortalHome({ params }: PageProps<'/[locale]/portal
     <section className="mx-auto max-w-7xl px-4 py-20 sm:px-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <h1 className="font-display text-4xl sm:text-5xl">{t.myGalleries}</h1>
-        <SignOutButton label={t.signOut} redirectTo={`/${locale}/portal/login`} />
+        <div className="flex items-center gap-6">
+          <Link href={`/${locale}/portal/calendar`} className="text-gold hover:underline">
+            {t.calendarLink}
+          </Link>
+          <SignOutButton label={t.signOut} redirectTo={`/${locale}/portal/login`} />
+        </div>
       </div>
       {cards.length === 0 ? (
         <p className="mt-8 text-mist">{t.noGalleries}</p>

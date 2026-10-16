@@ -232,7 +232,13 @@ for the order of the next steps.
   production managers can see or change the call sheet for now; crew will see it once their access
   to their own projects is merged.
 
+- **Production calendar** (*/portal/calendar*, linked from the portal home): the studio's productions
+  by shoot day, one month at a time, with the month before and after one click away. It lists each
+  production's title, status and location only. Each person sees what the project rules let them
+  see: staff see all of the studio's productions, and anyone else sees an empty calendar. Events are
+  not on it; they stay on the events pages.
+
 Not built yet: crew and client access to their own projects in the portal (in review), run-of-show
-timing and printing, equipment reservations, and calendar views. Only admins and production
-managers can open projects for now.
+timing and printing, equipment reservations, and the crew's own call sheet view. Only admins and
+production managers can open projects for now.
 
