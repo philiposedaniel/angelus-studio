@@ -1,6 +1,6 @@
 import { APIError, Forbidden, type CollectionConfig } from 'payload'
 
-import { hasTenantRole, isStaffAnywhere, isSuperAdmin, tenantRoles } from '@/access'
+import { hasTenantRole, isSuperAdmin, tenantRoles } from '@/access'
 import { DEFAULT_LOCALE, LOCALE_LABELS, LOCALES } from '@/i18n/config'
 import { exportGuestList, importGuestList } from '@/lib/guestListEndpoints'
 import { idOf } from '@/lib/ids'
@@ -201,8 +201,15 @@ export const EventGuests: CollectionConfig = {
       type: 'text',
       unique: true,
       admin: { hidden: true },
-      // Staff only. The collection's own rules already keep other studios' guests out of reach.
-      access: { read: ({ req: { user } }) => isStaffAnywhere(user) },
+      // Only staff of the guest's own studio may read it.
+      access: {
+        read: ({ req: { user }, doc }) => {
+          const tenantId = idOf(doc?.tenant)
+          return (
+            isSuperAdmin(user) || (tenantId !== undefined && hasTenantRole(user, tenantId, EVENT_GUEST_STAFF_ROLES))
+          )
+        },
+      },
     },
   ],
 }

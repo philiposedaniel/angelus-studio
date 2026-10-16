@@ -1,8 +1,9 @@
 import { APIError, type Access, type CollectionConfig, type Where } from 'payload'
 
-import { isStaffAnywhere, isSuperAdmin, tenantContentEditors, tenantIdsWithRole } from '@/access'
+import { hasTenantRole, isSuperAdmin, TENANT_STAFF_ROLES, tenantContentEditors, tenantIdsWithRole } from '@/access'
 import { uniqueSlugPerTenant } from '@/hooks/uniqueSlugPerTenant'
 import { parseVideoUrl } from '@/lib/embeds'
+import { idOf } from '@/lib/ids'
 import { newShareToken } from '@/lib/shareTokens'
 
 /**
@@ -128,9 +129,13 @@ export const Events: CollectionConfig = {
       type: 'text',
       unique: true,
       admin: { hidden: true },
-      // Only studio staff may read it; the public API never returns it.
-      // Staff only. The collection's own filter already keeps other studios' events out of reach.
-      access: { read: ({ req: { user } }) => isStaffAnywhere(user) },
+      // Only staff of the event's own studio may read it; the public API never returns it.
+      access: {
+        read: ({ req: { user }, doc }) => {
+          const tenantId = idOf(doc?.tenant)
+          return isSuperAdmin(user) || (tenantId !== undefined && hasTenantRole(user, tenantId, TENANT_STAFF_ROLES))
+        },
+      },
     },
     {
       name: 'guestLink',

@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test'
 import { getPayload } from 'payload'
 
 import config from '../../src/payload.config.js'
+import { waitForHydration } from '../helpers/hydration'
 import { login } from '../helpers/login'
 import { E2E_TENANT, seedTestUser, testUser } from '../helpers/seedUser'
 
@@ -63,6 +64,7 @@ test.describe('Invitations and RSVP', () => {
     await expect(page.getByRole('heading', { name: `${PREFIX}Ana and João`, level: 1 })).toBeVisible()
     await expect(page.getByText('Dear Maria Silva,')).toBeVisible()
     await expect(page.getByText('This invitation is for 2 people, you included.')).toBeVisible()
+    await waitForHydration(page)
 
     await page.getByLabel('Yes, I will be there').check()
     await page.getByLabel('How many of you are coming?').selectOption('2')
@@ -76,9 +78,9 @@ test.describe('Invitations and RSVP', () => {
 
     // Coming back shows the answer and lets them change it.
     await page.reload()
-    // Let the form hydrate before clicking, or the click submits it as a plain GET.
-    await page.waitForLoadState('networkidle')
+    // Wait for the form to hydrate, or the click submits it as a plain GET.
     await expect(page.getByText('Your reply: attending, 2 people.')).toBeVisible()
+    await waitForHydration(page)
     await page.getByLabel('Sorry, I cannot come').check()
     await page.getByRole('button', { name: 'Update reply' }).click()
     await expect(page.getByText('Thank you for letting us know. You will be missed.')).toBeVisible()
@@ -113,6 +115,7 @@ test.describe('Invitations and RSVP', () => {
     await login({ page, user: testUser })
     await page.goto(`${BASE}/en/invite/${openToken}/check-in`)
     await expect(page.getByRole('heading', { name: 'Maria Silva' })).toBeVisible()
+    await waitForHydration(page)
     await page.getByLabel('How many have arrived?').selectOption('2')
     await page.getByRole('button', { name: 'Check in' }).click()
     await expect(page.getByText('Checked in.')).toBeVisible()
