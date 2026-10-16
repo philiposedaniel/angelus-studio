@@ -187,6 +187,7 @@ export const en = {
     rsvpDeclined: 'Replied: not attending.',
     rsvpPending: 'Has not replied.',
     dietary: 'Dietary needs',
+    table: 'Table',
     alreadyIn: { one: 'Checked in at {time}: 1 person.', other: 'Checked in at {time}: {count} people.' },
     howManyArrived: 'How many have arrived?',
     undo: '0 (undo check-in)',

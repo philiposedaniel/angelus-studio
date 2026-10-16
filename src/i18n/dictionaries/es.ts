@@ -189,6 +189,7 @@ export const es: Dictionary = {
     rsvpDeclined: 'Respondió: no asistirá.',
     rsvpPending: 'No ha respondido.',
     dietary: 'Necesidades alimentarias',
+    table: 'Mesa',
     alreadyIn: { one: 'Llegó a las {time}: 1 persona.', other: 'Llegaron a las {time}: {count} personas.' },
     howManyArrived: '¿Cuántos han llegado?',
     undo: '0 (deshacer el registro)',

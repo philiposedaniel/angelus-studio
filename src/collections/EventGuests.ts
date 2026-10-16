@@ -23,7 +23,7 @@ export const EventGuests: CollectionConfig = {
   labels: { singular: 'Guest', plural: 'Guests' },
   admin: {
     useAsTitle: 'name',
-    defaultColumns: ['name', 'event', 'partySize', 'rsvpStatus', 'attendingCount', 'group'],
+    defaultColumns: ['name', 'event', 'partySize', 'rsvpStatus', 'attendingCount', 'group', 'table'],
     group: 'Events',
     listSearchableFields: ['name', 'email', 'group'],
   },
@@ -49,6 +49,17 @@ export const EventGuests: CollectionConfig = {
           .catch(() => null)
         if (!event) throw new APIError('This event does not exist.', 400)
         data.tenant = idOf(event.tenant)
+
+        // A guest can only sit at one of their own event's tables.
+        const tableId = idOf(data.table === undefined ? originalDoc?.table : data.table)
+        if (tableId !== undefined && tableId !== null) {
+          const table = await req.payload
+            .findByID({ collection: 'event-tables', id: tableId, depth: 0, req, overrideAccess: true })
+            .catch(() => null)
+          if (!table || String(idOf(table.event)) !== String(eventId)) {
+            throw new APIError('Choose one of this event\'s tables.', 400)
+          }
+        }
         return data
       },
     ],
@@ -108,6 +119,14 @@ export const EventGuests: CollectionConfig = {
       type: 'text',
       maxLength: 80,
       admin: { description: 'Optional, to sort the list, e.g. "Bride\'s family" or "Sponsors".' },
+    },
+    {
+      name: 'table',
+      type: 'relationship',
+      relationTo: 'event-tables',
+      index: true,
+      admin: { description: 'Where the guest\'s party sits. Add tables under Events → Tables.' },
+      filterOptions: ({ data }) => (data?.event ? { event: { equals: idOf(data.event) } } : false),
     },
     {
       name: 'partySize',

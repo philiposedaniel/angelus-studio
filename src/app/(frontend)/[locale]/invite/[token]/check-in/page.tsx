@@ -7,6 +7,7 @@ import { getDictionary } from '@/i18n/dictionaries'
 import { getSessionUser } from '@/lib/auth'
 import { canCheckIn } from '@/lib/checkIn'
 import { formatEventWhen } from '@/lib/eventTime'
+import { idOf } from '@/lib/ids'
 import { resolveLocale } from '@/lib/locale'
 import { findInvitation } from '@/lib/rsvp'
 import { isShareToken } from '@/lib/shareTokens'
@@ -48,6 +49,14 @@ export default async function CheckInPage({ params }: PageProps<'/[locale]/invit
   }
 
   const { guest, event } = found
+  // Staff only: the guest's table, so whoever is at the door can send the party to it.
+  const tableId = idOf(guest.table)
+  const table =
+    tableId === undefined || tableId === null
+      ? null
+      : await payload
+          .findByID({ collection: 'event-tables', id: tableId, depth: 0, user, overrideAccess: false })
+          .catch(() => null)
   const partySize = guest.partySize ?? 1
   const arrived = guest.checkedInCount ?? 0
   const time = new Intl.DateTimeFormat(locale, { timeStyle: 'short', timeZone: event.timeZone || 'Europe/Lisbon' })
@@ -71,6 +80,11 @@ export default async function CheckInPage({ params }: PageProps<'/[locale]/invit
         {guest.group && <p className="text-mist">{guest.group}</p>}
         <p>{plural(t.seats, partySize)}</p>
         <p>{rsvp}</p>
+        {table && (
+          <p className="text-gold">
+            {t.table}: {table.name}
+          </p>
+        )}
         {guest.dietaryNotes && (
           <p>
             <span className="text-mist">{t.dietary}: </span>

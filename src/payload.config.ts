@@ -15,6 +15,7 @@ import { Payments } from './collections/Payments'
 import { Quotes } from './collections/Quotes'
 import { isSuperAdmin } from './access/roles'
 import { EventGuests } from './collections/EventGuests'
+import { EventTables } from './collections/EventTables'
 import { EventVendors } from './collections/EventVendors'
 import { Vendors } from './collections/Vendors'
 import { Events } from './collections/Events'
@@ -62,6 +63,7 @@ export default buildConfig({
     Payments,
     Events,
     EventGuests,
+    EventTables,
     Vendors,
     EventVendors,
     Projects,
@@ -114,6 +116,7 @@ export default buildConfig({
         events: {},
         projects: {},
         'event-guests': {},
+        'event-tables': {},
         vendors: {},
         'event-vendors': {},
       },

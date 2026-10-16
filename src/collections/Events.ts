@@ -53,7 +53,7 @@ export const Events: CollectionConfig = {
       },
     ],
     beforeDelete: [
-      // An event's guest list and vendor bookings go with it.
+      // An event's guest list, tables and vendor bookings go with it.
       async ({ id, req }) => {
         await req.payload.delete({
           collection: 'event-vendors',
@@ -63,6 +63,12 @@ export const Events: CollectionConfig = {
         })
         await req.payload.delete({
           collection: 'event-guests',
+          where: { event: { equals: id } },
+          req,
+          overrideAccess: true,
+        })
+        await req.payload.delete({
+          collection: 'event-tables',
           where: { event: { equals: id } },
           req,
           overrideAccess: true,
@@ -177,6 +183,18 @@ export const Events: CollectionConfig = {
             date: { pickerAppearance: 'dayAndTime' },
             description: 'Optional. Replies close automatically after this moment.',
           },
+        },
+      ],
+    },
+    {
+      type: 'collapsible',
+      label: 'Seating',
+      admin: { initCollapsed: false },
+      fields: [
+        {
+          name: 'seatingPlan',
+          type: 'ui',
+          admin: { components: { Field: '@/components/admin/SeatingPlanField#SeatingPlanField' } },
         },
       ],
     },

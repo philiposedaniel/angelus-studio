@@ -103,18 +103,30 @@ test.describe('Invitations and RSVP', () => {
   test('the entry code leads staff to check the guest in, and tells anyone else to show it', async ({ page }) => {
     const payload = await getPayload({ config })
     // The reply test above ended with a decline, and guests who decline get no entry code.
-    await payload.update({ collection: 'event-guests', id: guestId, data: { rsvpStatus: 'attending', attendingCount: 2 } })
+    const guest = await payload.findByID({ collection: 'event-guests', id: guestId, depth: 0 })
+    const table = await payload.create({
+      collection: 'event-tables',
+      data: { event: guest.event as number, name: 'Head table', capacity: 8 },
+    })
+    await payload.update({
+      collection: 'event-guests',
+      id: guestId,
+      data: { rsvpStatus: 'attending', attendingCount: 2, table: table.id },
+    })
     await page.goto(`${BASE}/en/invite/${openToken}`)
     await expect(page.getByRole('img', { name: 'Your entry code' })).toBeVisible()
 
     await page.goto(`${BASE}/en/invite/${openToken}/check-in`)
     await expect(page.getByRole('heading', { name: 'Show this code at the entrance' })).toBeVisible()
     await expect(page.getByText('Maria Silva')).toHaveCount(0)
+    await expect(page.getByText('Head table')).toHaveCount(0)
 
     // Staff sign in on the same site, then open the code.
     await login({ page, user: testUser })
     await page.goto(`${BASE}/en/invite/${openToken}/check-in`)
     await expect(page.getByRole('heading', { name: 'Maria Silva' })).toBeVisible()
+    // The staff view says where the party sits.
+    await expect(page.getByText('Table: Head table')).toBeVisible()
     await waitForHydration(page)
     await page.getByLabel('How many have arrived?').selectOption('2')
     await page.getByRole('button', { name: 'Check in' }).click()

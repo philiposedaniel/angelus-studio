@@ -46,8 +46,8 @@ depends on it.
    uploads and short-lived signed URLs. *Needs Cloudflare.*
 9. **Organizer self-service.** Clients with the existing *Event organizer* role manage their
    own guest lists, vendors and tickets from the portal instead of through the studio.
-10. **Seating and invitation design.** Tables and seating chart; designed invitation pages
-    per event.
+10. **Seating and invitation design.** Tables and seating chart (seating built: tables per
+    event, guests seated at them, table shown at check-in); designed invitation pages per event.
 
 Steps 1, 2 and 4 need nothing from Daniel and can go back to back. Steps 3, 5, 7 and 8 start
 as soon as the account each needs exists.

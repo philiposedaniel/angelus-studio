@@ -82,6 +82,7 @@ export interface Config {
     payments: Payment;
     events: Event;
     'event-guests': EventGuest;
+    'event-tables': EventTable;
     vendors: Vendor;
     'event-vendors': EventVendor;
     projects: Project;
@@ -108,6 +109,7 @@ export interface Config {
     payments: PaymentsSelect<false> | PaymentsSelect<true>;
     events: EventsSelect<false> | EventsSelect<true>;
     'event-guests': EventGuestsSelect<false> | EventGuestsSelect<true>;
+    'event-tables': EventTablesSelect<false> | EventTablesSelect<true>;
     vendors: VendorsSelect<false> | VendorsSelect<true>;
     'event-vendors': EventVendorsSelect<false> | EventVendorsSelect<true>;
     projects: ProjectsSelect<false> | ProjectsSelect<true>;
@@ -687,6 +689,10 @@ export interface EventGuest {
    */
   group?: string | null;
   /**
+   * Where the guest's party sits. Add tables under Events → Tables.
+   */
+  table?: (number | null) | EventTable;
+  /**
    * Seats on this invitation, the guest included. 2 lets them bring one person.
    */
   partySize: number;
@@ -715,6 +721,30 @@ export interface EventGuest {
    */
   staffNotes?: string | null;
   inviteToken?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "event-tables".
+ */
+export interface EventTable {
+  id: number;
+  tenant?: (number | null) | Tenant;
+  event: number | Event;
+  /**
+   * As guests and staff will see it, e.g. "Table 4", "Head table" or "Jasmine".
+   */
+  name: string;
+  capacity: number;
+  /**
+   * Lower numbers are listed first.
+   */
+  sortOrder?: number | null;
+  /**
+   * Only staff see this.
+   */
+  notes?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1047,6 +1077,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'event-guests';
         value: number | EventGuest;
+      } | null)
+    | ({
+        relationTo: 'event-tables';
+        value: number | EventTable;
       } | null)
     | ({
         relationTo: 'vendors';
@@ -1500,6 +1534,7 @@ export interface EventGuestsSelect<T extends boolean = true> {
   email?: T;
   phone?: T;
   group?: T;
+  table?: T;
   partySize?: T;
   language?: T;
   rsvpStatus?: T;
@@ -1511,6 +1546,20 @@ export interface EventGuestsSelect<T extends boolean = true> {
   checkedInAt?: T;
   staffNotes?: T;
   inviteToken?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "event-tables_select".
+ */
+export interface EventTablesSelect<T extends boolean = true> {
+  tenant?: T;
+  event?: T;
+  name?: T;
+  capacity?: T;
+  sortOrder?: T;
+  notes?: T;
   updatedAt?: T;
   createdAt?: T;
 }

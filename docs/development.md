@@ -280,3 +280,20 @@ managers can open projects for now.
 
 Known limits: vendor documents (contracts, insurance) and vendor payments are not handled yet;
 amounts paid are recorded by hand. Vendors are not emailed until the email account exists.
+
+## Seating
+
+- *Events → Tables* adds an event's tables: name (unique within the event), seats and order. The
+  same staff who see the guest list (studio admins and production managers) see and change them.
+- A guest is seated by choosing their *Table* on the guest; only that event's tables are offered and
+  accepted. Several guests can be seated at once with *Edit* on a selection in the guest list.
+- The event's *Seating* section shows each table with who sits there and how many seats are taken,
+  flags tables over capacity, and lists guests still without a table. Seats count the people coming
+  once a guest has answered, every seat on the invitation while they have not, and none after a
+  decline.
+- Staff checking a guest in at the door see the guest's table. Guests do not see it on their
+  invitation. The guest list download has a *Table* column.
+- Deleting a table leaves its guests without a table. Deleting an event deletes its tables.
+
+Known limits: seating is a list of tables, not a drawn floor plan, and the guest import does not
+assign tables.

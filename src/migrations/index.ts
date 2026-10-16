@@ -11,6 +11,7 @@ import * as migration_20261016_013642_projects_crew_tasks from './20261016_01364
 import * as migration_20261016_064009_call_sheets from './20261016_064009_call_sheets';
 import * as migration_20261016_070048_guest_check_in from './20261016_070048_guest_check_in';
 import * as migration_20261016_070433_vendors from './20261016_070433_vendors';
+import * as migration_20261016_071024_event_tables from './20261016_071024_event_tables';
 
 export const migrations = [
   {
@@ -76,6 +77,11 @@ export const migrations = [
   {
     up: migration_20261016_070433_vendors.up,
     down: migration_20261016_070433_vendors.down,
-    name: '20261016_070433_vendors'
+    name: '20261016_070433_vendors',
+  },
+  {
+    up: migration_20261016_071024_event_tables.up,
+    down: migration_20261016_071024_event_tables.down,
+    name: '20261016_071024_event_tables'
   },
 ];
