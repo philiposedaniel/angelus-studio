@@ -69,13 +69,13 @@ export const migrations = [
     name: '20261016_064009_call_sheets',
   },
   {
-    up: migration_20261016_070048_guest_check_in.up,
-    down: migration_20261016_070048_guest_check_in.down,
-    name: '20261016_070048_guest_check_in'
-  },
-  {
     up: migration_20261016_000713_gallery_watermark.up,
     down: migration_20261016_000713_gallery_watermark.down,
     name: '20261016_000713_gallery_watermark',
+  },
+  {
+    up: migration_20261016_070048_guest_check_in.up,
+    down: migration_20261016_070048_guest_check_in.down,
+    name: '20261016_070048_guest_check_in'
   },
 ];
