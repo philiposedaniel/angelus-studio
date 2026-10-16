@@ -147,6 +147,11 @@ export const Events: CollectionConfig = {
           admin: { components: { Field: '@/components/admin/RsvpSummaryField#RsvpSummaryField' } },
         },
         {
+          name: 'guestImport',
+          type: 'ui',
+          admin: { components: { Field: '@/components/admin/GuestImportField#GuestImportField' } },
+        },
+        {
           name: 'rsvpOpen',
           label: 'Guests can reply',
           type: 'checkbox',

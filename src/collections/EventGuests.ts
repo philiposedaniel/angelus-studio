@@ -2,6 +2,7 @@ import { APIError, Forbidden, type CollectionConfig } from 'payload'
 
 import { hasTenantRole, isStaffAnywhere, isSuperAdmin, tenantRoles } from '@/access'
 import { DEFAULT_LOCALE, LOCALE_LABELS, LOCALES } from '@/i18n/config'
+import { exportGuestList, importGuestList } from '@/lib/guestListEndpoints'
 import { idOf } from '@/lib/ids'
 import { MAX_PARTY_SIZE, RSVP_LIMITS, RSVP_STATUSES } from '@/lib/rsvp'
 import { newShareToken } from '@/lib/shareTokens'
@@ -33,6 +34,10 @@ export const EventGuests: CollectionConfig = {
     update: tenantRoles(EVENT_GUEST_STAFF_ROLES),
     delete: tenantRoles(EVENT_GUEST_STAFF_ROLES),
   },
+  endpoints: [
+    { path: '/export', method: 'get', handler: exportGuestList },
+    { path: '/import', method: 'post', handler: importGuestList },
+  ],
   hooks: {
     beforeValidate: [
       // A guest always belongs to the same studio as their event.
@@ -64,9 +69,21 @@ export const EventGuests: CollectionConfig = {
           throw new APIError('More people are attending than this invitation has seats for.', 400)
         }
 
+        const checkedInCount: number = data.checkedInCount ?? originalDoc?.checkedInCount ?? 0
+        if (checkedInCount > partySize) {
+          throw new APIError('More people are checked in than this invitation has seats for.', 400)
+        }
+        // The arrival time is kept from the first check-in and cleared when it is undone.
+        const checkedInAt =
+          checkedInCount === 0
+            ? null
+            : (data.checkedInAt ?? originalDoc?.checkedInAt ?? new Date().toISOString())
+
         return {
           ...data,
           attendingCount,
+          checkedInCount,
+          checkedInAt,
           // Set on create, kept on change, never taken from the request.
           inviteToken:
             operation === 'create' || !originalDoc?.inviteToken ? newShareToken() : originalDoc.inviteToken,
@@ -148,6 +165,29 @@ export const EventGuests: CollectionConfig = {
           maxLength: RSVP_LIMITS.guestMessage,
         },
         { name: 'respondedAt', type: 'date', admin: { readOnly: true, date: { pickerAppearance: 'dayAndTime' } } },
+      ],
+    },
+    {
+      type: 'collapsible',
+      label: 'Check-in',
+      fields: [
+        {
+          name: 'checkedInCount',
+          label: 'Checked in',
+          type: 'number',
+          defaultValue: 0,
+          admin: {
+            description:
+              'How many of the party have arrived. Staff set it at the door by scanning the guest\'s invitation code.',
+          },
+          validate: (value: unknown) =>
+            value === null || value === undefined || isWholeNumber(value, 0, MAX_PARTY_SIZE) || 'Enter a whole number.',
+        },
+        {
+          name: 'checkedInAt',
+          type: 'date',
+          admin: { readOnly: true, date: { pickerAppearance: 'dayAndTime' } },
+        },
       ],
     },
     {
