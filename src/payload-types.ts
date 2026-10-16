@@ -80,6 +80,9 @@ export interface Config {
     inquiries: Inquiry;
     quotes: Quote;
     payments: Payment;
+    events: Event;
+    'event-guests': EventGuest;
+    projects: Project;
     'payload-kv': PayloadKv;
     'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
@@ -101,6 +104,9 @@ export interface Config {
     inquiries: InquiriesSelect<false> | InquiriesSelect<true>;
     quotes: QuotesSelect<false> | QuotesSelect<true>;
     payments: PaymentsSelect<false> | PaymentsSelect<true>;
+    events: EventsSelect<false> | EventsSelect<true>;
+    'event-guests': EventGuestsSelect<false> | EventGuestsSelect<true>;
+    projects: ProjectsSelect<false> | ProjectsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -624,6 +630,136 @@ export interface Payment {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "events".
+ */
+export interface Event {
+  id: number;
+  tenant?: (number | null) | Tenant;
+  title: string;
+  slug: string;
+  startsAt: string;
+  /**
+   * The time zone the event happens in, e.g. Europe/Lisbon.
+   */
+  timeZone: string;
+  endsAt?: string | null;
+  location?: string | null;
+  summary?: string | null;
+  image?: (number | null) | Media;
+  /**
+   * Optional Vimeo or YouTube live link, shown on the event page.
+   */
+  livestreamUrl?: string | null;
+  /**
+   * The album guests see. It must be published and shared (Share link on). Guests reach it through the guest link.
+   */
+  gallery?: (number | null) | Gallery;
+  guestToken?: string | null;
+  /**
+   * Untick to close replies. Guests then see their answer but cannot change it.
+   */
+  rsvpOpen?: boolean | null;
+  /**
+   * Optional. Replies close automatically after this moment.
+   */
+  rsvpDeadline?: string | null;
+  published?: boolean | null;
+  /**
+   * Untick for private events such as weddings: only people with an invitation or guest link can open them.
+   */
+  listed?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "event-guests".
+ */
+export interface EventGuest {
+  id: number;
+  tenant?: (number | null) | Tenant;
+  event: number | Event;
+  name: string;
+  email?: string | null;
+  phone?: string | null;
+  /**
+   * Optional, to sort the list, e.g. "Bride's family" or "Sponsors".
+   */
+  group?: string | null;
+  /**
+   * Seats on this invitation, the guest included. 2 lets them bring one person.
+   */
+  partySize: number;
+  /**
+   * The language the invitation link opens in.
+   */
+  language: 'en' | 'es' | 'fr' | 'pt' | 'de' | 'it';
+  /**
+   * Guests answer from their link. Staff can also record an answer given by phone.
+   */
+  rsvpStatus: 'pending' | 'attending' | 'declined';
+  /**
+   * How many of the party are coming.
+   */
+  attendingCount?: number | null;
+  dietaryNotes?: string | null;
+  guestMessage?: string | null;
+  respondedAt?: string | null;
+  /**
+   * Only staff see this.
+   */
+  staffNotes?: string | null;
+  inviteToken?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "projects".
+ */
+export interface Project {
+  id: number;
+  tenant?: (number | null) | Tenant;
+  title: string;
+  /**
+   * The paid quote this project came from. Set automatically when the deposit arrives.
+   */
+  quote?: (number | null) | Quote;
+  clientName: string;
+  clientEmail?: string | null;
+  status: 'planning' | 'confirmed' | 'in-production' | 'delivered' | 'closed';
+  /**
+   * The day the crew works.
+   */
+  shootDate?: string | null;
+  location?: string | null;
+  /**
+   * People working on this project, and their role.
+   */
+  crew?:
+    | {
+        user: number | User;
+        role?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  tasks?:
+    | {
+        title: string;
+        dueDate?: string | null;
+        done?: boolean | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Internal notes.
+   */
+  notes?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -798,6 +934,18 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'payments';
         value: number | Payment;
+      } | null)
+    | ({
+        relationTo: 'events';
+        value: number | Event;
+      } | null)
+    | ({
+        relationTo: 'event-guests';
+        value: number | EventGuest;
+      } | null)
+    | ({
+        relationTo: 'projects';
+        value: number | Project;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -1202,6 +1350,85 @@ export interface PaymentsSelect<T extends boolean = true> {
   paidAt?: T;
   stripeSessionId?: T;
   stripeEventId?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "events_select".
+ */
+export interface EventsSelect<T extends boolean = true> {
+  tenant?: T;
+  title?: T;
+  slug?: T;
+  startsAt?: T;
+  timeZone?: T;
+  endsAt?: T;
+  location?: T;
+  summary?: T;
+  image?: T;
+  livestreamUrl?: T;
+  gallery?: T;
+  guestToken?: T;
+  rsvpOpen?: T;
+  rsvpDeadline?: T;
+  published?: T;
+  listed?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "event-guests_select".
+ */
+export interface EventGuestsSelect<T extends boolean = true> {
+  tenant?: T;
+  event?: T;
+  name?: T;
+  email?: T;
+  phone?: T;
+  group?: T;
+  partySize?: T;
+  language?: T;
+  rsvpStatus?: T;
+  attendingCount?: T;
+  dietaryNotes?: T;
+  guestMessage?: T;
+  respondedAt?: T;
+  staffNotes?: T;
+  inviteToken?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "projects_select".
+ */
+export interface ProjectsSelect<T extends boolean = true> {
+  tenant?: T;
+  title?: T;
+  quote?: T;
+  clientName?: T;
+  clientEmail?: T;
+  status?: T;
+  shootDate?: T;
+  location?: T;
+  crew?:
+    | T
+    | {
+        user?: T;
+        role?: T;
+        id?: T;
+      };
+  tasks?:
+    | T
+    | {
+        title?: T;
+        dueDate?: T;
+        done?: T;
+        id?: T;
+      };
+  notes?: T;
   updatedAt?: T;
   createdAt?: T;
 }

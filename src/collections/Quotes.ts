@@ -3,6 +3,7 @@ import { APIError, type CollectionConfig } from 'payload'
 import { tenantAdmins, tenantRoles } from '@/access'
 import { INQUIRY_STAFF_ROLES } from '@/collections/Inquiries'
 import { CURRENCIES, CURRENCY_LABELS, MAX_AMOUNT, MAX_QUANTITY, quoteTotals } from '@/lib/money'
+import { openProjectForQuote } from '@/lib/projects'
 import { newShareToken } from '@/lib/shareTokens'
 
 /** Smallest amount Stripe will charge; a deposit below it cannot be paid online. */
@@ -37,6 +38,15 @@ export const Quotes: CollectionConfig = {
     delete: tenantAdmins,
   },
   hooks: {
+    afterChange: [
+      // A paid deposit opens the production. Only the change to paid does this.
+      async ({ doc, previousDoc, req }) => {
+        if (doc.status === 'deposit-paid' && previousDoc?.status !== 'deposit-paid') {
+          await openProjectForQuote(req.payload, doc, req)
+        }
+        return doc
+      },
+    ],
     beforeChange: [
       ({ data, originalDoc, operation, req }) => {
         const paidBefore = originalDoc?.status === 'deposit-paid'

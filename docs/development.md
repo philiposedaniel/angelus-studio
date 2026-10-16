@@ -181,4 +181,60 @@ Stripe round trip has not been run yet.
   copy is served, so changing the text takes effect at once, and the stored copies are not changed.
 - Staff see clean copies. Originals are never changed. With downloads allowed, a client can still
   download the original, which has no watermark; turn downloads off for galleries that must stay marked.
+## Events and guest albums
+
+- Staff create an event under *Events → Events*: title, slug, start (and optional end), time zone,
+  location, summary, an optional Vimeo or YouTube live link, and an optional *Album*. The album is a
+  client gallery; it must be published with *Share link* on.
+- The event page is `/<language>/events/<slug>` and the list is `/<language>/events`. Only published
+  events appear, and they show in the event's own time zone.
+- Guests get the *Guest link* from the event in the admin and send it to them. It is
+  `/<language>/events/<slug>/guests/<token>`. It opens the album only while the event is published
+  and the album is published and shared. Otherwise it says the album is not available, or shows nothing.
+- The guest token is 32 random characters, set on create and kept on change. Only staff can read it
+  through the API. Changing it is not offered yet; to stop a link working, unpublish the event.
+
+- *Show on the website* (on by default) puts a published event on the events list and its public
+  page. Untick it for private events such as weddings: the event then opens only through invitation
+  and guest links, and the public API does not return it.
+
+Not built yet: guest check-in, per-event printed passes, and separate livestream access control.
+Live streams use the Vimeo or YouTube embed only.
+
+## Invitations and RSVP
+
+- Staff add guests under *Events → Guests* (studio admins and production managers only; guest
+  details are personal data). Each guest has an event, a name, optional email, phone and group,
+  *Party size* (seats on the invitation, the guest included) and the language their link opens in.
+- Every guest gets a personal *Invitation link*, `/<language>/invite/<token>` (in the guest's language
+  when the studio offers it, otherwise the studio's first language), shown on the guest
+  to copy and send. The token is 32 random characters, set on create and kept on change, readable
+  only by staff. The link works while the event is published, whether or not it is shown on the website.
+- The invitation page shows the event, the live stream and, when the event has an album, a button to
+  it. The guest answers attending or not, how many of their party are coming (never more than the
+  seats), dietary needs and a note for the hosts, and can change the answer while replies are open.
+- On the event, *Invitations and RSVP* shows the headcount (invitations, seats, attending and
+  people coming, not attending, not answered), links to the event's guest list, and closes replies
+  with *Guests can reply* or a *Reply by* moment in the event's time zone.
+- Staff can record an answer given by phone by setting *RSVP* on the guest.
+- Answers are saved by the page's server action (`src/lib/rsvp.ts`); guests have no API access.
+  The studio comes from the host name, so a link only works on its own studio's site.
+- Deleting an event deletes its guests.
+
+Known limits: invitations are not emailed yet (that needs the email account); staff copy each
+link. No CSV import or export, check-in or seating yet. See `docs/planning/events-platform-plan.md`
+for the order of the next steps.
+
+## Projects and crew
+
+- A **project** opens automatically when a quote's deposit is paid (*Production → Projects*). It
+  copies the quote's title and client, starts in *Planning*, and is created once per quote.
+- Staff with the admin or production manager role plan it: status, shoot day, location, crew with
+  roles, and a task list with due dates.
+- **Crew conflicts:** saving a project fails if one of its crew is already on another project of the
+  same studio on the same day. Pick another person or day.
+- Crew must be members of the project's studio; the API refuses anyone else.
+
+Not built yet: crew and client access to their own projects, call sheets and run-of-show, equipment
+reservations, and calendar views. Only admins and production managers can open projects for now.
 

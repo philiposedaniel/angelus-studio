@@ -14,6 +14,9 @@ import { Media } from './collections/Media'
 import { Payments } from './collections/Payments'
 import { Quotes } from './collections/Quotes'
 import { isSuperAdmin } from './access/roles'
+import { EventGuests } from './collections/EventGuests'
+import { Events } from './collections/Events'
+import { Projects } from './collections/Projects'
 import { Services } from './collections/Services'
 import { Pages } from './collections/Pages'
 import { Inquiries } from './collections/Inquiries'
@@ -55,6 +58,9 @@ export default buildConfig({
     Inquiries,
     Quotes,
     Payments,
+    Events,
+    EventGuests,
+    Projects,
   ],
   localization: {
     locales: LOCALES.map((code) => ({ code, label: LOCALE_LABELS[code] })),
@@ -101,6 +107,9 @@ export default buildConfig({
         inquiries: {},
         quotes: {},
         payments: {},
+        events: {},
+        projects: {},
+        'event-guests': {},
       },
       tenantsArrayField: {
         includeDefaultField: false,
