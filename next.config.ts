@@ -37,6 +37,14 @@ const nextConfig: NextConfig = {
           { key: 'X-Robots-Tag', value: 'noindex' },
         ],
       },
+      // Client quote links carry their secret in the URL, like share links.
+      {
+        source: '/:locale/quote/:token',
+        headers: [
+          { key: 'Referrer-Policy', value: 'no-referrer' },
+          { key: 'X-Robots-Tag', value: 'noindex' },
+        ],
+      },
       // Embedded albums may be framed by any site. Browsers ignore X-Frame-Options when
       // frame-ancestors is present, so this opens framing for this path only.
       {

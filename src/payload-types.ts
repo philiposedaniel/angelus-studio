@@ -78,6 +78,8 @@ export interface Config {
     'gallery-favorites': GalleryFavorite;
     'gallery-downloads': GalleryDownload;
     inquiries: Inquiry;
+    quotes: Quote;
+    payments: Payment;
     'payload-kv': PayloadKv;
     'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
@@ -97,6 +99,8 @@ export interface Config {
     'gallery-favorites': GalleryFavoritesSelect<false> | GalleryFavoritesSelect<true>;
     'gallery-downloads': GalleryDownloadsSelect<false> | GalleryDownloadsSelect<true>;
     inquiries: InquiriesSelect<false> | InquiriesSelect<true>;
+    quotes: QuotesSelect<false> | QuotesSelect<true>;
+    payments: PaymentsSelect<false> | PaymentsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -547,6 +551,75 @@ export interface Inquiry {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "quotes".
+ */
+export interface Quote {
+  id: number;
+  tenant?: (number | null) | Tenant;
+  title: string;
+  clientName: string;
+  clientEmail: string;
+  /**
+   * The website request this quote answers, if any.
+   */
+  inquiry?: (number | null) | Inquiry;
+  currency: 'eur' | 'usd' | 'gbp';
+  lineItems: {
+    description: string;
+    quantity: number;
+    /**
+     * In minor units: 12550 means 125.50.
+     */
+    unitAmount: number;
+    id?: string | null;
+  }[];
+  /**
+   * Share of the total paid online to confirm the booking.
+   */
+  depositPercent: number;
+  /**
+   * Calculated from the line items, in minor units.
+   */
+  totalAmount?: number | null;
+  /**
+   * Due now, in minor units. Calculated.
+   */
+  depositAmount?: number | null;
+  status: 'draft' | 'sent' | 'deposit-paid' | 'cancelled';
+  /**
+   * After this day the client can no longer pay. Leave empty for no limit.
+   */
+  validUntil?: string | null;
+  publicToken?: string | null;
+  /**
+   * Internal notes. Not shown to the client.
+   */
+  notes?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payments".
+ */
+export interface Payment {
+  id: number;
+  tenant?: (number | null) | Tenant;
+  quote: number | Quote;
+  /**
+   * Amount in minor units, as charged.
+   */
+  amount: number;
+  currency: 'eur' | 'usd' | 'gbp';
+  status: 'pending' | 'paid' | 'failed';
+  paidAt?: string | null;
+  stripeSessionId: string;
+  stripeEventId?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -713,6 +786,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'inquiries';
         value: number | Inquiry;
+      } | null)
+    | ({
+        relationTo: 'quotes';
+        value: number | Quote;
+      } | null)
+    | ({
+        relationTo: 'payments';
+        value: number | Payment;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -1071,6 +1152,51 @@ export interface InquiriesSelect<T extends boolean = true> {
   status?: T;
   notes?: T;
   senderKey?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "quotes_select".
+ */
+export interface QuotesSelect<T extends boolean = true> {
+  tenant?: T;
+  title?: T;
+  clientName?: T;
+  clientEmail?: T;
+  inquiry?: T;
+  currency?: T;
+  lineItems?:
+    | T
+    | {
+        description?: T;
+        quantity?: T;
+        unitAmount?: T;
+        id?: T;
+      };
+  depositPercent?: T;
+  totalAmount?: T;
+  depositAmount?: T;
+  status?: T;
+  validUntil?: T;
+  publicToken?: T;
+  notes?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payments_select".
+ */
+export interface PaymentsSelect<T extends boolean = true> {
+  tenant?: T;
+  quote?: T;
+  amount?: T;
+  currency?: T;
+  status?: T;
+  paidAt?: T;
+  stripeSessionId?: T;
+  stripeEventId?: T;
   updatedAt?: T;
   createdAt?: T;
 }

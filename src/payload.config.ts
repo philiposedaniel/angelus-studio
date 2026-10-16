@@ -11,6 +11,8 @@ import { GalleryDownloads } from './collections/GalleryDownloads'
 import { GalleryFavorites } from './collections/GalleryFavorites'
 import { GalleryPhotos } from './collections/GalleryPhotos'
 import { Media } from './collections/Media'
+import { Payments } from './collections/Payments'
+import { Quotes } from './collections/Quotes'
 import { isSuperAdmin } from './access/roles'
 import { Services } from './collections/Services'
 import { Pages } from './collections/Pages'
@@ -51,6 +53,8 @@ export default buildConfig({
     GalleryFavorites,
     GalleryDownloads,
     Inquiries,
+    Quotes,
+    Payments,
   ],
   localization: {
     locales: LOCALES.map((code) => ({ code, label: LOCALE_LABELS[code] })),
@@ -95,6 +99,8 @@ export default buildConfig({
         'gallery-favorites': {},
         'gallery-downloads': {},
         inquiries: {},
+        quotes: {},
+        payments: {},
       },
       tenantsArrayField: {
         includeDefaultField: false,
