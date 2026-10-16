@@ -1,6 +1,7 @@
 import config from '@payload-config'
 import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
+import QRCode from 'qrcode'
 
 import { RsvpForm } from '@/components/invite/RsvpForm'
 import { getDictionary } from '@/i18n/dictionaries'
@@ -9,6 +10,7 @@ import { formatEventWhen } from '@/lib/eventTime'
 import { resolveLocale } from '@/lib/locale'
 import { findInvitation, rsvpIsOpen } from '@/lib/rsvp'
 import { isShareToken } from '@/lib/shareTokens'
+import { siteOrigin } from '@/lib/siteOrigin'
 import { getCurrentTenant } from '@/lib/tenant'
 
 // The link is the guest's personal key: keep it out of search engines and referrers.
@@ -49,6 +51,16 @@ export default async function InvitationPage({ params }: PageProps<'/[locale]/in
         timeZone: event.timeZone || 'Europe/Lisbon',
       }).format(new Date(event.rsvpDeadline))
     : null
+
+  // The entry code opens the check-in page, which only the studio's staff can use.
+  const entryCode =
+    guest.rsvpStatus === 'declined'
+      ? null
+      : await QRCode.toString(`${await siteOrigin(payload, tenant.id)}/${locale}/invite/${token}/check-in`, {
+          type: 'svg',
+          margin: 1,
+          errorCorrectionLevel: 'M',
+        })
 
   return (
     <main className="mx-auto grid max-w-2xl gap-8 px-6 py-16 text-ivory">
@@ -95,6 +107,20 @@ export default async function InvitationPage({ params }: PageProps<'/[locale]/in
           <p className="text-mist">{t.closed}</p>
         )}
       </section>
+
+      {entryCode && (
+        <section className="grid gap-3">
+          <h2 className="font-serif text-2xl">{t.entryCode}</h2>
+          <div
+            role="img"
+            aria-label={t.entryCode}
+            className="w-56 rounded-xl bg-ivory p-3"
+            // An SVG drawn by the QR library from our own link; it holds no visitor input.
+            dangerouslySetInnerHTML={{ __html: entryCode }}
+          />
+          <p className="text-sm text-mist">{t.entryCodeHelp}</p>
+        </section>
+      )}
 
       {live && (
         <section className="grid gap-3">

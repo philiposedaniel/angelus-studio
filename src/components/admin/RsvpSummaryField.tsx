@@ -19,7 +19,7 @@ export async function RsvpSummaryField(props: UIFieldServerProps) {
       where: { event: { equals: eventId } },
       pagination: false,
       depth: 0,
-      select: { rsvpStatus: true, attendingCount: true, partySize: true },
+      select: { rsvpStatus: true, attendingCount: true, partySize: true, checkedInCount: true },
       user: props.req.user,
       overrideAccess: false,
     })
@@ -57,11 +57,20 @@ export async function RsvpSummaryField(props: UIFieldServerProps) {
             <td style={cell}>Not answered</td>
             <td style={cell}>{s.pending}</td>
           </tr>
+          <tr>
+            <td style={cell}>Checked in</td>
+            <td style={cell}>{s.arrived} people</td>
+          </tr>
         </tbody>
       </table>
-      <a href={`/admin/collections/event-guests?where[event][equals]=${encodeURIComponent(String(eventId))}`}>
-        Open this event&apos;s guest list
-      </a>
+      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+        <a href={`/admin/collections/event-guests?where[event][equals]=${encodeURIComponent(String(eventId))}`}>
+          Open this event&apos;s guest list
+        </a>
+        <a href={`/api/event-guests/export?event=${encodeURIComponent(String(eventId))}`} download>
+          Download the guest list (CSV)
+        </a>
+      </div>
     </div>
   )
 }
