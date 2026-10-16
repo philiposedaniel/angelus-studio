@@ -76,6 +76,8 @@ test.describe('Invitations and RSVP', () => {
 
     // Coming back shows the answer and lets them change it.
     await page.reload()
+    // Let the form hydrate before clicking, or the click submits it as a plain GET.
+    await page.waitForLoadState('networkidle')
     await expect(page.getByText('Your reply: attending, 2 people.')).toBeVisible()
     await page.getByLabel('Sorry, I cannot come').check()
     await page.getByRole('button', { name: 'Update reply' }).click()

@@ -242,3 +242,16 @@ link or send the exported list through their own tools. No seating yet. Scanning
 camera app, so the phone must be signed in to the studio's site in the same browser it opens links in. See `docs/planning/events-platform-plan.md`
 for the order of the next steps.
 
+## Projects and crew
+
+- A **project** opens automatically when a quote's deposit is paid (*Production → Projects*). It
+  copies the quote's title and client, starts in *Planning*, and is created once per quote.
+- Staff with the admin or production manager role plan it: status, shoot day, location, crew with
+  roles, and a task list with due dates.
+- **Crew conflicts:** saving a project fails if one of its crew is already on another project of the
+  same studio on the same day. Pick another person or day.
+- Crew must be members of the project's studio; the API refuses anyone else.
+
+Not built yet: crew and client access to their own projects, call sheets and run-of-show, equipment
+reservations, and calendar views. Only admins and production managers can open projects for now.
+

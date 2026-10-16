@@ -82,6 +82,7 @@ export interface Config {
     payments: Payment;
     events: Event;
     'event-guests': EventGuest;
+    projects: Project;
     'payload-kv': PayloadKv;
     'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
@@ -105,6 +106,7 @@ export interface Config {
     payments: PaymentsSelect<false> | PaymentsSelect<true>;
     events: EventsSelect<false> | EventsSelect<true>;
     'event-guests': EventGuestsSelect<false> | EventGuestsSelect<true>;
+    projects: ProjectsSelect<false> | ProjectsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -714,6 +716,51 @@ export interface EventGuest {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "projects".
+ */
+export interface Project {
+  id: number;
+  tenant?: (number | null) | Tenant;
+  title: string;
+  /**
+   * The paid quote this project came from. Set automatically when the deposit arrives.
+   */
+  quote?: (number | null) | Quote;
+  clientName: string;
+  clientEmail?: string | null;
+  status: 'planning' | 'confirmed' | 'in-production' | 'delivered' | 'closed';
+  /**
+   * The day the crew works.
+   */
+  shootDate?: string | null;
+  location?: string | null;
+  /**
+   * People working on this project, and their role.
+   */
+  crew?:
+    | {
+        user: number | User;
+        role?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  tasks?:
+    | {
+        title: string;
+        dueDate?: string | null;
+        done?: boolean | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Internal notes.
+   */
+  notes?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -896,6 +943,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'event-guests';
         value: number | EventGuest;
+      } | null)
+    | ({
+        relationTo: 'projects';
+        value: number | Project;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -1348,6 +1399,38 @@ export interface EventGuestsSelect<T extends boolean = true> {
   checkedInAt?: T;
   staffNotes?: T;
   inviteToken?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "projects_select".
+ */
+export interface ProjectsSelect<T extends boolean = true> {
+  tenant?: T;
+  title?: T;
+  quote?: T;
+  clientName?: T;
+  clientEmail?: T;
+  status?: T;
+  shootDate?: T;
+  location?: T;
+  crew?:
+    | T
+    | {
+        user?: T;
+        role?: T;
+        id?: T;
+      };
+  tasks?:
+    | T
+    | {
+        title?: T;
+        dueDate?: T;
+        done?: T;
+        id?: T;
+      };
+  notes?: T;
   updatedAt?: T;
   createdAt?: T;
 }
