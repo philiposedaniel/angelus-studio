@@ -1,4 +1,4 @@
-import { Forbidden, type Payload } from 'payload'
+import type { Payload } from 'payload'
 
 import type { Tenant, User } from '@/payload-types'
 
@@ -72,7 +72,8 @@ export async function productionsInMonth(
     })
     .catch((error: unknown) => {
       // People who may not see productions at all (such as clients) get an empty calendar, not an error.
-      if (error instanceof Forbidden) return null
+      // Checked by status, not by class: the production build can load Payload's errors more than once.
+      if (typeof error === 'object' && error !== null && (error as { status?: unknown }).status === 403) return null
       throw error
     })
   if (!found) return []
