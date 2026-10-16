@@ -1,6 +1,8 @@
 import type { Page } from '@playwright/test'
 import { expect } from '@playwright/test'
 
+import { waitForHydration } from './hydration'
+
 export interface LoginOptions {
   page: Page
   serverURL?: string
@@ -19,6 +21,8 @@ export async function login({
   user,
 }: LoginOptions): Promise<void> {
   await page.goto(`${serverURL}/admin/login`)
+  // Before hydration the submit click does nothing and the login never happens.
+  await waitForHydration(page)
 
   await page.fill('#field-email', user.email)
   await page.fill('#field-password', user.password)

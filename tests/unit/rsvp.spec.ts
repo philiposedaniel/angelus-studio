@@ -61,14 +61,14 @@ describe('rsvpIsOpen', () => {
 })
 
 describe('summarizeRsvps', () => {
-  it('counts invitations, seats and the people coming', () => {
+  it('counts invitations, seats, the people coming and those who arrived', () => {
     expect(
       summarizeRsvps([
-        { rsvpStatus: 'attending', attendingCount: 2, partySize: 2 },
+        { rsvpStatus: 'attending', attendingCount: 2, partySize: 2, checkedInCount: 2 },
         { rsvpStatus: 'attending', attendingCount: 1, partySize: 3 },
         { rsvpStatus: 'declined', attendingCount: 0, partySize: 2 },
         { rsvpStatus: 'pending', attendingCount: 0, partySize: 1 },
       ]),
-    ).toEqual({ invitations: 4, seats: 8, attending: 2, declined: 1, pending: 1, headcount: 3 })
+    ).toEqual({ invitations: 4, seats: 8, attending: 2, declined: 1, pending: 1, headcount: 3, arrived: 2 })
   })
 })
