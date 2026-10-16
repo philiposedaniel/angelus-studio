@@ -29,7 +29,9 @@ import { QuoteLinkField as QuoteLinkField_adbf6fc446fd4f10c087ddb04a0991a9 } fro
 import { EventGuestLinkField as EventGuestLinkField_c42b0564f688527b531f8eefb3d23a44 } from '@/components/admin/EventGuestLinkField'
 import { RsvpSummaryField as RsvpSummaryField_b02b2a46c354feb218eda568fb94637c } from '@/components/admin/RsvpSummaryField'
 import { GuestImportField as GuestImportField_c812d960eba5e92393703c36e9e28849 } from '@/components/admin/GuestImportField'
+import { EventVendorsField as EventVendorsField_3cbe409af76e3e58062f9383933568a1 } from '@/components/admin/EventVendorsField'
 import { InvitationLinkField as InvitationLinkField_a662a60c3fc05b58c41797d06a0edec6 } from '@/components/admin/InvitationLinkField'
+import { VendorLinkField as VendorLinkField_b1bca457eed9774feb8920b690ed1c90 } from '@/components/admin/VendorLinkField'
 import { GlobalViewRedirect as GlobalViewRedirect_d6d5f193a167989e2ee7d14202901e62 } from '@payloadcms/plugin-multi-tenant/rsc'
 import { TenantSelector as TenantSelector_d6d5f193a167989e2ee7d14202901e62 } from '@payloadcms/plugin-multi-tenant/rsc'
 import { TenantSelectionProvider as TenantSelectionProvider_d6d5f193a167989e2ee7d14202901e62 } from '@payloadcms/plugin-multi-tenant/rsc'
@@ -68,7 +70,9 @@ export const importMap = {
   "@/components/admin/EventGuestLinkField#EventGuestLinkField": EventGuestLinkField_c42b0564f688527b531f8eefb3d23a44,
   "@/components/admin/RsvpSummaryField#RsvpSummaryField": RsvpSummaryField_b02b2a46c354feb218eda568fb94637c,
   "@/components/admin/GuestImportField#GuestImportField": GuestImportField_c812d960eba5e92393703c36e9e28849,
+  "@/components/admin/EventVendorsField#EventVendorsField": EventVendorsField_3cbe409af76e3e58062f9383933568a1,
   "@/components/admin/InvitationLinkField#InvitationLinkField": InvitationLinkField_a662a60c3fc05b58c41797d06a0edec6,
+  "@/components/admin/VendorLinkField#VendorLinkField": VendorLinkField_b1bca457eed9774feb8920b690ed1c90,
   "@payloadcms/plugin-multi-tenant/rsc#GlobalViewRedirect": GlobalViewRedirect_d6d5f193a167989e2ee7d14202901e62,
   "@payloadcms/plugin-multi-tenant/rsc#TenantSelector": TenantSelector_d6d5f193a167989e2ee7d14202901e62,
   "@payloadcms/plugin-multi-tenant/rsc#TenantSelectionProvider": TenantSelectionProvider_d6d5f193a167989e2ee7d14202901e62,
