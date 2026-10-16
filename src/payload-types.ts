@@ -706,6 +706,11 @@ export interface EventGuest {
   guestMessage?: string | null;
   respondedAt?: string | null;
   /**
+   * How many of the party have arrived. Staff set it at the door by scanning the guest's invitation code.
+   */
+  checkedInCount?: number | null;
+  checkedInAt?: string | null;
+  /**
    * Only staff see this.
    */
   staffNotes?: string | null;
@@ -1416,6 +1421,8 @@ export interface EventGuestsSelect<T extends boolean = true> {
   dietaryNotes?: T;
   guestMessage?: T;
   respondedAt?: T;
+  checkedInCount?: T;
+  checkedInAt?: T;
   staffNotes?: T;
   inviteToken?: T;
   updatedAt?: T;
