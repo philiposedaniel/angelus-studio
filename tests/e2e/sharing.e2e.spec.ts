@@ -3,6 +3,7 @@ import { getPayload } from 'payload'
 
 import config from '../../src/payload.config.js'
 import { testJpeg } from '../helpers/image'
+import { waitForHydration } from '../helpers/hydration'
 import { E2E_TENANT, seedE2ETenant } from '../helpers/seedUser'
 
 const BASE = 'http://localhost:3000'
@@ -57,6 +58,7 @@ test.describe('Shared albums', () => {
     await expect
       .poll(() => page.locator('main li img').first().evaluate((img: HTMLImageElement) => img.naturalWidth))
       .toBeGreaterThan(0)
+    await waitForHydration(page)
 
     await page.getByRole('button', { name: 'Open photo 1' }).click()
     const viewer = page.getByRole('dialog')

@@ -147,6 +147,31 @@ describe('events', () => {
     expect(seenByClient.docs.every((e) => !('guestToken' in e) || !e.guestToken)).toBe(true)
   })
 
+  it('does not show a listed event of one studio to another studio’s staff, guest token included', async () => {
+    // A listed event is public, but staff of another studio still must not see it: the tenant
+    // filter keeps it to the owning studio. The guest token is the key to the guest album.
+    await payload.create({
+      collection: 'events',
+      data: eventData(studioB, { slug: `${PREFIX}listed-b`, listed: true }) as never,
+      overrideAccess: true,
+    })
+    const seenByA = await payload.find({
+      collection: 'events',
+      user: managerA,
+      overrideAccess: false,
+      where: { slug: { equals: `${PREFIX}listed-b` } },
+    })
+    expect(seenByA.docs).toHaveLength(0)
+
+    const seenByOwner = await payload.find({
+      collection: 'events',
+      user: managerB,
+      overrideAccess: false,
+      where: { slug: { equals: `${PREFIX}listed-b` } },
+    })
+    expect(seenByOwner.docs[0]?.guestToken).toMatch(/^[A-Za-z0-9_-]{32}$/)
+  })
+
   it('does not let a studio create events for another studio', async () => {
     await expect(
       payload.create({
