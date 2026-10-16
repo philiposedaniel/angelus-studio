@@ -1,3 +1,4 @@
+import * as migration_20261016_000713_gallery_watermark from './20261016_000713_gallery_watermark';
 import * as migration_20261015_184125_initial from './20261015_184125_initial';
 import * as migration_20261015_191623_client_galleries from './20261015_191623_client_galleries';
 import * as migration_20261015_193142_gallery_downloads from './20261015_193142_gallery_downloads';
@@ -41,5 +42,10 @@ export const migrations = [
     up: migration_20261015_235501_quotes_and_payments.up,
     down: migration_20261015_235501_quotes_and_payments.down,
     name: '20261015_235501_quotes_and_payments'
+  },
+  {
+    up: migration_20261016_000713_gallery_watermark.up,
+    down: migration_20261016_000713_gallery_watermark.down,
+    name: '20261016_000713_gallery_watermark',
   },
 ];

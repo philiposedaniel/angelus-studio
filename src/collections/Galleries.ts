@@ -81,6 +81,15 @@ export const Galleries: CollectionConfig = {
       },
     },
     {
+      name: 'watermarkText',
+      type: 'text',
+      maxLength: 60,
+      admin: {
+        description:
+          'Written on the preview copies clients and album viewers see, such as your studio name. Leave empty for no watermark. Originals are never changed.',
+      },
+    },
+    {
       name: 'allowDownloads',
       type: 'checkbox',
       defaultValue: true,
