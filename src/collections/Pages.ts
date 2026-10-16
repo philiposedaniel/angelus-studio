@@ -4,8 +4,8 @@ import { publishedOrTenantStaff, tenantContentEditors } from '@/access'
 import { PAGE_BLOCKS } from '@/blocks'
 import { uniqueSlugPerTenant } from '@/hooks/uniqueSlugPerTenant'
 
-/** Paths the website already uses, which a page slug must not take over. */
-const RESERVED_SLUGS = ['portal', 's', 'admin', 'api', 'healthz']
+/** Paths the website already uses, which a page slug must not take over (events and quotes have their own pages). */
+const RESERVED_SLUGS = ['portal', 's', 'admin', 'api', 'healthz', 'events', 'quote']
 
 /** Website pages built from blocks: text, videos, embed codes and photo albums. */
 export const Pages: CollectionConfig = {

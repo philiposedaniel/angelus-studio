@@ -134,6 +134,17 @@ export const en = {
     paymentCancelled: 'The payment was cancelled. Nothing has been charged.',
     notFound: 'This quote is not available.',
   },
+  events: {
+    heading: 'Events',
+    upcoming: 'Upcoming and recent events',
+    noEvents: 'No events are listed yet.',
+    when: 'When',
+    where: 'Where',
+    watchLive: 'Watch live',
+    backToEvents: 'All events',
+    notFound: 'This event is not available.',
+    guestAlbumUnavailable: 'The album is not available yet. Please ask the studio for an updated link.',
+  },
   footer: { rights: 'All rights reserved.' },
 }
 

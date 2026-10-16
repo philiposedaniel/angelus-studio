@@ -173,3 +173,19 @@ Stripe round trip has not been run yet.
 - Only deposits are taken online. Balance payments and contract signing come later.
 - The admin *Client link* box points at the English page; the client can change language on the site.
 
+## Events and guest albums
+
+- Staff create an event under *Website → Events*: title, slug, start (and optional end), time zone,
+  location, summary, an optional Vimeo or YouTube live link, and an optional *Album*. The album is a
+  client gallery; it must be published with *Share link* on.
+- The event page is `/<language>/events/<slug>` and the list is `/<language>/events`. Only published
+  events appear, and they show in the event's own time zone.
+- Guests get the *Guest link* from the event in the admin and send it to them. It is
+  `/<language>/events/<slug>/guests/<token>`. It opens the album only while the event is published
+  and the album is published and shared. Otherwise it says the album is not available, or shows nothing.
+- The guest token is 32 random characters, set on create and kept on change. Only staff can read it
+  through the API. Changing it is not offered yet; to stop a link working, unpublish the event.
+
+Not built yet: guest check-in and RSVP, per-event printed passes, and separate livestream
+access control. Live streams use the Vimeo or YouTube embed only.
+
