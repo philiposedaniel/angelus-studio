@@ -3,6 +3,7 @@ import { getPayload } from 'payload'
 
 import config from '../../src/payload.config.js'
 import { testJpeg } from '../helpers/image'
+import { waitForHydration } from '../helpers/hydration'
 import { E2E_TENANT, seedE2ETenant } from '../helpers/seedUser'
 
 const BASE = 'http://localhost:3000'
@@ -57,6 +58,7 @@ test.describe('Shared albums', () => {
     await expect
       .poll(() => page.locator('main li img').first().evaluate((img: HTMLImageElement) => img.naturalWidth))
       .toBeGreaterThan(0)
+    await waitForHydration(page)
 
     await page.getByRole('button', { name: 'Open photo 1' }).click()
     const viewer = page.getByRole('dialog')
@@ -88,8 +90,9 @@ test.describe('Shared albums', () => {
 
     await page.setContent(`<iframe src="${BASE}/s/${token}/embed" width="800" height="600"></iframe>`)
     const frame = page.frameLocator('iframe')
-    await expect(frame.getByRole('link', { name: 'Garden party' })).toBeVisible()
-    await expect(frame.getByRole('button', { name: /Open photo/ })).toHaveCount(2)
+    // The iframe is a separate page load, so allow it longer than the default wait.
+    await expect(frame.getByRole('link', { name: 'Garden party' })).toBeVisible({ timeout: 15_000 })
+    await expect(frame.getByRole('button', { name: /Open photo/ })).toHaveCount(2, { timeout: 15_000 })
   })
 
   test('turning sharing off stops the link working', async ({ page }) => {
