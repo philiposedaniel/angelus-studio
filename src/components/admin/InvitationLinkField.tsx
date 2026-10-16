@@ -5,7 +5,7 @@ import { tenantLocales } from '@/lib/locale'
 import { isShareToken } from '@/lib/shareTokens'
 
 import { CopyButton } from './CopyButton'
-import { siteOrigin } from './siteOrigin'
+import { siteOrigin } from '@/lib/siteOrigin'
 
 /** A guest's personal invitation link, to copy and send them. */
 export async function InvitationLinkField(props: UIFieldServerProps) {

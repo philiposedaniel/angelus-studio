@@ -213,8 +213,33 @@ Live streams use the Vimeo or YouTube embed only.
   The studio comes from the host name, so a link only works on its own studio's site.
 - Deleting an event deletes its guests.
 
+### Guest list import and export
+
+- On the event, *Import guests from a spreadsheet* takes a CSV file with a header line: *Name*
+  (required), *Email*, *Phone*, *Group*, *Party size* (default 1) and *Language* (`en`, `es`…, default
+  the studio's). Common alternatives (Full name, E-mail, Seats, Table…) are recognised, and files
+  saved with semicolons work. It first shows how many guests are ready and which lines have problems;
+  *Add N guests* then adds them. Guests whose email is already on the event, or repeated in the file,
+  are skipped, so importing the same file twice adds nobody with an email. Up to 2,000 rows or 1 MB.
+- *Download the guest list (CSV)* exports every guest with their answer, check-in and invitation link.
+  Cells that start like a spreadsheet formula get a leading apostrophe so they cannot run.
+- Both run at `/api/event-guests/import` and `/api/event-guests/export?event=<id>`, as the signed-in
+  user, so only the studio's admins and production managers can use them.
+
+### Check-in at the door
+
+- The invitation page shows the guest an entry code (QR) unless they declined. It opens
+  `/<language>/invite/<token>/check-in`.
+- Staff sign in on the studio's site first (the check-in page links to the sign-in), then scan codes
+  with the phone's camera. The page shows the guest, their party size, answer and dietary needs, and
+  records how many arrived (0 undoes it). Anyone else who opens it only sees "Show this code at the
+  entrance". Only studio admins and production managers can check guests in.
+- The event shows how many people have checked in; each guest shows the count and arrival time, which
+  staff can also change by hand.
+
 Known limits: invitations are not emailed yet (that needs the email account); staff copy each
-link. No CSV import or export, check-in or seating yet. See `docs/planning/events-platform-plan.md`
+link or send the exported list through their own tools. No seating yet. Scanning uses the phone's own
+camera app, so the phone must be signed in to the studio's site in the same browser it opens links in. See `docs/planning/events-platform-plan.md`
 for the order of the next steps.
 
 ## Projects and crew
