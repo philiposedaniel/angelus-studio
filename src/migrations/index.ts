@@ -8,7 +8,8 @@ import * as migration_20261015_235501_quotes_and_payments from './20261015_23550
 import * as migration_20261016_002313_events_guest_albums from './20261016_002313_events_guest_albums';
 import * as migration_20261016_004415_event_guests_rsvp from './20261016_004415_event_guests_rsvp';
 import * as migration_20261016_013642_projects_crew_tasks from './20261016_013642_projects_crew_tasks';
-import * as migration_20261016_022807_guest_check_in from './20261016_022807_guest_check_in';
+import * as migration_20261016_064009_call_sheets from './20261016_064009_call_sheets';
+import * as migration_20261016_070048_guest_check_in from './20261016_070048_guest_check_in';
 
 export const migrations = [
   {
@@ -62,8 +63,13 @@ export const migrations = [
     name: '20261016_013642_projects_crew_tasks',
   },
   {
-    up: migration_20261016_022807_guest_check_in.up,
-    down: migration_20261016_022807_guest_check_in.down,
-    name: '20261016_022807_guest_check_in'
+    up: migration_20261016_064009_call_sheets.up,
+    down: migration_20261016_064009_call_sheets.down,
+    name: '20261016_064009_call_sheets',
+  },
+  {
+    up: migration_20261016_070048_guest_check_in.up,
+    down: migration_20261016_070048_guest_check_in.down,
+    name: '20261016_070048_guest_check_in'
   },
 ];

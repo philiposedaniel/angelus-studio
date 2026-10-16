@@ -5419,19 +5419,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "checked_in_count": {
-          "name": "checked_in_count",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false,
-          "default": 0
-        },
-        "checked_in_at": {
-          "name": "checked_in_at",
-          "type": "timestamp(3) with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
         "staff_notes": {
           "name": "staff_notes",
           "type": "varchar",
@@ -5811,6 +5798,100 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.projects_call_sheet_schedule": {
+      "name": "projects_call_sheet_schedule",
+      "schema": "",
+      "columns": {
+        "_order": {
+          "name": "_order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "_parent_id": {
+          "name": "_parent_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "id": {
+          "name": "id",
+          "type": "varchar",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "time": {
+          "name": "time",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "item": {
+          "name": "item",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "location": {
+          "name": "location",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "projects_call_sheet_schedule_order_idx": {
+          "name": "projects_call_sheet_schedule_order_idx",
+          "columns": [
+            {
+              "expression": "_order",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "projects_call_sheet_schedule_parent_id_idx": {
+          "name": "projects_call_sheet_schedule_parent_id_idx",
+          "columns": [
+            {
+              "expression": "_parent_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "projects_call_sheet_schedule_parent_id_fk": {
+          "name": "projects_call_sheet_schedule_parent_id_fk",
+          "tableFrom": "projects_call_sheet_schedule",
+          "tableTo": "projects",
+          "columnsFrom": [
+            "_parent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.projects": {
       "name": "projects",
       "schema": "",
@@ -5867,6 +5948,18 @@
         },
         "location": {
           "name": "location",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "call_sheet_meeting_point": {
+          "name": "call_sheet_meeting_point",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "call_sheet_notes": {
+          "name": "call_sheet_notes",
           "type": "varchar",
           "primaryKey": false,
           "notNull": false
@@ -7738,6 +7831,6 @@
     "tables": {},
     "columns": {}
   },
-  "id": "1591db4e-f01f-41ea-85a2-23ec07dcb4bc",
+  "id": "e0a77fd9-6845-4ab4-a4e7-5e5ccd91b782",
   "prevId": "00000000-0000-0000-0000-000000000000"
 }
