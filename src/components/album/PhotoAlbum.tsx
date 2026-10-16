@@ -80,11 +80,14 @@ export function PhotoAlbum({ photos, labels, tileExtras, rowHeight = 240, classN
   }, [step])
 
   const current = index === null ? null : photos[index]
-  // Preload the neighbours so moving through the album feels instant.
+  // Preload the neighbours so moving through the album feels instant. An album of two photos
+  // has the same neighbour on both sides, so each photo is listed once.
   const neighbours =
     index === null || photos.length < 2
       ? []
-      : [photos[(index + 1) % photos.length]!, photos[(index - 1 + photos.length) % photos.length]!]
+      : [photos[(index + 1) % photos.length]!, photos[(index - 1 + photos.length) % photos.length]!].filter(
+          (photo, i, all) => all.findIndex((other) => other.id === photo.id) === i,
+        )
 
   const control =
     'flex size-12 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur transition-colors hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-white'
