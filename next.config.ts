@@ -45,6 +45,14 @@ const nextConfig: NextConfig = {
           { key: 'X-Robots-Tag', value: 'noindex' },
         ],
       },
+      // Guest links carry their secret in the URL, like quote and share links.
+      {
+        source: '/:locale/events/:slug/guests/:token',
+        headers: [
+          { key: 'Referrer-Policy', value: 'no-referrer' },
+          { key: 'X-Robots-Tag', value: 'noindex' },
+        ],
+      },
       // Embedded albums may be framed by any site. Browsers ignore X-Frame-Options when
       // frame-ancestors is present, so this opens framing for this path only.
       {

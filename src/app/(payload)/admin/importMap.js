@@ -26,6 +26,7 @@ import { BoldFeatureClient as BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864
 import { ItalicFeatureClient as ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { ShareLinkField as ShareLinkField_2e5df494bd78670e2c10ffd7678d4d11 } from '@/components/admin/ShareLinkField'
 import { QuoteLinkField as QuoteLinkField_adbf6fc446fd4f10c087ddb04a0991a9 } from '@/components/admin/QuoteLinkField'
+import { EventGuestLinkField as EventGuestLinkField_c42b0564f688527b531f8eefb3d23a44 } from '@/components/admin/EventGuestLinkField'
 import { GlobalViewRedirect as GlobalViewRedirect_d6d5f193a167989e2ee7d14202901e62 } from '@payloadcms/plugin-multi-tenant/rsc'
 import { TenantSelector as TenantSelector_d6d5f193a167989e2ee7d14202901e62 } from '@payloadcms/plugin-multi-tenant/rsc'
 import { TenantSelectionProvider as TenantSelectionProvider_d6d5f193a167989e2ee7d14202901e62 } from '@payloadcms/plugin-multi-tenant/rsc'
@@ -61,6 +62,7 @@ export const importMap = {
   "@payloadcms/richtext-lexical/client#ItalicFeatureClient": ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@/components/admin/ShareLinkField#ShareLinkField": ShareLinkField_2e5df494bd78670e2c10ffd7678d4d11,
   "@/components/admin/QuoteLinkField#QuoteLinkField": QuoteLinkField_adbf6fc446fd4f10c087ddb04a0991a9,
+  "@/components/admin/EventGuestLinkField#EventGuestLinkField": EventGuestLinkField_c42b0564f688527b531f8eefb3d23a44,
   "@payloadcms/plugin-multi-tenant/rsc#GlobalViewRedirect": GlobalViewRedirect_d6d5f193a167989e2ee7d14202901e62,
   "@payloadcms/plugin-multi-tenant/rsc#TenantSelector": TenantSelector_d6d5f193a167989e2ee7d14202901e62,
   "@payloadcms/plugin-multi-tenant/rsc#TenantSelectionProvider": TenantSelectionProvider_d6d5f193a167989e2ee7d14202901e62,

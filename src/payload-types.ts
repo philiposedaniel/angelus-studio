@@ -80,6 +80,7 @@ export interface Config {
     inquiries: Inquiry;
     quotes: Quote;
     payments: Payment;
+    events: Event;
     'payload-kv': PayloadKv;
     'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
@@ -101,6 +102,7 @@ export interface Config {
     inquiries: InquiriesSelect<false> | InquiriesSelect<true>;
     quotes: QuotesSelect<false> | QuotesSelect<true>;
     payments: PaymentsSelect<false> | PaymentsSelect<true>;
+    events: EventsSelect<false> | EventsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -620,6 +622,37 @@ export interface Payment {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "events".
+ */
+export interface Event {
+  id: number;
+  tenant?: (number | null) | Tenant;
+  title: string;
+  slug: string;
+  startsAt: string;
+  /**
+   * The time zone the event happens in, e.g. Europe/Lisbon.
+   */
+  timeZone: string;
+  endsAt?: string | null;
+  location?: string | null;
+  summary?: string | null;
+  image?: (number | null) | Media;
+  /**
+   * Optional Vimeo or YouTube live link, shown on the event page.
+   */
+  livestreamUrl?: string | null;
+  /**
+   * The album guests see. It must be published and shared (Share link on). Guests reach it through the guest link.
+   */
+  gallery?: (number | null) | Gallery;
+  guestToken?: string | null;
+  published?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -794,6 +827,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'payments';
         value: number | Payment;
+      } | null)
+    | ({
+        relationTo: 'events';
+        value: number | Event;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -1197,6 +1234,27 @@ export interface PaymentsSelect<T extends boolean = true> {
   paidAt?: T;
   stripeSessionId?: T;
   stripeEventId?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "events_select".
+ */
+export interface EventsSelect<T extends boolean = true> {
+  tenant?: T;
+  title?: T;
+  slug?: T;
+  startsAt?: T;
+  timeZone?: T;
+  endsAt?: T;
+  location?: T;
+  summary?: T;
+  image?: T;
+  livestreamUrl?: T;
+  gallery?: T;
+  guestToken?: T;
+  published?: T;
   updatedAt?: T;
   createdAt?: T;
 }

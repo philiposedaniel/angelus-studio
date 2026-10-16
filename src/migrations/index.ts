@@ -5,6 +5,7 @@ import * as migration_20261015_194709_shared_albums from './20261015_194709_shar
 import * as migration_20261015_201137_website_pages from './20261015_201137_website_pages';
 import * as migration_20261015_213640_inquiries from './20261015_213640_inquiries';
 import * as migration_20261015_235501_quotes_and_payments from './20261015_235501_quotes_and_payments';
+import * as migration_20261016_002313_events_guest_albums from './20261016_002313_events_guest_albums';
 
 export const migrations = [
   {
@@ -40,6 +41,11 @@ export const migrations = [
   {
     up: migration_20261015_235501_quotes_and_payments.up,
     down: migration_20261015_235501_quotes_and_payments.down,
-    name: '20261015_235501_quotes_and_payments'
+    name: '20261015_235501_quotes_and_payments',
+  },
+  {
+    up: migration_20261016_002313_events_guest_albums.up,
+    down: migration_20261016_002313_events_guest_albums.down,
+    name: '20261016_002313_events_guest_albums'
   },
 ];

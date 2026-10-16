@@ -136,5 +136,16 @@ export const es: Dictionary = {
     paymentCancelled: 'El pago se ha cancelado. No se ha cobrado nada.',
     notFound: 'Este presupuesto no está disponible.',
   },
+  events: {
+    heading: 'Eventos',
+    upcoming: 'Próximos y recientes',
+    noEvents: 'Todavía no hay eventos publicados.',
+    when: 'Cuándo',
+    where: 'Dónde',
+    watchLive: 'Ver en directo',
+    backToEvents: 'Todos los eventos',
+    notFound: 'Este evento no está disponible.',
+    guestAlbumUnavailable: 'El álbum todavía no está disponible. Pide al estudio un enlace actualizado.',
+  },
   footer: { rights: 'Todos los derechos reservados.' },
 }
