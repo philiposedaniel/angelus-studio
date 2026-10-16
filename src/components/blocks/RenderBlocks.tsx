@@ -8,6 +8,7 @@ import type { Locale } from '@/i18n/config'
 import { getDictionary } from '@/i18n/dictionaries'
 import { idOf } from '@/lib/ids'
 import { embedDocument, parseGooglePhotosUrl, parseVideoUrl } from '@/lib/embeds'
+import { mediaSrc } from '@/lib/media'
 import { findSharedGalleryById, findSharedPhotos } from '@/lib/sharedAlbum'
 import type { Media, Page, Tenant } from '@/payload-types'
 
@@ -140,7 +141,7 @@ export async function RenderBlocks({ blocks, locale, tenant }: Props) {
                 <div className="relative aspect-[4/3] bg-graphite">
                   {cover?.url ? (
                     <Image
-                      src={cover.url}
+                      src={mediaSrc(cover.url)}
                       alt={cover.alt}
                       fill
                       sizes="(min-width: 640px) 40vw, 100vw"
