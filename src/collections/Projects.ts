@@ -10,6 +10,9 @@ export const PROJECT_STATUSES = ['planning', 'confirmed', 'in-production', 'deli
 
 const DAY_MS = 24 * 60 * 60 * 1000
 
+/** A 24-hour clock time, such as 08:30 or 17:05. */
+const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/
+
 /** The start and end of a calendar day, from a date-only value such as "2026-11-14". */
 const dayBounds = (ymd: string) => {
   const start = new Date(`${ymd.slice(0, 10)}T00:00:00.000Z`)
@@ -138,6 +141,33 @@ export const Projects: CollectionConfig = {
         { name: 'title', type: 'text', required: true, maxLength: 200 },
         { name: 'dueDate', type: 'date', admin: { date: { pickerAppearance: 'dayOnly' } } },
         { name: 'done', type: 'checkbox', defaultValue: false },
+      ],
+    },
+    {
+      name: 'callSheet',
+      type: 'group',
+      admin: { description: 'The day plan for the crew: where to meet and what happens when.' },
+      fields: [
+        { name: 'meetingPoint', type: 'text', maxLength: 200 },
+        { name: 'notes', type: 'textarea', maxLength: 2000, admin: { description: 'Shared with the crew.' } },
+        {
+          name: 'schedule',
+          type: 'array',
+          maxRows: 50,
+          fields: [
+            {
+              name: 'time',
+              type: 'text',
+              required: true,
+              maxLength: 5,
+              admin: { description: '24-hour time, such as 08:30.' },
+              validate: (value: unknown) =>
+                (typeof value === 'string' && TIME_PATTERN.test(value)) || 'Use 24-hour time, such as 08:30.',
+            },
+            { name: 'item', type: 'text', required: true, maxLength: 200 },
+            { name: 'location', type: 'text', maxLength: 200 },
+          ],
+        },
       ],
     },
     { name: 'notes', type: 'textarea', admin: { description: 'Internal notes.' } },

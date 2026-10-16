@@ -752,6 +752,27 @@ export interface Project {
       }[]
     | null;
   /**
+   * The day plan for the crew: where to meet and what happens when.
+   */
+  callSheet?: {
+    meetingPoint?: string | null;
+    /**
+     * Shared with the crew.
+     */
+    notes?: string | null;
+    schedule?:
+      | {
+          /**
+           * 24-hour time, such as 08:30.
+           */
+          time: string;
+          item: string;
+          location?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  /**
    * Internal notes.
    */
   notes?: string | null;
@@ -1427,6 +1448,20 @@ export interface ProjectsSelect<T extends boolean = true> {
         dueDate?: T;
         done?: T;
         id?: T;
+      };
+  callSheet?:
+    | T
+    | {
+        meetingPoint?: T;
+        notes?: T;
+        schedule?:
+          | T
+          | {
+              time?: T;
+              item?: T;
+              location?: T;
+              id?: T;
+            };
       };
   notes?: T;
   updatedAt?: T;
