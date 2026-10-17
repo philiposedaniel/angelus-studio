@@ -204,6 +204,9 @@ Stripe round trip has not been run yet.
   download the original, which has no watermark; turn downloads off for galleries that must stay marked.
 ## Events and guest albums
 
+Task-by-task manuals for this area: [staff manual](guides/events-staff-manual.md) and
+[guide for clients, guests and vendors](guides/events-client-guide.md).
+
 - Staff create an event under *Events → Events*: title, slug, start (and optional end), time zone,
   location, summary, an optional Vimeo or YouTube live link, and an optional *Album*. The album is a
   client gallery; it must be published with *Share link* on.
@@ -382,6 +385,8 @@ set; there is no per-event colour or font picker yet.
   Staff notes on a guest are never shown to them and they cannot write them. Everything is checked
   on the server through the normal access rules, so the same limits apply to the REST API.
 - Studio admins and production managers can open the same page for any event of their studio.
+- The guest list shows 100 guests a page, sorted by name, with a search by name or email; the
+  headcount and the CSV download always cover the whole list.
 
 Known limits: organizers cannot import guests from CSV, manage seating or vendors, or edit the
 event itself from the portal; staff do those in the admin. Organizers are not emailed until the
@@ -481,3 +486,38 @@ until the email account exists; they see it on their waitlist link, and staff ca
 link. A person who takes a paid offer but does not pay loses it like any unpaid hold. Wrong promo codes are
 not counted against a limit of their own; the form token and minimum fill time slow guessing, so
 avoid short codes for large discounts.
+
+### Large events: speed targets
+
+`tests/int/largeEvents.int.spec.ts` writes an event with 5,000 registrations, 5,000 guests and
+2,000 people on a waitlist straight into the database, then times what staff and visitors use.
+Each target is the best of three runs and leaves room for a slow CI machine; in development every
+read is well under it.
+
+| Read | Target | Measured in development |
+|---|---|---|
+| Places taken on a ticket type (every booking, under the lock) | 150 ms | 2–3 ms |
+| Event page ticket list, waitlist refresh included | 400 ms | about 20 ms |
+| Someone's place on the waitlist | 150 ms | 1–2 ms |
+| Organizer guest list, one page of 100 or a search | 300 ms | about 20 ms |
+| Event headcount (admin and organizer page) | 100 ms | 3 ms |
+| Registration summary on the event (admin) | 1 s | about 350 ms |
+| Attendee list CSV | 2 s | about 0.9 s |
+| Guest list CSV | 2 s | about 0.5 s |
+
+Places taken, promo code use and the headcount are summed in Postgres instead of loading every
+row (they had taken about half a second at this size). Raw SQL goes through `runSql` in
+`src/lib/sqlSession.ts`, which uses the request's open transaction so the sums see what the lock
+protects; it skips access rules, so callers check access first and filter by ids they already
+checked. The CSV downloads and the admin's registration summary and seating plan still load every
+row through Payload, with access rules, at roughly 0.1 ms a row: comfortable to about 20,000 rows
+per event, and the first thing to revisit beyond that.
+
+### Accessibility and phones
+
+`tests/e2e/accessibility.e2e.spec.ts` opens the pages guests, buyers, vendors and hosts use (event
+list, event page with tickets, ticket, waitlist, invitation, vendor link, portal sign-in and home,
+and the host's guest list) on a 360-pixel-wide phone screen. Each must have no WCAG 2.2 A or AA
+violation that [axe](https://github.com/dequelabs/axe-core) can detect and nothing wider than the
+screen. It also registers for a ticket and searches a guest list with the keyboard alone. Automated
+checks catch roughly a third of real problems; screen reader testing by a person is still to do.
