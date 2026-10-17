@@ -1,4 +1,4 @@
-import { getPayload, type Payload } from 'payload'
+import { getPayload, type Payload, type RequiredDataFromCollectionSlug } from 'payload'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import config from '@/payload.config'
@@ -40,10 +40,12 @@ const addPhoto = async (name: string) =>
     file: await testJpeg(`${PREFIX}${name}.jpg`),
   })
 
+// The favorites hook fills in user, gallery and tenant, as it does for the REST route, so the
+// data the client sends is only the photo.
 const favorite = (user: User, photo: GalleryPhoto) =>
   payload.create({
     collection: 'gallery-favorites',
-    data: { photo: photo.id },
+    data: { photo: photo.id } as RequiredDataFromCollectionSlug<'gallery-favorites'>,
     user,
     overrideAccess: false,
   })
