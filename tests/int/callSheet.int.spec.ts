@@ -15,6 +15,7 @@ let studioB: Tenant
 let managerA: User
 let managerB: User
 let photographerA: User
+let clientA: User
 let projectId: number
 
 const makeUser = async (name: string, tenant: Tenant, roles: string[]) => {
@@ -44,6 +45,7 @@ describe('call sheets', () => {
     managerA = await makeUser('manager-a', studioA, ['production-manager'])
     managerB = await makeUser('manager-b', studioB, ['production-manager'])
     photographerA = await makeUser('photographer-a', studioA, ['photographer'])
+    clientA = await makeUser('client-a', studioA, ['client'])
 
     const project = await payload.create({
       collection: 'projects',
@@ -96,13 +98,14 @@ describe('call sheets', () => {
     ).rejects.toThrow()
   })
 
-  it('keeps the call sheet from other studios and from crew who are not production staff', async () => {
+  it('keeps the call sheet from other studios and from people who are not on the crew', async () => {
     await expect(
       payload.find({ collection: 'projects', user: managerB, overrideAccess: false, where: { id: { equals: projectId } } }),
     ).resolves.toMatchObject({ docs: [] })
+    // Not on the crew, so the project is not listed for them at all.
     await expect(
       payload.find({ collection: 'projects', user: photographerA, overrideAccess: false, where: { id: { equals: projectId } } }),
-    ).rejects.toThrow()
+    ).resolves.toMatchObject({ docs: [] })
     await expect(
       payload.update({
         collection: 'projects',
@@ -112,5 +115,22 @@ describe('call sheets', () => {
         data: { callSheet: { notes: 'Changed by a photographer' } },
       }),
     ).rejects.toThrow()
+  })
+
+  it('shows the call sheet to crew on the job, and never to the client', async () => {
+    await payload.update({
+      collection: 'projects',
+      id: projectId,
+      data: { crew: [{ user: photographerA.id, role: 'photographer' }], clientUser: clientA.id },
+      overrideAccess: true,
+    })
+    const crewView = await payload.findByID({ collection: 'projects', id: projectId, user: photographerA, overrideAccess: false })
+    expect(crewView.callSheet?.meetingPoint).toBe('Hotel lobby, Rua Augusta 10')
+    expect(crewView.callSheet?.schedule?.[0]?.time).toBe('07:30')
+
+    const clientView = await payload.findByID({ collection: 'projects', id: projectId, user: clientA, overrideAccess: false })
+    expect(clientView.title).toBe(`${PREFIX}Gala`)
+    expect(clientView.callSheet?.meetingPoint).toBeUndefined()
+    expect(clientView.callSheet?.schedule ?? []).toEqual([])
   })
 })

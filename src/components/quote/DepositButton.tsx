@@ -28,7 +28,11 @@ export function DepositButton({ token, locale, t }: Props) {
       </button>
       {state.status === 'error' && (
         <p role="alert" className="text-copper">
-          {state.message === 'unavailable' ? t.paymentUnavailable : t.paymentFailed}
+          {state.message === 'unavailable'
+            ? t.paymentUnavailable
+            : state.message === 'unsigned'
+              ? t.signFirst
+              : t.paymentFailed}
         </p>
       )}
     </form>
