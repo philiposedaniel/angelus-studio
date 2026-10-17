@@ -214,5 +214,18 @@ export const es: Dictionary = {
       failed: 'Algo ha fallado. Inténtalo de nuevo.',
     },
   },
+  vendorBooking: {
+    heading: 'Reserva de proveedor',
+    vendor: 'Proveedor',
+    role: 'Tu función',
+    arrival: 'Llegada',
+    instructions: 'Instrucciones',
+    note: 'Una nota para el estudio (opcional)',
+    confirm: 'Confirmo que estaré allí',
+    confirming: 'Confirmando…',
+    confirmed: 'Gracias. Tu reserva está confirmada.',
+    alreadyConfirmed: 'Has confirmado esta reserva. Contacta con el estudio si algo cambia.',
+    failed: 'Algo ha fallado. Inténtalo de nuevo o contacta con el estudio.',
+  },
   footer: { rights: 'Todos los derechos reservados.' },
 }
