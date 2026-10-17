@@ -1,7 +1,9 @@
+import { sql } from '@payloadcms/db-postgres'
 import type { Payload } from 'payload'
 
 import { idOf } from '@/lib/ids'
 import { isShareToken } from '@/lib/shareTokens'
+import { runSql } from '@/lib/sqlSession'
 import type { Event, EventGuest } from '@/payload-types'
 
 export const RSVP_STATUSES = ['pending', 'attending', 'declined'] as const
@@ -148,18 +150,45 @@ export async function submitRsvp({
 
 /** Headcount for an event's guest list. */
 export function summarizeRsvps(
-  guests: readonly Pick<EventGuest, 'rsvpStatus' | 'attendingCount' | 'partySize' | 'checkedInCount'>[],
+  guests: readonly (Pick<EventGuest, 'rsvpStatus' | 'attendingCount' | 'partySize' | 'checkedInCount'> & {
+    /** How many invitations the row stands for, when guests come grouped (see `eventRsvpSummary`). */
+    invitations?: number
+  })[],
 ) {
   const summary = { invitations: 0, seats: 0, attending: 0, declined: 0, pending: 0, headcount: 0, arrived: 0 }
   for (const guest of guests) {
-    summary.invitations += 1
-    summary.seats += guest.partySize ?? 1
+    const count = guest.invitations ?? 1
+    summary.invitations += count
+    summary.seats += guest.partySize ?? count
     summary.arrived += guest.checkedInCount ?? 0
     if (guest.rsvpStatus === 'attending') {
-      summary.attending += 1
+      summary.attending += count
       summary.headcount += guest.attendingCount ?? 0
-    } else if (guest.rsvpStatus === 'declined') summary.declined += 1
-    else summary.pending += 1
+    } else if (guest.rsvpStatus === 'declined') summary.declined += count
+    else summary.pending += count
   }
   return summary
+}
+
+/**
+ * The headcount for a whole event, added up in the database so a guest list of thousands does
+ * not have to be loaded. The caller must already have checked the user may see this event's
+ * guests: the sum reads past access rules, by event id only.
+ */
+export async function eventRsvpSummary(payload: Payload, eventId: number | string) {
+  const rows = await runSql<{ status: string; invitations: string; seats: string; coming: string; arrived: string }>(
+    payload,
+    sql`SELECT rsvp_status AS status, COUNT(*) AS invitations, COALESCE(SUM(party_size), 0) AS seats,
+        COALESCE(SUM(attending_count), 0) AS coming, COALESCE(SUM(checked_in_count), 0) AS arrived
+      FROM event_guests WHERE event_id = ${Number(eventId)} GROUP BY rsvp_status`,
+  )
+  return summarizeRsvps(
+    rows.map((row) => ({
+      rsvpStatus: row.status as RsvpStatus,
+      invitations: Number(row.invitations),
+      partySize: Number(row.seats),
+      attendingCount: Number(row.coming),
+      checkedInCount: Number(row.arrived),
+    })),
+  )
 }
