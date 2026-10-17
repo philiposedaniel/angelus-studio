@@ -7,7 +7,7 @@ import { checkFormToken, looksLikeSpam, senderKey } from '@/lib/inquiries'
 import { idOf } from '@/lib/ids'
 import { isShareToken } from '@/lib/shareTokens'
 import { getStripe, stripeConfigured } from '@/lib/stripe'
-import type { Event, Registration, TicketType, User } from '@/payload-types'
+import type { Event, Registration, TicketType, User, WaitlistEntry } from '@/payload-types'
 
 /** Most places one ticket type can hold, and most places one registration can take. */
 export const MAX_TICKET_CAPACITY = 100_000
@@ -76,13 +76,19 @@ export async function lockTicketType(req: PayloadRequest, ticketTypeId: number |
 }
 
 /**
- * Places taken on a ticket type: confirmed registrations, and those waiting for payment whose
- * hold has not run out. Leaves out one registration if given.
+ * Places taken on a ticket type: confirmed registrations, those waiting for payment whose hold
+ * has not run out, and places offered to people on the waitlist whose offer has not run out.
+ * Leaves out one registration, or one waitlist offer, if given.
  */
 export async function placesTaken(
   payload: Payload,
   ticketTypeId: number | string,
-  { req, excludeId, now = Date.now() }: { req?: PayloadRequest; excludeId?: number | string; now?: number } = {},
+  {
+    req,
+    excludeId,
+    excludeWaitlistId,
+    now = Date.now(),
+  }: { req?: PayloadRequest; excludeId?: number | string; excludeWaitlistId?: number | string; now?: number } = {},
 ) {
   const { docs } = await payload.find({
     collection: 'registrations',
@@ -109,26 +115,57 @@ export async function placesTaken(
     overrideAccess: true,
     ...(req ? { req } : {}),
   })
-  return docs.reduce((sum, doc) => sum + (doc.quantity ?? 0), 0)
+  const offers = await payload.find({
+    collection: 'waitlist-entries',
+    where: {
+      and: [
+        { ticketType: { equals: ticketTypeId } },
+        { status: { equals: 'offered' } },
+        { offerExpiresAt: { greater_than: new Date(now).toISOString() } },
+        ...(excludeWaitlistId !== undefined ? [{ id: { not_equals: excludeWaitlistId } }] : []),
+      ],
+    },
+    pagination: false,
+    depth: 0,
+    select: { quantity: true },
+    overrideAccess: true,
+    ...(req ? { req } : {}),
+  })
+  return [...docs, ...offers.docs].reduce((sum, doc) => sum + (doc.quantity ?? 0), 0)
+}
+
+/** People waiting for a ticket type, not yet offered places. */
+export async function waitingCount(payload: Payload, ticketTypeId: number | string, req?: PayloadRequest) {
+  const { totalDocs } = await payload.count({
+    collection: 'waitlist-entries',
+    where: { and: [{ ticketType: { equals: ticketTypeId } }, { status: { equals: 'waiting' } }] },
+    overrideAccess: true,
+    ...(req ? { req } : {}),
+  })
+  return totalDocs
 }
 
 /* ---- Sales ---- */
 
 export type SalesState = 'onSale' | 'notYet' | 'ended' | 'soldOut' | 'closed'
 
-/** Whether a ticket type can be booked now on the website. */
+/**
+ * Whether a ticket type can be booked now on the website. While anyone is waiting on its
+ * waitlist, freed places go to them first, so it stays sold out to everyone else.
+ */
 export function salesState(
   ticketType: Pick<TicketType, 'onSale' | 'salesStart' | 'salesEnd' | 'capacity'>,
   event: Pick<Event, 'startsAt' | 'endsAt'>,
   taken: number,
   now = Date.now(),
+  waiting = 0,
 ): SalesState {
   if (ticketType.onSale === false) return 'closed'
   if (ticketType.salesStart && new Date(ticketType.salesStart).getTime() > now) return 'notYet'
   // Sales end at the end of sales, or else when the event is over.
   const end = ticketType.salesEnd ?? event.endsAt ?? event.startsAt
   if (end && new Date(end).getTime() < now) return 'ended'
-  if (taken >= (ticketType.capacity ?? 0)) return 'soldOut'
+  if (waiting > 0 || taken >= (ticketType.capacity ?? 0)) return 'soldOut'
   return 'onSale'
 }
 
@@ -139,8 +176,8 @@ export type RegistrationFieldError = 'required' | 'invalid' | 'tooLong'
 
 export type RegistrationState =
   | { status: 'idle' }
-  | { status: 'registered'; token: string }
-  | { status: 'checkout'; url: string }
+  | { status: 'registered'; token: string; registrationId?: number }
+  | { status: 'checkout'; url: string; registrationId?: number }
   | {
       status: 'error'
       errors?: Partial<Record<RegistrationField, RegistrationFieldError>>
@@ -289,7 +326,7 @@ export async function submitRegistration({
   }
   if (!canSell(ticketType)) return { status: 'error', reason: 'closed' }
   const taken = await placesTaken(payload, ticketType.id, { now })
-  const state = salesState(ticketType, event, taken, now)
+  const state = salesState(ticketType, event, taken, now, await waitingCount(payload, ticketType.id))
   if (state === 'soldOut') return { status: 'error', reason: 'soldOut' }
   if (state !== 'onSale') return { status: 'error', reason: 'closed' }
   const remaining = (ticketType.capacity ?? 0) - taken
@@ -318,6 +355,50 @@ export async function submitRegistration({
     return { status: 'error', reason: 'tooMany' }
   }
 
+  return createRegistration({
+    payload,
+    tenantId,
+    event,
+    ticketType,
+    input,
+    locale,
+    senderKey: key,
+    origin,
+    createCheckout,
+    now,
+  })
+}
+
+/**
+ * Saves a registration a visitor is entitled to, after the caller's checks: confirmed at once for
+ * a free ticket, or waiting for payment and sent to Stripe Checkout for a paid one. A waitlist
+ * claim passes the entry whose offered places it takes.
+ */
+export async function createRegistration({
+  payload,
+  tenantId,
+  event,
+  ticketType,
+  input,
+  locale,
+  senderKey: key,
+  origin,
+  createCheckout = stripeTicketCheckout,
+  now = Date.now(),
+  waitlistEntryId,
+}: {
+  payload: Payload
+  tenantId: number
+  event: Event
+  ticketType: TicketType
+  input: Omit<RegistrationInput, 'ticketType'>
+  locale: Locale
+  senderKey?: string | null
+  origin: string
+  createCheckout?: CreateTicketCheckout
+  now?: number
+  waitlistEntryId?: number
+}): Promise<RegistrationState> {
   const paid = (ticketType.price ?? 0) > 0
   let created: Registration
   try {
@@ -337,9 +418,10 @@ export async function submitRegistration({
         senderKey: key,
       },
       overrideAccess: true,
+      ...(waitlistEntryId !== undefined ? { context: { waitlistEntryId } } : {}),
     })
     if (!isShareToken(created.ticketToken)) return { status: 'error', reason: 'failed' }
-    if (!paid) return { status: 'registered', token: created.ticketToken }
+    if (!paid) return { status: 'registered', token: created.ticketToken, registrationId: created.id }
   } catch (error) {
     if ((error as { status?: number }).status === SOLD_OUT_STATUS) {
       const left = Math.max(0, (ticketType.capacity ?? 0) - (await placesTaken(payload, ticketType.id, { now })))
@@ -378,7 +460,7 @@ export async function submitRegistration({
       },
       overrideAccess: true,
     })
-    return { status: 'checkout', url: checkout.url }
+    return { status: 'checkout', url: checkout.url, registrationId: created.id }
   } catch (error) {
     payload.logger.error({ err: error, msg: 'Could not start a ticket payment' })
     // Free the held places at once rather than when the hold runs out.
@@ -429,15 +511,19 @@ type SummaryRegistration = Pick<Registration, 'ticketType' | 'quantity' | 'statu
 
 /**
  * Per ticket type: places taken (confirmed, plus held for people paying now), places left,
- * places waiting for payment and people checked in.
+ * places waiting for payment, people checked in and people on the waitlist.
  */
 export function summarizeTickets(
   ticketTypes: readonly Pick<TicketType, 'id' | 'name' | 'capacity' | 'onSale'>[],
   registrations: readonly SummaryRegistration[],
+  waitlist: readonly Pick<WaitlistEntry, 'ticketType' | 'status'>[] = [],
   now = Date.now(),
 ) {
   return ticketTypes.map((ticketType) => {
     const own = registrations.filter((r) => String(idOf(r.ticketType)) === String(ticketType.id))
+    const queued = waitlist.filter(
+      (w) => String(idOf(w.ticketType)) === String(ticketType.id) && (w.status === 'waiting' || w.status === 'offered'),
+    )
     const confirmed = own.filter((r) => r.status === 'confirmed')
     const holding = own.filter((r) => holdsPlaces({ status: r.status, holdExpiresAt: r.holdExpiresAt ?? null }, now))
     const taken = holding.reduce((sum, r) => sum + (r.quantity ?? 0), 0)
@@ -450,6 +536,7 @@ export function summarizeTickets(
       registrations: confirmed.length,
       waiting: holding.filter((r) => r.status === 'pending').reduce((sum, r) => sum + (r.quantity ?? 0), 0),
       arrived: confirmed.reduce((sum, r) => sum + (r.checkedInCount ?? 0), 0),
+      onWaitlist: queued.length,
       onSale: ticketType.onSale !== false,
     }
   })
@@ -467,10 +554,23 @@ export type TicketOffer = {
   left: number
   maxPerOrder: number
   salesStart: string | null
+  /** People on the waitlist who have not been offered places yet. */
+  waiting: number
 }
 
-/** The ticket types an event page shows, each with whether it can be booked now and places left. */
-export async function ticketOffers(payload: Payload, event: Event, locale: Locale, now = Date.now()) {
+/**
+ * The ticket types an event page shows, each with whether it can be booked now and places left.
+ * A sold-out ticket can be joined on its waitlist. Waitlists are brought up to date first, since
+ * holds and offers run out with time.
+ */
+export async function ticketOffers(
+  payload: Payload,
+  event: Event,
+  locale: Locale,
+  now = Date.now(),
+  // Passed in by the caller: the waitlist module builds on this one, so it is not imported here.
+  refresh?: (ticketTypeId: number, now: number) => Promise<void>,
+) {
   const { docs } = await payload.find({
     collection: 'ticket-types',
     where: { and: [{ event: { equals: event.id } }, { tenant: { equals: idOf(event.tenant) } }] },
@@ -482,8 +582,10 @@ export async function ticketOffers(payload: Payload, event: Event, locale: Local
   })
   return Promise.all(
     docs.map(async (ticketType): Promise<TicketOffer> => {
+      if (refresh) await refresh(ticketType.id, now)
       const taken = await placesTaken(payload, ticketType.id, { now })
-      const state = canSell(ticketType) ? salesState(ticketType, event, taken, now) : 'closed'
+      const waiting = await waitingCount(payload, ticketType.id)
+      const state = canSell(ticketType) ? salesState(ticketType, event, taken, now, waiting) : 'closed'
       return {
         id: ticketType.id,
         name: ticketType.name,
@@ -494,6 +596,7 @@ export async function ticketOffers(payload: Payload, event: Event, locale: Local
         left: Math.max(0, (ticketType.capacity ?? 0) - taken),
         maxPerOrder: ticketType.maxPerOrder ?? DEFAULT_MAX_PER_ORDER,
         salesStart: ticketType.salesStart ?? null,
+        waiting,
       }
     }),
   )

@@ -13,6 +13,7 @@ import { issueFormToken } from '@/lib/inquiries'
 import { formatMoney } from '@/lib/money'
 import { getCurrentTenant } from '@/lib/tenant'
 import { ticketOffers, type TicketOffer } from '@/lib/tickets'
+import { refreshWaitlist } from '@/lib/waitlist'
 
 import { formatEventWhen } from '@/lib/eventTime'
 
@@ -39,13 +40,25 @@ export default async function EventPage({ params, searchParams }: PageProps<'/[l
   const t = getDictionary(locale).events
   const live = parseVideoUrl(event.livestreamUrl)
   const tt = getDictionary(locale).tickets
-  const offers = await ticketOffers(await getPayload({ config }), event, locale)
-  const bookable = offers.filter((offer) => offer.state === 'onSale')
   const price = (offer: TicketOffer) => (offer.price > 0 ? formatMoney(offer.price, offer.currency, locale) : tt.free)
+  const payload = await getPayload({ config })
+  const offers = await ticketOffers(payload, event, locale, undefined, (id, now) => refreshWaitlist(payload, id, { now }))
+  const bookable = offers.filter((offer) => offer.state === 'onSale')
+  const soldOut = offers.filter((offer) => offer.state === 'soldOut')
+  const formOffer = (offer: TicketOffer) => ({
+    id: offer.id,
+    name: offer.name,
+    left: offer.left,
+    maxPerOrder: offer.maxPerOrder,
+    price: offer.price,
+    priceLabel: price(offer),
+  })
   const paymentCancelled = (await searchParams).payment === 'cancelled'
   const availability = (offer: TicketOffer) => {
     if (offer.state === 'onSale') return plural(tt.placesLeft, offer.left)
-    if (offer.state === 'soldOut') return tt.soldOut
+    if (offer.state === 'soldOut') {
+      return offer.waiting > 0 ? `${tt.soldOut} · ${plural(tt.waitlist.peopleWaiting, offer.waiting)}` : tt.soldOut
+    }
     if (offer.state === 'notYet' && offer.salesStart) {
       const date = new Intl.DateTimeFormat(locale, {
         dateStyle: 'long',
@@ -108,15 +121,22 @@ export default async function EventPage({ params, searchParams }: PageProps<'/[l
                 eventId={event.id}
                 locale={locale}
                 formToken={issueFormToken(tenant.id)}
-                offers={bookable.map((offer) => ({
-                  id: offer.id,
-                  name: offer.name,
-                  left: offer.left,
-                  maxPerOrder: offer.maxPerOrder,
-                  price: offer.price,
-                  priceLabel: price(offer),
-                }))}
+                offers={bookable.map(formOffer)}
                 t={tt}
+              />
+            </div>
+          )}
+          {soldOut.length > 0 && (
+            <div className="grid gap-4 rounded-xl border border-ivory/10 p-6">
+              <h3 className="font-serif text-xl">{tt.waitlist.heading}</h3>
+              <p className="text-sm text-mist">{tt.waitlist.intro}</p>
+              <RegistrationForm
+                eventId={event.id}
+                locale={locale}
+                formToken={issueFormToken(tenant.id)}
+                offers={soldOut.map(formOffer)}
+                t={tt}
+                waitlist
               />
             </div>
           )}

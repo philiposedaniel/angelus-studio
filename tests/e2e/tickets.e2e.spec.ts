@@ -68,21 +68,25 @@ test.describe('Event registration and tickets', () => {
   })
 
   test('a visitor registers on the event page, gets a ticket, and staff check it in', async ({ page }) => {
+    // Walks through five pages and a sign-in; on a cold dev server each compiles on first visit.
+    test.slow()
     await page.goto(`${BASE}/en/events/${PREFIX}open-day`)
     await expect(page.getByRole('heading', { name: 'Tickets', exact: true })).toBeVisible()
     await expect(page.getByText('40 places left')).toBeVisible()
-    await expect(page.getByText('Sold out')).toBeVisible()
+    await expect(page.getByText('Sold out', { exact: true })).toBeVisible()
     await waitForHydration(page)
 
-    // The sold-out ticket is not offered in the form.
-    await expect(page.getByLabel('Ticket').locator('option')).toHaveCount(1)
-    await page.getByLabel('Places').selectOption('2')
-    await page.getByLabel('Full name').fill('Maria Silva')
-    await page.getByLabel('Email').fill('maria@example.com')
-    await page.getByLabel('I agree that the studio keeps these details').check()
+    // The sold-out ticket is not offered in the form; it has a waitlist instead.
+    const form = page.getByRole('form', { name: 'Register' })
+    await expect(form.getByLabel('Ticket').locator('option')).toHaveCount(1)
+    await expect(page.getByRole('form', { name: 'Join the waitlist' }).getByLabel('Ticket')).toHaveText(/Workshop/)
+    await form.getByLabel('Places').selectOption('2')
+    await form.getByLabel('Full name').fill('Maria Silva')
+    await form.getByLabel('Email').fill('maria@example.com')
+    await form.getByLabel('I agree that the studio keeps these details').check()
     // People take a few seconds to fill a form; faster is treated as a bot.
     await page.waitForTimeout(MIN_FILL_MS)
-    await page.getByRole('button', { name: 'Register' }).click()
+    await form.getByRole('button', { name: 'Register' }).click()
 
     await page.waitForURL(/\/en\/tickets\/[A-Za-z0-9_-]{32}$/)
     const ticketUrl = page.url()
@@ -129,7 +133,7 @@ test.describe('Event registration and tickets', () => {
     await page.goto(`${BASE}/en/events/${PREFIX}open-day`)
     await expect(page.getByText('€45.00')).toBeVisible()
     await expect(page.getByText('Not available')).toBeVisible()
-    await expect(page.getByLabel('Ticket').locator('option', { hasText: 'Gala dinner' })).toHaveCount(0)
+    await expect(page.getByRole('form', { name: 'Register' }).getByLabel('Ticket').locator('option', { hasText: 'Gala dinner' })).toHaveCount(0)
 
     await page.goto(`${BASE}/en/tickets/${waitingToken}`)
     await expect(page.getByText('Total: €90.00')).toBeVisible()

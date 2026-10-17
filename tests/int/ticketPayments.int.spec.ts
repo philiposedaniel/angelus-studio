@@ -128,7 +128,7 @@ describe('paid tickets', () => {
   it('holds the places and sends the buyer to Stripe for the stored price', async () => {
     const ticketType = await makeTicketType()
     const result = await register(filled(ticketType, { quantity: '2' }))
-    expect(result).toEqual({ status: 'checkout', url: expect.stringMatching(/^https:\/\/checkout\.stripe\.test\//) })
+    expect(result).toMatchObject({ status: 'checkout', url: expect.stringMatching(/^https:\/\/checkout\.stripe\.test\//) })
     const checkout = checkouts[checkouts.length - 1]!
     expect(checkout).toMatchObject({ unitAmount: 2500, quantity: 2, currency: 'eur', metadata: { kind: 'ticket' } })
     expect(checkout.expiresAt).toBe(NOW + CHECKOUT_EXPIRES_MS)

@@ -14,7 +14,7 @@ export async function RegistrationSummaryField(props: UIFieldServerProps) {
     )
   }
   const query = { user: props.req.user, overrideAccess: false, pagination: false, depth: 0 } as const
-  const [ticketTypes, registrations] = await Promise.all([
+  const [ticketTypes, registrations, waitlist] = await Promise.all([
     props.payload
       .find({ collection: 'ticket-types', where: { event: { equals: eventId } }, sort: 'sortOrder', ...query })
       .catch(() => null),
@@ -23,6 +23,14 @@ export async function RegistrationSummaryField(props: UIFieldServerProps) {
         collection: 'registrations',
         where: { event: { equals: eventId } },
         select: { ticketType: true, quantity: true, status: true, checkedInCount: true, holdExpiresAt: true },
+        ...query,
+      })
+      .catch(() => null),
+    props.payload
+      .find({
+        collection: 'waitlist-entries',
+        where: { and: [{ event: { equals: eventId } }, { status: { in: ['waiting', 'offered'] } }] },
+        select: { ticketType: true, status: true },
         ...query,
       })
       .catch(() => null),
@@ -40,6 +48,7 @@ export async function RegistrationSummaryField(props: UIFieldServerProps) {
       <a href={`/admin/collections/ticket-types/create`}>Add a ticket type</a>
       <a href={`/admin/collections/ticket-types?${filter}`}>This event&apos;s ticket types</a>
       <a href={`/admin/collections/registrations?${filter}`}>This event&apos;s registrations</a>
+      <a href={`/admin/collections/waitlist-entries?${filter}`}>This event&apos;s waitlist</a>
     </div>
   )
   if (ticketTypes.docs.length === 0) {
@@ -53,7 +62,7 @@ export async function RegistrationSummaryField(props: UIFieldServerProps) {
       </div>
     )
   }
-  const rows = summarizeTickets(ticketTypes.docs, registrations.docs)
+  const rows = summarizeTickets(ticketTypes.docs, registrations.docs, waitlist?.docs ?? [])
   const cell: React.CSSProperties = { padding: '4px 12px 4px 0', textAlign: 'left' }
 
   return (
@@ -66,6 +75,7 @@ export async function RegistrationSummaryField(props: UIFieldServerProps) {
             <th style={cell}>Places taken</th>
             <th style={cell}>Left</th>
             <th style={cell}>Checked in</th>
+            <th style={cell}>Waitlist</th>
             <th style={cell}>On sale</th>
           </tr>
         </thead>
@@ -79,6 +89,7 @@ export async function RegistrationSummaryField(props: UIFieldServerProps) {
               </td>
               <td style={cell}>{row.left}</td>
               <td style={cell}>{row.arrived}</td>
+              <td style={cell}>{row.onWaitlist}</td>
               <td style={cell}>{row.onSale ? 'Yes' : 'No'}</td>
             </tr>
           ))}
