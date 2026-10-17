@@ -41,6 +41,16 @@ export const Payments: CollectionConfig = {
       options: CURRENCIES.map((value) => ({ label: CURRENCY_LABELS[value], value })),
     },
     {
+      name: 'kind',
+      type: 'select',
+      required: true,
+      defaultValue: 'deposit',
+      options: [
+        { label: 'Deposit', value: 'deposit' },
+        { label: 'Balance', value: 'balance' },
+      ],
+    },
+    {
       name: 'status',
       type: 'select',
       required: true,

@@ -10,6 +10,7 @@ import * as migration_20261016_002313_events_guest_albums from './20261016_00231
 import * as migration_20261016_004415_event_guests_rsvp from './20261016_004415_event_guests_rsvp';
 import * as migration_20261016_013642_projects_crew_tasks from './20261016_013642_projects_crew_tasks';
 import * as migration_20261016_023702_projects_client_user from './20261016_023702_projects_client_user';
+import * as migration_20261016_030420_balance_payments from './20261016_030420_balance_payments';
 import * as migration_20261016_064009_call_sheets from './20261016_064009_call_sheets';
 import * as migration_20261016_070048_guest_check_in from './20261016_070048_guest_check_in';
 import * as migration_20261016_070433_vendors from './20261016_070433_vendors';
@@ -78,6 +79,11 @@ export const migrations = [
     up: migration_20261016_023702_projects_client_user.up,
     down: migration_20261016_023702_projects_client_user.down,
     name: '20261016_023702_projects_client_user',
+  },
+  {
+    up: migration_20261016_030420_balance_payments.up,
+    down: migration_20261016_030420_balance_payments.down,
+    name: '20261016_030420_balance_payments',
   },
   {
     up: migration_20261016_064009_call_sheets.up,
