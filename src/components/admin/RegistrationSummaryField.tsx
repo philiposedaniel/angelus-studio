@@ -49,6 +49,9 @@ export async function RegistrationSummaryField(props: UIFieldServerProps) {
       <a href={`/admin/collections/ticket-types?${filter}`}>This event&apos;s ticket types</a>
       <a href={`/admin/collections/registrations?${filter}`}>This event&apos;s registrations</a>
       <a href={`/admin/collections/waitlist-entries?${filter}`}>This event&apos;s waitlist</a>
+      <a href={`/api/registrations/export?event=${encodeURIComponent(String(eventId))}`} download>
+        Download the attendee list (CSV)
+      </a>
     </div>
   )
   if (ticketTypes.docs.length === 0) {

@@ -88,7 +88,10 @@ export interface Config {
     'ticket-types': TicketType;
     registrations: Registration;
     'waitlist-entries': WaitlistEntry;
+    'promo-codes': PromoCode;
     projects: Project;
+    equipment: Equipment;
+    'equipment-reservations': EquipmentReservation;
     'payload-kv': PayloadKv;
     'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
@@ -118,7 +121,10 @@ export interface Config {
     'ticket-types': TicketTypesSelect<false> | TicketTypesSelect<true>;
     registrations: RegistrationsSelect<false> | RegistrationsSelect<true>;
     'waitlist-entries': WaitlistEntriesSelect<false> | WaitlistEntriesSelect<true>;
+    'promo-codes': PromoCodesSelect<false> | PromoCodesSelect<true>;
     projects: ProjectsSelect<false> | ProjectsSelect<true>;
+    equipment: EquipmentSelect<false> | EquipmentSelect<true>;
+    'equipment-reservations': EquipmentReservationsSelect<false> | EquipmentReservationsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -652,9 +658,16 @@ export interface Payment {
   amount: number;
   currency: 'eur' | 'usd' | 'gbp';
   kind: 'deposit' | 'balance' | 'ticket';
-  status: 'pending' | 'paid' | 'failed' | 'expired';
+  status: 'pending' | 'paid' | 'failed' | 'expired' | 'refund-pending' | 'refunded';
+  /**
+   * Refunded so far, in minor units, as Stripe reports it.
+   */
+  refundedAmount?: number | null;
+  refundedAt?: string | null;
   paidAt?: string | null;
   stripeSessionId: string;
+  stripePaymentIntentId?: string | null;
+  stripeRefundId?: string | null;
   stripeEventId?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -684,10 +697,15 @@ export interface Registration {
    */
   holdExpiresAt?: string | null;
   /**
-   * Price of the places, in cents, when registered.
+   * Price of the places, in cents, when registered, after any promo code.
    */
   amount?: number | null;
   currency?: ('eur' | 'usd' | 'gbp') | null;
+  promoCode?: (number | null) | PromoCode;
+  /**
+   * Taken off by the promo code, in cents.
+   */
+  discount?: number | null;
   /**
    * The language the ticket link opens in.
    */
@@ -830,6 +848,44 @@ export interface Event {
    * Untick for private events such as weddings: only people with an invitation or guest link can open them.
    */
   listed?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "promo-codes".
+ */
+export interface PromoCode {
+  id: number;
+  tenant?: (number | null) | Tenant;
+  event: number | Event;
+  /**
+   * What people type on the event page, such as EARLYBIRD. Letters, digits, - and _; any case works.
+   */
+  code: string;
+  discountType: 'percent' | 'amount';
+  /**
+   * 100 makes the ticket free.
+   */
+  percentOff?: number | null;
+  /**
+   * In cents of the ticket's currency: 500 is 5.00.
+   */
+  amountOff?: number | null;
+  /**
+   * Leave empty for all of the event's paid tickets.
+   */
+  ticketTypes?: (number | TicketType)[] | null;
+  /**
+   * How many places can be bought with the code in all. Empty for no limit.
+   */
+  maxUses?: number | null;
+  startsAt?: string | null;
+  endsAt?: string | null;
+  /**
+   * Untick to stop the code working.
+   */
+  active?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1084,6 +1140,45 @@ export interface Project {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "equipment".
+ */
+export interface Equipment {
+  id: number;
+  tenant?: (number | null) | Tenant;
+  name: string;
+  /**
+   * For example camera, lens or light.
+   */
+  category?: string | null;
+  serialNumber?: string | null;
+  /**
+   * Untick to retire it. Retired kit cannot be reserved.
+   */
+  active?: boolean | null;
+  /**
+   * Internal notes.
+   */
+  notes?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "equipment-reservations".
+ */
+export interface EquipmentReservation {
+  id: number;
+  tenant?: (number | null) | Tenant;
+  equipment: number | Equipment;
+  project: number | Project;
+  startsAt: string;
+  endsAt: string;
+  notes?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -1292,8 +1387,20 @@ export interface PayloadLockedDocument {
         value: number | WaitlistEntry;
       } | null)
     | ({
+        relationTo: 'promo-codes';
+        value: number | PromoCode;
+      } | null)
+    | ({
         relationTo: 'projects';
         value: number | Project;
+      } | null)
+    | ({
+        relationTo: 'equipment';
+        value: number | Equipment;
+      } | null)
+    | ({
+        relationTo: 'equipment-reservations';
+        value: number | EquipmentReservation;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -1707,8 +1814,12 @@ export interface PaymentsSelect<T extends boolean = true> {
   currency?: T;
   kind?: T;
   status?: T;
+  refundedAmount?: T;
+  refundedAt?: T;
   paidAt?: T;
   stripeSessionId?: T;
+  stripePaymentIntentId?: T;
+  stripeRefundId?: T;
   stripeEventId?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -1873,6 +1984,8 @@ export interface RegistrationsSelect<T extends boolean = true> {
   holdExpiresAt?: T;
   amount?: T;
   currency?: T;
+  promoCode?: T;
+  discount?: T;
   language?: T;
   checkedInCount?: T;
   checkedInAt?: T;
@@ -1900,6 +2013,25 @@ export interface WaitlistEntriesSelect<T extends boolean = true> {
   language?: T;
   claimToken?: T;
   senderKey?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "promo-codes_select".
+ */
+export interface PromoCodesSelect<T extends boolean = true> {
+  tenant?: T;
+  event?: T;
+  code?: T;
+  discountType?: T;
+  percentOff?: T;
+  amountOff?: T;
+  ticketTypes?: T;
+  maxUses?: T;
+  startsAt?: T;
+  endsAt?: T;
+  active?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1946,6 +2078,34 @@ export interface ProjectsSelect<T extends boolean = true> {
               id?: T;
             };
       };
+  notes?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "equipment_select".
+ */
+export interface EquipmentSelect<T extends boolean = true> {
+  tenant?: T;
+  name?: T;
+  category?: T;
+  serialNumber?: T;
+  active?: T;
+  notes?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "equipment-reservations_select".
+ */
+export interface EquipmentReservationsSelect<T extends boolean = true> {
+  tenant?: T;
+  equipment?: T;
+  project?: T;
+  startsAt?: T;
+  endsAt?: T;
   notes?: T;
   updatedAt?: T;
   createdAt?: T;

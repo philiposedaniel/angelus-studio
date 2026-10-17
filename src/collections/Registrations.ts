@@ -3,9 +3,19 @@ import { APIError, Forbidden, type CollectionConfig, type FieldAccess } from 'pa
 import { hasTenantRole, isSuperAdmin, tenantRoles } from '@/access'
 import { EVENT_GUEST_STAFF_ROLES } from '@/collections/EventGuests'
 import { DEFAULT_LOCALE, LOCALE_LABELS, LOCALES } from '@/i18n/config'
+import { exportAttendees } from '@/lib/attendees'
+import { refundTicketEndpoint } from '@/lib/ticketRefunds'
 import { idOf } from '@/lib/ids'
+import {
+  lockPromoCode,
+  promoApplies,
+  promoDiscount,
+  promoPlacesUsed,
+  PROMO_INVALID_STATUS,
+  withinLimit,
+} from '@/lib/promoCodes'
 import { newShareToken } from '@/lib/shareTokens'
-import { refreshWaitlist } from '@/lib/waitlist'
+import { offerOpen, refreshWaitlist, WAITLIST_CLAIM_CLOSED_STATUS, WAITLIST_REFRESH_CONTEXT } from '@/lib/waitlist'
 import { CURRENCIES, CURRENCY_LABELS } from '@/lib/money'
 import {
   holdsPlaces,
@@ -42,6 +52,10 @@ export const Registrations: CollectionConfig = {
     listSearchableFields: ['name', 'email'],
   },
   defaultSort: '-createdAt',
+  endpoints: [
+    { path: '/export', method: 'get', handler: exportAttendees },
+    { path: '/:id/refund', method: 'post', handler: refundTicketEndpoint },
+  ],
   access: {
     read: tenantRoles(EVENT_GUEST_STAFF_ROLES),
     create: tenantRoles(EVENT_GUEST_STAFF_ROLES),
@@ -72,6 +86,17 @@ export const Registrations: CollectionConfig = {
 
         const ticketTypeId = idOf(data.ticketType ?? originalDoc?.ticketType)
         const quantity: number = data.quantity ?? originalDoc?.quantity ?? 1
+        // The price is fixed when the registration is made, so its places and ticket are too.
+        if (
+          operation === 'update' &&
+          (originalDoc?.amount ?? 0) > 0 &&
+          (quantity !== originalDoc?.quantity || String(ticketTypeId) !== String(idOf(originalDoc?.ticketType)))
+        ) {
+          throw new APIError(
+            'A registration with a price cannot change its places or ticket. Cancel it and add a new one instead.',
+            400,
+          )
+        }
         const status = data.status ?? originalDoc?.status ?? 'confirmed'
         const holdExpiresAt = data.holdExpiresAt === undefined ? originalDoc?.holdExpiresAt : data.holdExpiresAt
         // Counted under a lock, so two registrations for the last places cannot both succeed.
@@ -92,8 +117,16 @@ export const Registrations: CollectionConfig = {
             req,
             overrideAccess: true,
           })
-          // A waitlist claim takes the places that were offered to it.
+          // A waitlist claim takes the places that were offered to it, once, while the offer lasts.
           const waitlistEntryId = (context as Record<string, unknown>)?.waitlistEntryId
+          if (operation === 'create' && typeof waitlistEntryId === 'number') {
+            const entry = await req.payload
+              .findByID({ collection: 'waitlist-entries', id: waitlistEntryId, depth: 0, req, overrideAccess: true })
+              .catch(() => null)
+            if (!entry || !offerOpen(entry) || String(idOf(entry.ticketType)) !== String(ticketTypeId)) {
+              throw new APIError('These places are no longer offered.', WAITLIST_CLAIM_CLOSED_STATUS)
+            }
+          }
           const taken = await placesTaken(req.payload, ticketTypeId, {
             req,
             excludeId: originalDoc?.id,
@@ -116,7 +149,9 @@ export const Registrations: CollectionConfig = {
           checkedInCount === 0 ? null : (data.checkedInAt ?? originalDoc?.checkedInAt ?? new Date().toISOString())
 
         // What the registration costs, from the ticket type's price when it is made, never from the request.
-        let { amount, currency } = originalDoc ?? {}
+        let { amount, currency, discount } = originalDoc ?? {}
+        // A promo code is applied when the registration is made and kept with it.
+        let promoCode = operation === 'create' ? (idOf(data.promoCode) ?? null) : (idOf(originalDoc?.promoCode) ?? null)
         if (operation === 'create' && ticketTypeId !== undefined && ticketTypeId !== null) {
           const ticketType = await req.payload.findByID({
             collection: 'ticket-types',
@@ -125,7 +160,23 @@ export const Registrations: CollectionConfig = {
             req,
             overrideAccess: true,
           })
-          amount = (ticketType.price ?? 0) * quantity
+          discount = 0
+          if (promoCode !== null) {
+            const promo = await req.payload
+              .findByID({ collection: 'promo-codes', id: promoCode, depth: 0, req, overrideAccess: true })
+              .catch(() => null)
+            if (!promo || !promoApplies(promo, ticketType)) {
+              throw new APIError('This promo code cannot be used for this ticket.', PROMO_INVALID_STATUS)
+            }
+            // Counted under a lock, so a code's last discounted places cannot be taken twice.
+            await lockPromoCode(req, promo.id)
+            if (!withinLimit(promo, await promoPlacesUsed(req.payload, promo.id, { req }), quantity)) {
+              throw new APIError('This promo code has been used up.', PROMO_INVALID_STATUS)
+            }
+            discount = promoDiscount(promo, ticketType.price ?? 0, quantity)
+            promoCode = promo.id
+          }
+          amount = (ticketType.price ?? 0) * quantity - discount
           currency = ticketType.currency
         }
 
@@ -133,6 +184,8 @@ export const Registrations: CollectionConfig = {
           ...data,
           amount,
           currency,
+          discount,
+          promoCode,
           checkedInCount,
           checkedInAt,
           // Set on create, kept on change, never taken from the request.
@@ -142,6 +195,21 @@ export const Registrations: CollectionConfig = {
       },
     ],
     afterChange: [
+      // A waitlist claim marks its entry claimed in the same transaction as the registration.
+      async ({ context, doc, operation, req }) => {
+        const waitlistEntryId = (context as Record<string, unknown>)?.waitlistEntryId
+        if (operation === 'create' && typeof waitlistEntryId === 'number') {
+          await req.payload.update({
+            collection: 'waitlist-entries',
+            id: waitlistEntryId,
+            data: { status: 'claimed', registration: doc.id },
+            req,
+            overrideAccess: true,
+            context: WAITLIST_REFRESH_CONTEXT,
+          })
+        }
+        return doc
+      },
       // Places given back (a cancellation, fewer places) go to the next people on the waitlist.
       async ({ doc, previousDoc, operation, req }) => {
         const freed =
@@ -213,6 +281,8 @@ export const Registrations: CollectionConfig = {
         description: 'While waiting for payment. After this the places are free again.',
         condition: (data) => data?.status === 'pending',
       },
+      // Set only by the website while someone pays, never through the admin or the API.
+      access: { create: () => false, update: () => false },
     },
     {
       type: 'row',
@@ -220,13 +290,29 @@ export const Registrations: CollectionConfig = {
         {
           name: 'amount',
           type: 'number',
-          admin: { readOnly: true, width: '50%', description: 'Price of the places, in cents, when registered.' },
+          admin: { readOnly: true, width: '50%', description: 'Price of the places, in cents, when registered, after any promo code.' },
         },
         {
           name: 'currency',
           type: 'select',
           admin: { readOnly: true, width: '50%' },
           options: CURRENCIES.map((value) => ({ label: CURRENCY_LABELS[value], value })),
+        },
+      ],
+    },
+    {
+      type: 'row',
+      fields: [
+        {
+          name: 'promoCode',
+          type: 'relationship',
+          relationTo: 'promo-codes',
+          admin: { readOnly: true, width: '50%' },
+        },
+        {
+          name: 'discount',
+          type: 'number',
+          admin: { readOnly: true, width: '50%', description: 'Taken off by the promo code, in cents.' },
         },
       ],
     },
@@ -242,6 +328,11 @@ export const Registrations: CollectionConfig = {
       name: 'ticketLink',
       type: 'ui',
       admin: { components: { Field: '@/components/admin/TicketLinkField#TicketLinkField' } },
+    },
+    {
+      name: 'refund',
+      type: 'ui',
+      admin: { components: { Field: '@/components/admin/RefundField#RefundField' } },
     },
     {
       type: 'collapsible',
@@ -276,7 +367,7 @@ export const Registrations: CollectionConfig = {
       type: 'text',
       index: true,
       admin: { hidden: true },
-      access: { read: () => false, update: () => false },
+      access: { read: () => false, create: () => false, update: () => false },
     },
   ],
 }

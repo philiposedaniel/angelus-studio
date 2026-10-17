@@ -64,8 +64,20 @@ export const WaitlistEntries: CollectionConfig = {
         if (user && statusChange && data.status !== 'removed' && !isWaitlistSystem(context)) {
           throw new APIError('Staff can only remove people from the waitlist.', 400)
         }
+        // Only the status is staff's to change; everything else stays as the person and the
+        // waitlist set it, so nobody can stretch an offer or hand it to someone else.
+        const kept =
+          operation === 'update' && !isWaitlistSystem(context) && originalDoc
+            ? Object.fromEntries(
+                ['name', 'email', 'phone', 'quantity', 'offerExpiresAt', 'registration', 'language'].map((field) => [
+                  field,
+                  originalDoc[field],
+                ]),
+              )
+            : {}
         return {
           ...data,
+          ...kept,
           // Set on create, kept on change, never taken from the request.
           claimToken: operation === 'create' || !originalDoc?.claimToken ? newShareToken() : originalDoc.claimToken,
         }

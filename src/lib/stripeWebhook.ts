@@ -6,6 +6,7 @@ import { STRIPE_PAYMENT_CONTEXT } from '@/collections/Quotes'
 import { idOf } from '@/lib/ids'
 import { getStripe, stripeConfigured } from '@/lib/stripe'
 import { balanceAmount, PAID_QUOTE_STATUSES } from '@/lib/quotes'
+import { recordRefund } from '@/lib/ticketRefunds'
 import { PAID_TICKET_CONTEXT } from '@/lib/tickets'
 import type { Payment } from '@/payload-types'
 
@@ -13,6 +14,8 @@ import type { Payment } from '@/payload-types'
 const PAID_EVENTS = new Set(['checkout.session.completed', 'checkout.session.async_payment_succeeded'])
 /** A Checkout session that ran out unpaid: a ticket's held places are freed. Other events are ignored. */
 const EXPIRED_EVENT = 'checkout.session.expired'
+/** A charge refunded, from the admin or the Stripe dashboard. */
+const REFUNDED_EVENT = 'charge.refunded'
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } })
@@ -156,6 +159,16 @@ export async function handleStripeWebhook(request: Request): Promise<Response> {
       return json({ error: 'Could not release the ticket.' }, 500)
     }
   }
+  if (event.type === REFUNDED_EVENT) {
+    const payload = await getPayload({ config })
+    try {
+      const handled = await recordRefund(payload, event.data.object as Stripe.Charge, event.id)
+      return json({ received: true, handled })
+    } catch (error) {
+      payload.logger.error({ err: error, msg: 'Could not record a refund; Stripe will retry' })
+      return json({ error: 'Could not record the refund.' }, 500)
+    }
+  }
   if (!PAID_EVENTS.has(event.type)) return json({ received: true, handled: false })
 
   const payload = await getPayload({ config })
@@ -174,8 +187,13 @@ export async function handleStripeWebhook(request: Request): Promise<Response> {
     const payment = docs[0] ?? (await recordMissingPayment(payload, session))
     // Unknown sessions, or sessions not yet paid, are acknowledged; nothing is recorded.
     if (!payment) return json({ received: true, handled: false })
-    if (payment.status === 'paid') return json({ received: true, duplicate: true })
+    // Paid already, or paid and since refunded: a repeated event changes nothing.
+    if (payment.status === 'paid' || payment.status === 'refund-pending' || payment.status === 'refunded') {
+      return json({ received: true, duplicate: true })
+    }
     if (session.payment_status !== 'paid') return json({ received: true, handled: false })
+    const paymentIntentId =
+      typeof session.payment_intent === 'string' ? session.payment_intent : (session.payment_intent?.id ?? null)
 
     if (session.amount_total !== payment.amount || session.currency !== payment.currency) {
       payload.logger.error({
@@ -198,7 +216,7 @@ export async function handleStripeWebhook(request: Request): Promise<Response> {
       await payload.update({
         collection: 'payments',
         id: payment.id,
-        data: { status: 'paid', paidAt: new Date().toISOString(), stripeEventId: event.id },
+        data: { status: 'paid', paidAt: new Date().toISOString(), stripeEventId: event.id, stripePaymentIntentId: paymentIntentId },
         overrideAccess: true,
       })
       return json({ received: true, handled: true })
@@ -234,7 +252,7 @@ export async function handleStripeWebhook(request: Request): Promise<Response> {
     await payload.update({
       collection: 'payments',
       id: payment.id,
-      data: { status: 'paid', paidAt: new Date().toISOString(), stripeEventId: event.id },
+      data: { status: 'paid', paidAt: new Date().toISOString(), stripeEventId: event.id, stripePaymentIntentId: paymentIntentId },
       overrideAccess: true,
     })
     return json({ received: true, handled: true })
