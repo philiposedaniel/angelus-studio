@@ -1,3 +1,4 @@
+import * as migration_20261016_000713_gallery_watermark from './20261016_000713_gallery_watermark';
 import * as migration_20261015_184125_initial from './20261015_184125_initial';
 import * as migration_20261015_191623_client_galleries from './20261015_191623_client_galleries';
 import * as migration_20261015_193142_gallery_downloads from './20261015_193142_gallery_downloads';
@@ -67,6 +68,11 @@ export const migrations = [
     up: migration_20261016_064009_call_sheets.up,
     down: migration_20261016_064009_call_sheets.down,
     name: '20261016_064009_call_sheets',
+  },
+  {
+    up: migration_20261016_000713_gallery_watermark.up,
+    down: migration_20261016_000713_gallery_watermark.down,
+    name: '20261016_000713_gallery_watermark',
   },
   {
     up: migration_20261016_070048_guest_check_in.up,
