@@ -49,6 +49,12 @@ export const en = {
     noProjects: 'You have no productions to see yet.',
     shootDay: 'Shoot day',
     location: 'Location',
+    callSheetHeading: 'Call sheet',
+    meetingPoint: 'Meeting point',
+    crewNotes: 'Notes for the crew',
+    schedule: 'Schedule',
+    noSchedule: 'No schedule has been set yet.',
+    noCallSheet: 'The call sheet is not ready yet. The production team will share it before the shoot.',
     projectStatus: {
       planning: 'Planning',
       confirmed: 'Confirmed',
