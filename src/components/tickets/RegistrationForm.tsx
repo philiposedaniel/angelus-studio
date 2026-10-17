@@ -18,6 +18,8 @@ type Props = {
   t: Dictionary['tickets']
   /** Joins the waitlist of sold-out tickets instead of registering. */
   waitlist?: boolean
+  /** Asks for a promo code, when the event has one that could work. */
+  promoCodes?: boolean
 }
 
 type State = RegistrationState | WaitlistJoinState
@@ -36,7 +38,7 @@ const plural = (forms: { one: string; other: string }, count: number) =>
  * Registration for an event, or joining a sold-out ticket's waitlist. Every check runs again on
  * the server; success opens the ticket, the payment or the waitlist link.
  */
-export function RegistrationForm({ eventId, locale, formToken, offers, t, waitlist = false }: Props) {
+export function RegistrationForm({ eventId, locale, formToken, offers, t, waitlist = false, promoCodes = false }: Props) {
   const [state, action, pending] = useActionState<State, FormData>(waitlist ? joinAction : registerAction, {
     status: 'idle',
   })
@@ -120,6 +122,14 @@ export function RegistrationForm({ eventId, locale, formToken, offers, t, waitli
       {field('name', t.name, <input {...a11y('name')} type="text" autoComplete="name" maxLength={120} className={input} />)}
       {field('email', t.email, <input {...a11y('email')} type="email" autoComplete="email" maxLength={200} className={input} />)}
       {field('phone', t.phone, <input {...a11y('phone')} type="tel" autoComplete="tel" maxLength={40} className={input} />)}
+      {!waitlist &&
+        promoCodes &&
+        (offer?.price ?? 0) > 0 &&
+        field(
+          'promoCode',
+          t.promoCode,
+          <input {...a11y('promoCode')} type="text" autoComplete="off" maxLength={40} className={cn(input, 'uppercase')} />,
+        )}
       <div className="flex flex-col gap-2 sm:col-span-2">
         <label className="flex items-start gap-3 text-sm text-ivory/90">
           <input

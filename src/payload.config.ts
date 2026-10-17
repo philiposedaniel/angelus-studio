@@ -21,9 +21,12 @@ import { EventVendors } from './collections/EventVendors'
 import { Registrations } from './collections/Registrations'
 import { TicketTypes } from './collections/TicketTypes'
 import { WaitlistEntries } from './collections/WaitlistEntries'
+import { PromoCodes } from './collections/PromoCodes'
 import { Vendors } from './collections/Vendors'
 import { Events } from './collections/Events'
 import { Projects } from './collections/Projects'
+import { Equipment } from './collections/Equipment'
+import { EquipmentReservations } from './collections/EquipmentReservations'
 import { Services } from './collections/Services'
 import { Pages } from './collections/Pages'
 import { Inquiries } from './collections/Inquiries'
@@ -74,7 +77,10 @@ export default buildConfig({
     TicketTypes,
     Registrations,
     WaitlistEntries,
+    PromoCodes,
     Projects,
+    Equipment,
+    EquipmentReservations,
   ],
   localization: {
     locales: LOCALES.map((code) => ({ code, label: LOCALE_LABELS[code] })),
@@ -125,12 +131,15 @@ export default buildConfig({
         events: {},
         projects: {},
         'event-guests': {},
+        equipment: {},
+        'equipment-reservations': {},
         'event-tables': {},
         vendors: {},
         'event-vendors': {},
         'ticket-types': {},
         registrations: {},
         'waitlist-entries': {},
+        'promo-codes': {},
       },
       tenantsArrayField: {
         includeDefaultField: false,
