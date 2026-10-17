@@ -17,6 +17,8 @@ import { isSuperAdmin } from './access/roles'
 import { EventGuests } from './collections/EventGuests'
 import { EventTables } from './collections/EventTables'
 import { EventVendors } from './collections/EventVendors'
+import { Registrations } from './collections/Registrations'
+import { TicketTypes } from './collections/TicketTypes'
 import { Vendors } from './collections/Vendors'
 import { Events } from './collections/Events'
 import { Projects } from './collections/Projects'
@@ -66,6 +68,8 @@ export default buildConfig({
     EventTables,
     Vendors,
     EventVendors,
+    TicketTypes,
+    Registrations,
     Projects,
   ],
   localization: {
@@ -119,6 +123,8 @@ export default buildConfig({
         'event-tables': {},
         vendors: {},
         'event-vendors': {},
+        'ticket-types': {},
+        registrations: {},
       },
       tenantsArrayField: {
         includeDefaultField: false,

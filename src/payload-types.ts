@@ -85,6 +85,8 @@ export interface Config {
     'event-tables': EventTable;
     vendors: Vendor;
     'event-vendors': EventVendor;
+    'ticket-types': TicketType;
+    registrations: Registration;
     projects: Project;
     'payload-kv': PayloadKv;
     'payload-jobs': PayloadJob;
@@ -112,6 +114,8 @@ export interface Config {
     'event-tables': EventTablesSelect<false> | EventTablesSelect<true>;
     vendors: VendorsSelect<false> | VendorsSelect<true>;
     'event-vendors': EventVendorsSelect<false> | EventVendorsSelect<true>;
+    'ticket-types': TicketTypesSelect<false> | TicketTypesSelect<true>;
+    registrations: RegistrationsSelect<false> | RegistrationsSelect<true>;
     projects: ProjectsSelect<false> | ProjectsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
@@ -890,6 +894,84 @@ export interface EventVendor {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ticket-types".
+ */
+export interface TicketType {
+  id: number;
+  tenant?: (number | null) | Tenant;
+  event: number | Event;
+  /**
+   * As people see it on the event page, e.g. "General admission".
+   */
+  name: string;
+  description?: string | null;
+  /**
+   * How many people this ticket admits in total.
+   */
+  capacity: number;
+  /**
+   * The most places one person can book at once on the website.
+   */
+  maxPerOrder: number;
+  /**
+   * Optional. Empty opens it at once.
+   */
+  salesStart?: string | null;
+  /**
+   * Optional. Empty closes it when the event ends.
+   */
+  salesEnd?: string | null;
+  /**
+   * Untick to stop new registrations. Existing tickets keep working.
+   */
+  onSale?: boolean | null;
+  /**
+   * Lower numbers are listed first.
+   */
+  sortOrder?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "registrations".
+ */
+export interface Registration {
+  id: number;
+  tenant?: (number | null) | Tenant;
+  ticketType: number | TicketType;
+  /**
+   * Set from the ticket type.
+   */
+  event?: (number | null) | Event;
+  name: string;
+  email: string;
+  phone?: string | null;
+  quantity: number;
+  /**
+   * Cancelling frees the places and stops the ticket from working at the door.
+   */
+  status: 'confirmed' | 'cancelled';
+  /**
+   * The language the ticket link opens in.
+   */
+  language: 'en' | 'es' | 'fr' | 'pt' | 'de' | 'it';
+  /**
+   * How many have arrived. Staff set it at the door by scanning the ticket.
+   */
+  checkedInCount?: number | null;
+  checkedInAt?: string | null;
+  /**
+   * Only staff see this.
+   */
+  staffNotes?: string | null;
+  ticketToken?: string | null;
+  senderKey?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "projects".
  */
 export interface Project {
@@ -1154,6 +1236,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'event-vendors';
         value: number | EventVendor;
+      } | null)
+    | ({
+        relationTo: 'ticket-types';
+        value: number | TicketType;
+      } | null)
+    | ({
+        relationTo: 'registrations';
+        value: number | Registration;
       } | null)
     | ({
         relationTo: 'projects';
@@ -1697,6 +1787,46 @@ export interface EventVendorsSelect<T extends boolean = true> {
   vendorNote?: T;
   staffNotes?: T;
   vendorToken?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ticket-types_select".
+ */
+export interface TicketTypesSelect<T extends boolean = true> {
+  tenant?: T;
+  event?: T;
+  name?: T;
+  description?: T;
+  capacity?: T;
+  maxPerOrder?: T;
+  salesStart?: T;
+  salesEnd?: T;
+  onSale?: T;
+  sortOrder?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "registrations_select".
+ */
+export interface RegistrationsSelect<T extends boolean = true> {
+  tenant?: T;
+  ticketType?: T;
+  event?: T;
+  name?: T;
+  email?: T;
+  phone?: T;
+  quantity?: T;
+  status?: T;
+  language?: T;
+  checkedInCount?: T;
+  checkedInAt?: T;
+  staffNotes?: T;
+  ticketToken?: T;
+  senderKey?: T;
   updatedAt?: T;
   createdAt?: T;
 }

@@ -28,9 +28,10 @@ depends on it.
    change the answer until the deadline. Staff see the headcount on the event. *Needs nothing.*
 2. **Guest list import, export and check-in** (PR #13). CSV import with a preview, CSV export, and a
    staff check-in page that scans the QR code on the invitation. *Needs nothing.*
-3. **Event registration and tickets.** Ticket types with price, capacity and sales window;
-   free registration; paid tickets through Stripe Checkout reusing the signed webhook; orders
-   and attendee tickets with QR codes that the check-in page also accepts. *Needs Stripe test keys.*
+3. **Event registration and tickets** (free registration built). Ticket types with capacity and
+   sales window; free registration with a ticket page and QR entry code that staff check in.
+   Still to come: paid tickets through Stripe Checkout reusing the signed webhook, once online
+   balance payments are merged. *Paid tickets need Stripe test keys.*
 4. **Vendors** (PR #22; private documents come with R2 storage, step 8). Directory, per-event assignments, amounts due and paid, private documents,
    and a vendor link with their event details. *Needs nothing; documents stay on local disk
    until R2.*

@@ -363,3 +363,35 @@ set; there is no per-event colour or font picker yet.
 Known limits: organizers cannot import guests from CSV, manage seating or vendors, or edit the
 event itself from the portal; staff do those in the admin. Organizers are not emailed until the
 email account exists.
+
+## Registration and tickets
+
+- *Events → Ticket types* adds the tickets for an event: name and description (translatable), the
+  number of places, the most places one person can book at once (up to 20), optional opening and
+  closing times for registration, *On sale*, and order. Tickets are free for now; paid tickets come
+  with online payments.
+- A published event shown on the website lists its ticket types with places left, "Sold out", or
+  when registration opens, and shows a registration form while any ticket is on sale. Registration
+  closes at the ticket's closing time, or else when the event ends.
+- Registering takes a name, an email, an optional phone and consent, and opens the person's ticket
+  at `/<language>/tickets/<token>`: the event, the places it admits and an entry code. The form has
+  the same protection as the contact form (a signed form token, a hidden field and a minimum fill
+  time) and allows 3 registrations per email address and 10 per network address per hour.
+- Capacity is checked in the collection under a database lock (a Postgres advisory lock per ticket
+  type, held until the transaction ends), so two people cannot take the last place, whether they
+  register on the website or staff add them in the admin. Lowering a ticket type's places below the
+  places taken is refused, and a ticket type with registrations cannot be deleted; untick *On sale*.
+- *Events → Registrations* lists everyone registered. Staff can add a registration by hand (for a
+  phone booking), cancel one (which frees its places and stops the ticket working at the door) and
+  copy its ticket link to resend it. The event's *Registration and tickets* section shows places
+  taken, left and checked in per ticket type. Only studio admins and production managers see ticket
+  types and registrations.
+- The entry code opens `/<language>/tickets/<token>/check-in`. Signed-in admins and production
+  managers of the studio record how many have arrived, as for invitations; anyone else is only told
+  to show the code. A cancelled registration shows "Do not admit".
+- Deleting an event deletes its ticket types and registrations.
+
+Known limits: tickets are free only; paid tickets wait for online balance payments to be merged and
+Stripe keys. Tickets are not emailed until the email account exists, so the ticket page asks people
+to save its link, and staff can resend it from the registration. One entry code covers every place
+on a registration. There is no waitlist, promo code or attendee export yet.
