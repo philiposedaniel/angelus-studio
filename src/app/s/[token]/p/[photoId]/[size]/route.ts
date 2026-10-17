@@ -9,6 +9,7 @@ import { findSharedGallery } from '@/lib/sharedAlbum'
 import { isSharedSize } from '@/lib/shareTokens'
 import { GALLERY_PHOTOS_DIR } from '@/lib/storage'
 import { getCurrentTenant } from '@/lib/tenant'
+import { watermarkImage } from '@/lib/watermark'
 
 const notFound = () => new Response('Not found', { status: 404 })
 
@@ -37,13 +38,20 @@ export async function GET(
   const stats = await fs.promises.stat(file).catch(() => null)
   if (!stats) return notFound()
 
+  const headers = {
+    'Content-Type': copy.mimeType ?? 'image/webp',
+    // Short, private caching so revoking a link takes effect quickly.
+    'Cache-Control': 'private, max-age=300',
+    'X-Robots-Tag': 'noindex',
+  }
+  if (gallery.watermarkText) {
+    const marked = await watermarkImage(await fs.promises.readFile(file), gallery.watermarkText)
+    return new Response(new Uint8Array(marked), {
+      headers: { ...headers, 'Content-Type': 'image/webp', 'Content-Length': String(marked.length) },
+    })
+  }
+
   return new Response(Readable.toWeb(fs.createReadStream(file)) as ReadableStream, {
-    headers: {
-      'Content-Type': copy.mimeType ?? 'image/webp',
-      'Content-Length': String(stats.size),
-      // Short, private caching so revoking a link takes effect quickly.
-      'Cache-Control': 'private, max-age=300',
-      'X-Robots-Tag': 'noindex',
-    },
+    headers: { ...headers, 'Content-Length': String(stats.size) },
   })
 }
