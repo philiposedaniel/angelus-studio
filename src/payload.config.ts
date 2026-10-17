@@ -15,6 +15,8 @@ import { Payments } from './collections/Payments'
 import { Quotes } from './collections/Quotes'
 import { isSuperAdmin } from './access/roles'
 import { EventGuests } from './collections/EventGuests'
+import { EventVendors } from './collections/EventVendors'
+import { Vendors } from './collections/Vendors'
 import { Events } from './collections/Events'
 import { Projects } from './collections/Projects'
 import { Equipment } from './collections/Equipment'
@@ -62,6 +64,8 @@ export default buildConfig({
     Payments,
     Events,
     EventGuests,
+    Vendors,
+    EventVendors,
     Projects,
     Equipment,
     EquipmentReservations,
@@ -116,6 +120,8 @@ export default buildConfig({
         'event-guests': {},
         equipment: {},
         'equipment-reservations': {},
+        vendors: {},
+        'event-vendors': {},
       },
       tenantsArrayField: {
         includeDefaultField: false,
