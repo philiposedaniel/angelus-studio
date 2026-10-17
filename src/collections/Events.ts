@@ -90,7 +90,7 @@ export const Events: CollectionConfig = {
       },
     ],
     beforeDelete: [
-      // An event's guest list, tables, vendor bookings, waitlist, registrations and ticket types go with it.
+      // An event's guest list, tables, vendor bookings, waitlist, registrations, promo codes and ticket types go with it.
       async ({ id, req }) => {
         await req.payload.delete({
           collection: 'waitlist-entries',
@@ -100,6 +100,12 @@ export const Events: CollectionConfig = {
         })
         await req.payload.delete({
           collection: 'registrations',
+          where: { event: { equals: id } },
+          req,
+          overrideAccess: true,
+        })
+        await req.payload.delete({
+          collection: 'promo-codes',
           where: { event: { equals: id } },
           req,
           overrideAccess: true,

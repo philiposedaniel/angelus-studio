@@ -21,6 +21,8 @@ import * as migration_20261017_022307_event_organizers from './20261017_022307_e
 import * as migration_20261017_130402_event_tickets from './20261017_130402_event_tickets';
 import * as migration_20261017_131541_paid_tickets from './20261017_131541_paid_tickets';
 import * as migration_20261017_190125_waitlist from './20261017_190125_waitlist';
+import * as migration_20261017_192724_promo_codes from './20261017_192724_promo_codes';
+import * as migration_20261017_195026_ticket_refunds from './20261017_195026_ticket_refunds';
 
 export const migrations = [
   {
@@ -136,6 +138,16 @@ export const migrations = [
   {
     up: migration_20261017_190125_waitlist.up,
     down: migration_20261017_190125_waitlist.down,
-    name: '20261017_190125_waitlist'
+    name: '20261017_190125_waitlist',
+  },
+  {
+    up: migration_20261017_192724_promo_codes.up,
+    down: migration_20261017_192724_promo_codes.down,
+    name: '20261017_192724_promo_codes',
+  },
+  {
+    up: migration_20261017_195026_ticket_refunds.up,
+    down: migration_20261017_195026_ticket_refunds.down,
+    name: '20261017_195026_ticket_refunds'
   },
 ];

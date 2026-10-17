@@ -20,6 +20,7 @@ import { EventVendors } from './collections/EventVendors'
 import { Registrations } from './collections/Registrations'
 import { TicketTypes } from './collections/TicketTypes'
 import { WaitlistEntries } from './collections/WaitlistEntries'
+import { PromoCodes } from './collections/PromoCodes'
 import { Vendors } from './collections/Vendors'
 import { Events } from './collections/Events'
 import { Projects } from './collections/Projects'
@@ -72,6 +73,7 @@ export default buildConfig({
     TicketTypes,
     Registrations,
     WaitlistEntries,
+    PromoCodes,
     Projects,
   ],
   localization: {
@@ -128,6 +130,7 @@ export default buildConfig({
         'ticket-types': {},
         registrations: {},
         'waitlist-entries': {},
+        'promo-codes': {},
       },
       tenantsArrayField: {
         includeDefaultField: false,
