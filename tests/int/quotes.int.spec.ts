@@ -170,7 +170,7 @@ describe('quotes and payments', () => {
         data: { lineItems: [{ description: 'Cheaper', quantity: 1, unitAmount: 100 }] } as never,
         overrideAccess: true,
       }),
-    ).rejects.toThrow(/prices of a paid quote/)
+    ).rejects.toThrow(/prices of a signed or paid quote/)
   })
 
   it('will not send a quote whose deposit is too small to pay online', async () => {

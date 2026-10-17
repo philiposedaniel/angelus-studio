@@ -2,8 +2,11 @@ import config from '@payload-config'
 import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
+import { DepositButton } from '@/components/quote/DepositButton'
 import { PaymentButton } from '@/components/quote/PaymentButton'
+import { SignContractForm } from '@/components/quote/SignContractForm'
 import { getDictionary } from '@/i18n/dictionaries'
+import { contractRequired, contractSigned } from '@/lib/contracts'
 import { resolveLocale } from '@/lib/locale'
 import { formatMoney } from '@/lib/money'
 import { balanceAmount, isQuoteExpired } from '@/lib/quotes'
@@ -50,7 +53,10 @@ export default async function QuotePage({ params, searchParams }: PageProps<'/[l
   const expired = depositDue && isQuoteExpired(quote.validUntil)
   const balance = balanceAmount(quote)
   const balanceDue = quote.status === 'deposit-paid' && balance > 0
-  const canPayDeposit = depositDue && !expired && stripeConfigured()
+  // A quote with contract terms takes its deposit only after the client has signed them.
+  const hasContract = contractRequired(quote.contract)
+  const signed = contractSigned(quote.contract)
+  const canPayDeposit = depositDue && !expired && stripeConfigured() && (!hasContract || signed)
   const canPayBalance = balanceDue && stripeConfigured()
 
   return (
@@ -109,7 +115,22 @@ export default async function QuotePage({ params, searchParams }: PageProps<'/[l
         </div>
       </dl>
 
-      {canPayDeposit && <PaymentButton kind="deposit" token={token} locale={locale} t={t} />}
+      {hasContract && (
+        <section className="grid gap-3">
+          <h2 className="font-serif text-2xl">{t.contractHeading}</h2>
+          <div className="whitespace-pre-line text-mist">{quote.contract?.terms}</div>
+          {signed && quote.contract?.signedAt && (
+            <p role="status" className="text-gold">
+              {t.signedBy} {quote.contract.signedName} · {formatDate(quote.contract.signedAt, locale)}
+            </p>
+          )}
+        </section>
+      )}
+      {hasContract && !signed && depositDue && !expired && (
+        <SignContractForm token={token} locale={locale} t={t} />
+      )}
+
+      {canPayDeposit && <DepositButton token={token} locale={locale} t={t} />}
       {canPayBalance && <PaymentButton kind="balance" token={token} locale={locale} t={t} />}
       {((depositDue && !expired) || balanceDue) && !stripeConfigured() && (
         <p className="text-mist">{t.paymentUnavailable}</p>

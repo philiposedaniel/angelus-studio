@@ -2,6 +2,7 @@ import { APIError, type CollectionConfig } from 'payload'
 
 import { tenantAdmins, tenantRoles } from '@/access'
 import { INQUIRY_STAFF_ROLES } from '@/collections/Inquiries'
+import { contractSigned, MAX_CONTRACT_LENGTH } from '@/lib/contracts'
 import { CURRENCIES, CURRENCY_LABELS, MAX_AMOUNT, MAX_QUANTITY, quoteTotals } from '@/lib/money'
 import { openProjectForQuote } from '@/lib/projects'
 import { PAID_QUOTE_STATUSES } from '@/lib/quotes'
@@ -9,6 +10,9 @@ import { newShareToken } from '@/lib/shareTokens'
 
 /** Smallest amount Stripe will charge; a deposit below it cannot be paid online. */
 export const MIN_DEPOSIT = 50
+
+/** Nobody but the signing action writes a signature: the field is closed to the API and the admin. */
+const signatureLocked = { create: () => false, update: () => false }
 
 export const QUOTE_STATUSES = ['draft', 'sent', 'deposit-paid', 'paid-in-full', 'cancelled'] as const
 
@@ -77,8 +81,15 @@ export const Quotes: CollectionConfig = {
             JSON.stringify(data.lineItems) !== JSON.stringify(originalDoc?.lineItems)) ||
           (data.depositPercent !== undefined && data.depositPercent !== originalDoc?.depositPercent) ||
           (data.currency !== undefined && data.currency !== originalDoc?.currency)
-        if (paidBefore && pricingChanged && !fromStripe) {
-          throw new APIError('The prices of a paid quote cannot change.', 400)
+        // A signed contract names these prices, so they are locked from signing onwards too.
+        const signedBefore = contractSigned(originalDoc?.contract)
+        if ((paidBefore || signedBefore) && pricingChanged && !fromStripe) {
+          throw new APIError('The prices of a signed or paid quote cannot change.', 400)
+        }
+        const termsChanged =
+          data.contract?.terms !== undefined && (data.contract.terms ?? '') !== (originalDoc?.contract?.terms ?? '')
+        if (signedBefore && termsChanged && !fromStripe) {
+          throw new APIError('The contract cannot change after the client has signed it.', 400)
         }
 
         const { totalAmount, depositAmount } = quoteTotals(lineItems, depositPercent)
@@ -194,6 +205,38 @@ export const Quotes: CollectionConfig = {
       type: 'text',
       unique: true,
       admin: { hidden: true },
+    },
+    {
+      name: 'contract',
+      type: 'group',
+      admin: {
+        description: 'Optional. With terms, the client must sign them on the quote page before paying the deposit.',
+      },
+      fields: [
+        {
+          name: 'terms',
+          type: 'textarea',
+          maxLength: MAX_CONTRACT_LENGTH,
+          admin: { description: 'Shown to the client in full. Locked once they sign.' },
+        },
+        // The signature is written only by the signing action, never through the API or the admin.
+        { name: 'signedName', type: 'text', maxLength: 120, access: signatureLocked, admin: { readOnly: true } },
+        {
+          name: 'signedAt',
+          type: 'date',
+          access: signatureLocked,
+          admin: { readOnly: true, date: { pickerAppearance: 'dayAndTime' } },
+        },
+        { name: 'signedIp', type: 'text', maxLength: 100, access: signatureLocked, admin: { readOnly: true } },
+        { name: 'signedUserAgent', type: 'text', maxLength: 300, access: signatureLocked, admin: { readOnly: true } },
+        {
+          name: 'termsFingerprint',
+          type: 'text',
+          maxLength: 64,
+          access: signatureLocked,
+          admin: { readOnly: true, description: 'Fingerprint of the terms the client signed.' },
+        },
+      ],
     },
     {
       name: 'notes',
