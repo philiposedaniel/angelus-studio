@@ -10,6 +10,7 @@ import { Galleries } from './collections/Galleries'
 import { GalleryDownloads } from './collections/GalleryDownloads'
 import { GalleryFavorites } from './collections/GalleryFavorites'
 import { GalleryPhotos } from './collections/GalleryPhotos'
+import { GallerySelections } from './collections/GallerySelections'
 import { Media } from './collections/Media'
 import { Payments } from './collections/Payments'
 import { Quotes } from './collections/Quotes'
@@ -61,6 +62,7 @@ export default buildConfig({
     GalleryPhotos,
     GalleryFavorites,
     GalleryDownloads,
+    GallerySelections,
     Inquiries,
     Quotes,
     Payments,
@@ -116,6 +118,7 @@ export default buildConfig({
         'gallery-photos': {},
         'gallery-favorites': {},
         'gallery-downloads': {},
+        'gallery-selections': {},
         inquiries: {},
         quotes: {},
         payments: {},

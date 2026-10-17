@@ -21,6 +21,7 @@ import * as migration_20261017_022307_event_organizers from './20261017_022307_e
 import * as migration_20261017_130402_event_tickets from './20261017_130402_event_tickets';
 import * as migration_20261017_131541_paid_tickets from './20261017_131541_paid_tickets';
 import * as migration_20261017_190125_waitlist from './20261017_190125_waitlist';
+import * as migration_20261017_204530_photo_selections from './20261017_204530_photo_selections';
 
 export const migrations = [
   {
@@ -136,6 +137,11 @@ export const migrations = [
   {
     up: migration_20261017_190125_waitlist.up,
     down: migration_20261017_190125_waitlist.down,
-    name: '20261017_190125_waitlist'
+    name: '20261017_190125_waitlist',
+  },
+  {
+    up: migration_20261017_204530_photo_selections.up,
+    down: migration_20261017_204530_photo_selections.down,
+    name: '20261017_204530_photo_selections'
   },
 ];
