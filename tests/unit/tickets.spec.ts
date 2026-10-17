@@ -58,7 +58,7 @@ describe('summarizeTickets', () => {
       ],
     )
     expect(rows).toEqual([
-      { id: 1, name: 'General', capacity: 10, taken: 3, left: 7, registrations: 1, waiting: 0, arrived: 2, onSale: true },
+      { id: 1, name: 'General', capacity: 10, taken: 3, left: 7, registrations: 1, waiting: 0, arrived: 2, onWaitlist: 0, onSale: true },
     ])
   })
 })

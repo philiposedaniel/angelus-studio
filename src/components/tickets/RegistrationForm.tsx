@@ -2,10 +2,11 @@
 
 import { startTransition, useActionState, useState, type ReactNode } from 'react'
 
-import { register } from '@/app/(frontend)/[locale]/events/[slug]/actions'
+import { joinWaitlistAction, register } from '@/app/(frontend)/[locale]/events/[slug]/actions'
 import type { Dictionary } from '@/i18n/dictionaries'
 import { cn } from '@/lib/cn'
 import type { RegistrationField, RegistrationState } from '@/lib/tickets'
+import type { WaitlistJoinState } from '@/lib/waitlist'
 
 type Offer = { id: number; name: string; left: number; maxPerOrder: number; price: number; priceLabel: string }
 
@@ -15,7 +16,15 @@ type Props = {
   formToken: string
   offers: Offer[]
   t: Dictionary['tickets']
+  /** Joins the waitlist of sold-out tickets instead of registering. */
+  waitlist?: boolean
 }
+
+type State = RegistrationState | WaitlistJoinState
+
+// The two server actions take the same form; only what they do with it differs.
+const joinAction = joinWaitlistAction as (previous: State, form: FormData) => Promise<State>
+const registerAction = register as (previous: State, form: FormData) => Promise<State>
 
 const input =
   'w-full rounded-lg border border-ivory/15 bg-charcoal px-4 py-3 text-ivory placeholder:text-mist/60 focus:border-gold focus:outline-none aria-[invalid=true]:border-copper'
@@ -23,43 +32,51 @@ const input =
 const plural = (forms: { one: string; other: string }, count: number) =>
   (count === 1 ? forms.one : forms.other).replace('{count}', String(count))
 
-/** Free registration for an event. Every check runs again on the server; success opens the ticket. */
-export function RegistrationForm({ eventId, locale, formToken, offers, t }: Props) {
-  const [state, action, pending] = useActionState<RegistrationState, FormData>(register, { status: 'idle' })
+/**
+ * Registration for an event, or joining a sold-out ticket's waitlist. Every check runs again on
+ * the server; success opens the ticket, the payment or the waitlist link.
+ */
+export function RegistrationForm({ eventId, locale, formToken, offers, t, waitlist = false }: Props) {
+  const [state, action, pending] = useActionState<State, FormData>(waitlist ? joinAction : registerAction, {
+    status: 'idle',
+  })
+  const prefix = waitlist ? 'waitlist' : 'registration'
   const [ticketType, setTicketType] = useState(String(offers[0]?.id ?? ''))
   const offer = offers.find((o) => String(o.id) === ticketType) ?? offers[0]
-  const most = Math.max(1, Math.min(offer?.left ?? 1, offer?.maxPerOrder ?? 1))
-  const paid = (offer?.price ?? 0) > 0
+  // On the waitlist people can ask for as many places as one order allows.
+  const most = Math.max(1, waitlist ? (offer?.maxPerOrder ?? 1) : Math.min(offer?.left ?? 1, offer?.maxPerOrder ?? 1))
+  const paid = !waitlist && (offer?.price ?? 0) > 0
 
   const errors = state.status === 'error' ? (state.errors ?? {}) : {}
   const field = (name: RegistrationField, label: string, control: ReactNode, wide = false) => (
     <div className={cn('flex flex-col gap-2', wide && 'sm:col-span-2')}>
-      <label htmlFor={`registration-${name}`} className="text-sm text-mist">
+      <label htmlFor={`${prefix}-${name}`} className="text-sm text-mist">
         {label}
       </label>
       {control}
       {errors[name] && (
-        <p id={`registration-${name}-error`} className="text-sm text-copper">
+        <p id={`${prefix}-${name}-error`} className="text-sm text-copper">
           {t.errors[errors[name]]}
         </p>
       )}
     </div>
   )
   const a11y = (name: RegistrationField) => ({
-    id: `registration-${name}`,
+    id: `${prefix}-${name}`,
     name,
     'aria-invalid': errors[name] ? true : undefined,
-    'aria-describedby': errors[name] ? `registration-${name}-error` : undefined,
+    'aria-describedby': errors[name] ? `${prefix}-${name}-error` : undefined,
   })
   const problem =
     state.status === 'error' && state.reason
       ? state.reason === 'notEnough'
-        ? plural(t.errors.notEnough, state.remaining ?? 0)
+        ? plural(t.errors.notEnough, 'remaining' in state ? (state.remaining ?? 0) : 0)
         : t.errors[state.reason]
       : null
 
   return (
     <form
+      aria-label={waitlist ? t.waitlist.heading : t.register}
       className="grid gap-5 sm:grid-cols-2"
       noValidate
       // Submitting by hand keeps what the visitor typed when the server asks for a correction.
@@ -74,8 +91,8 @@ export function RegistrationForm({ eventId, locale, formToken, offers, t }: Prop
       <input type="hidden" name="event" value={eventId} />
       {/* Hidden from people; bots fill it in. */}
       <div aria-hidden="true" className="absolute -left-[9999px] h-px w-px overflow-hidden">
-        <label htmlFor="registration-website">Website</label>
-        <input id="registration-website" type="text" name="website" tabIndex={-1} autoComplete="off" />
+        <label htmlFor={`${prefix}-website`}>Website</label>
+        <input id={`${prefix}-website`} type="text" name="website" tabIndex={-1} autoComplete="off" />
       </div>
 
       {field(
@@ -113,7 +130,7 @@ export function RegistrationForm({ eventId, locale, formToken, offers, t }: Prop
           {t.consent}
         </label>
         {errors.consent && (
-          <p id="registration-consent-error" className="text-sm text-copper">
+          <p id={`${prefix}-consent-error`} className="text-sm text-copper">
             {t.errors[errors.consent]}
           </p>
         )}
@@ -124,7 +141,17 @@ export function RegistrationForm({ eventId, locale, formToken, offers, t }: Prop
           disabled={pending}
           className="justify-self-start rounded-full bg-gold px-8 py-3 font-medium text-ink transition-colors hover:bg-ivory disabled:opacity-60"
         >
-          {pending ? (paid ? t.paying : t.submitting) : paid ? t.pay : t.submit}
+          {waitlist
+            ? pending
+              ? t.waitlist.submitting
+              : t.waitlist.submit
+            : pending
+              ? paid
+                ? t.paying
+                : t.submitting
+              : paid
+                ? t.pay
+                : t.submit}
         </button>
         {problem && (
           <p role="alert" className="text-copper">

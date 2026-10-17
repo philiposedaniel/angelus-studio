@@ -5,6 +5,7 @@ import { EVENT_GUEST_STAFF_ROLES } from '@/collections/EventGuests'
 import { DEFAULT_LOCALE, LOCALE_LABELS, LOCALES } from '@/i18n/config'
 import { idOf } from '@/lib/ids'
 import { newShareToken } from '@/lib/shareTokens'
+import { refreshWaitlist } from '@/lib/waitlist'
 import { CURRENCIES, CURRENCY_LABELS } from '@/lib/money'
 import {
   holdsPlaces,
@@ -91,7 +92,13 @@ export const Registrations: CollectionConfig = {
             req,
             overrideAccess: true,
           })
-          const taken = await placesTaken(req.payload, ticketTypeId, { req, excludeId: originalDoc?.id })
+          // A waitlist claim takes the places that were offered to it.
+          const waitlistEntryId = (context as Record<string, unknown>)?.waitlistEntryId
+          const taken = await placesTaken(req.payload, ticketTypeId, {
+            req,
+            excludeId: originalDoc?.id,
+            excludeWaitlistId: typeof waitlistEntryId === 'number' ? waitlistEntryId : undefined,
+          })
           if (taken + quantity > (ticketType.capacity ?? 0)) {
             throw new APIError(
               `Not enough places left on this ticket: ${Math.max(0, (ticketType.capacity ?? 0) - taken)} left.`,
@@ -132,6 +139,22 @@ export const Registrations: CollectionConfig = {
           ticketToken:
             operation === 'create' || !originalDoc?.ticketToken ? newShareToken() : originalDoc.ticketToken,
         }
+      },
+    ],
+    afterChange: [
+      // Places given back (a cancellation, fewer places) go to the next people on the waitlist.
+      async ({ doc, previousDoc, operation, req }) => {
+        const freed =
+          operation === 'update' &&
+          holdsPlaces(previousDoc) &&
+          (!holdsPlaces(doc) || (doc.quantity ?? 0) < (previousDoc?.quantity ?? 0))
+        if (freed) await refreshWaitlist(req.payload, idOf(doc.ticketType)!, { req })
+        return doc
+      },
+    ],
+    afterDelete: [
+      async ({ doc, req }) => {
+        if (holdsPlaces(doc)) await refreshWaitlist(req.payload, idOf(doc.ticketType)!, { req })
       },
     ],
   },

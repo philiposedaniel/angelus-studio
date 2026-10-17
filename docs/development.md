@@ -415,10 +415,31 @@ email account exists.
 - The entry code opens `/<language>/tickets/<token>/check-in`. Signed-in admins and production
   managers of the studio record how many have arrived, as for invitations; anyone else is only told
   to show the code. A cancelled registration shows "Do not admit".
-- Deleting an event deletes its ticket types and registrations.
+- A sold-out ticket that is still selling has a waitlist. The event page shows a *Join the
+  waitlist* form (same fields and protection as registering; 3 joins per email address and 10 per
+  network address per hour, one active place in line per email address per ticket), and joining
+  opens the person's waitlist link at `/<language>/waitlist/<token>`, which shows their place in
+  line. When places free up (a cancellation, an unpaid hold or offer running out, fewer places on
+  a registration, more places on the ticket, or the ticket going back on sale), they are offered
+  to the people waiting strictly in the order they joined, and held for them for 24 hours; if the
+  next person needs more places than are free, everyone behind them waits too. While anyone is
+  waiting the ticket stays sold out to the public, so freed places never go to someone who did
+  not wait. An offered person takes the places from their link: a free ticket opens at once, a
+  paid one goes to Stripe Checkout like any paid registration (its usual 35-minute hold applies).
+  An offer not taken in time passes to the next person, and anyone can leave the queue from their
+  link.
+- *Events → Waitlist* lists everyone waiting, with their status and waitlist link to resend.
+  Staff can take someone off (*Removed by staff*) but cannot offer places by hand; offers follow
+  the queue. The event's *Registration and tickets* section shows how many are on each waitlist.
+  Offers and holds run out with time, so the queue is brought up to date whenever places are given
+  back and whenever the event page or a waitlist link is opened; there is no background timer.
+- Deleting an event deletes its ticket types, registrations and waitlists.
 
 Known limits: refunds are made by hand in Stripe, then the registration is cancelled here; no
 booking fee is added (decision 6 in the events plan is open). Paid tickets have been tested with
 signed webhook events, not yet with a live Stripe round trip. Tickets are not emailed until the email account exists, so the ticket page asks people
 to save its link, and staff can resend it from the registration. One entry code covers every place
-on a registration. There is no waitlist, promo code or attendee export yet.
+on a registration. Nobody is told by email when places are offered to them from the waitlist
+until the email account exists; they see it on their waitlist link, and staff can resend that
+link. A person who takes a paid offer but does not pay loses it like any unpaid hold. There is no
+promo code or attendee export yet.
