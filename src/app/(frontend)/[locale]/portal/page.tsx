@@ -67,6 +67,9 @@ export default async function PortalHome({ params }: PageProps<'/[locale]/portal
       <div className="flex flex-wrap items-end justify-between gap-4">
         <h1 className="font-display text-4xl sm:text-5xl">{t.myGalleries}</h1>
         <div className="flex items-center gap-6">
+          <Link href={`/${locale}/portal/calendar`} className="text-gold hover:underline">
+            {t.calendarLink}
+          </Link>
           <Link href={`/${locale}/portal/projects`} className="text-sm text-gold hover:text-ivory">
             {t.myProjects}
           </Link>

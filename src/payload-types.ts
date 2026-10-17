@@ -605,7 +605,7 @@ export interface Quote {
    * Due now, in minor units. Calculated.
    */
   depositAmount?: number | null;
-  status: 'draft' | 'sent' | 'deposit-paid' | 'cancelled';
+  status: 'draft' | 'sent' | 'deposit-paid' | 'paid-in-full' | 'cancelled';
   /**
    * After this day the client can no longer pay. Leave empty for no limit.
    */
@@ -648,6 +648,7 @@ export interface Payment {
    */
   amount: number;
   currency: 'eur' | 'usd' | 'gbp';
+  kind: 'deposit' | 'balance';
   status: 'pending' | 'paid' | 'failed';
   paidAt?: string | null;
   stripeSessionId: string;
@@ -1618,6 +1619,7 @@ export interface PaymentsSelect<T extends boolean = true> {
   quote?: T;
   amount?: T;
   currency?: T;
+  kind?: T;
   status?: T;
   paidAt?: T;
   stripeSessionId?: T;

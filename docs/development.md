@@ -152,6 +152,10 @@ jobs to a separate worker process.
   The client's link works only while the quote is sent and not past its valid-until day.
 - Payments appear under *Sales → Payments*. Only admins and finance managers see them. Nobody
   creates or edits them by hand.
+- After the deposit is paid, the quote shows *Pay the balance securely* for the rest of the total.
+  The balance is a second Checkout session (kind *balance*). Its webhook marks the quote
+  *Paid in full*. A balance that arrives before its deposit is recorded is kept on the payment
+  and logged, and the quote is not moved.
 - **Contract (optional):** the quote's *Contract* section holds terms of up to 10,000 characters.
   With terms, the client reads them on the quote page, types their full name as their signature,
   and ticks the agreement box. Only then does *Pay deposit* appear. The server records the typed
@@ -172,11 +176,10 @@ Stripe round trip has not been run yet.
 
 ### Known limits
 
-- Each click on *Pay deposit* starts a new Checkout session. A client who pays two sessions is
-  charged twice; refund the extra payment in Stripe and note it on the quote.
+- Each click on *Pay deposit* or *Pay the balance* starts a new Checkout session. A client who pays two
+  sessions for the same payment is charged twice; refund the extra payment in Stripe and note it on the quote.
 - The quote's text is entered once and is not translated; the interface around it is.
 - No email goes out yet. Staff copy the client link into their own email.
-- Only deposits are taken online. Balance payments come later.
 - Contract signing is a typed name with a recorded agreement, not a qualified or third-party
   e-signature. No PDF copy of the signed contract is produced yet, so staff copy the terms into
   their own records. The IP address and browser are personal data; how long to keep them is not
@@ -279,6 +282,12 @@ for the order of the next steps.
   and places. Times are 24-hour *HH:MM*, and saving fails on anything else. Production staff and crew
   can read it; clients cannot. Only admins and production managers can change it.
 
+- **Production calendar** (*/portal/calendar*, linked from the portal home): the studio's productions
+  by shoot day, one month at a time, with the month before and after one click away. It lists each
+  production's title, status and location only. Each person sees what the project rules let them
+  see: staff see all of the studio's productions, and anyone else sees an empty calendar. Events are
+  not on it; they stay on the events pages.
+
 ## Equipment and reservations
 
 - **Equipment** (*Production → Equipment*): the kit the studio owns, with a name, category, serial
@@ -294,7 +303,7 @@ for the order of the next steps.
   see nothing.
 - Not built yet: kit check-out and return, kit lists per production, and a calendar of kit use.
 
-Not built yet: run-of-show timing and printing, calendar views, the crew's
+Not built yet: run-of-show timing and printing, the crew's
 own view of the call sheet in the portal, and clients uploading or approving anything on their project.
 
 
