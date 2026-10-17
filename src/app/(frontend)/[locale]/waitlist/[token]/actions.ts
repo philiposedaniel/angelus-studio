@@ -20,11 +20,12 @@ export type WaitlistActionState = { status: 'idle' } | { status: 'error'; reason
 export async function claimWaitlistAction(_previous: WaitlistActionState, form: FormData): Promise<WaitlistActionState> {
   const tenant = await getCurrentTenant()
   if (!tenant) return { status: 'error', reason: 'failed' }
+  const payload = await getPayload({ config })
   const result = await claimWaitlistPlaces({
-    payload: await getPayload({ config }),
+    payload,
     tenantId: tenant.id,
     token: form.get('token'),
-    origin: await requestOrigin(),
+    origin: await requestOrigin(payload, tenant.id),
   })
   if (result.status === 'registered') {
     const requested = form.get('locale')
@@ -41,7 +42,8 @@ export async function claimWaitlistAction(_previous: WaitlistActionState, form: 
 export async function leaveWaitlistAction(_previous: WaitlistActionState, form: FormData): Promise<WaitlistActionState> {
   const tenant = await getCurrentTenant()
   if (!tenant) return { status: 'error', reason: 'failed' }
-  const left = await leaveWaitlist({ payload: await getPayload({ config }), tenantId: tenant.id, token: form.get('token') })
+  const payload = await getPayload({ config })
+  const left = await leaveWaitlist({ payload, tenantId: tenant.id, token: form.get('token') })
   revalidatePath('/[locale]/waitlist/[token]', 'page')
   return left ? { status: 'idle' } : { status: 'error', reason: 'closed' }
 }

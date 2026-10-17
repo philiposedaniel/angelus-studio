@@ -14,6 +14,7 @@ import { formatMoney } from '@/lib/money'
 import { getCurrentTenant } from '@/lib/tenant'
 import { ticketOffers, type TicketOffer } from '@/lib/tickets'
 import { refreshWaitlist } from '@/lib/waitlist'
+import { eventHasPromoCodes } from '@/lib/promoCodes'
 
 import { formatEventWhen } from '@/lib/eventTime'
 
@@ -44,6 +45,7 @@ export default async function EventPage({ params, searchParams }: PageProps<'/[l
   const payload = await getPayload({ config })
   const offers = await ticketOffers(payload, event, locale, undefined, (id, now) => refreshWaitlist(payload, id, { now }))
   const bookable = offers.filter((offer) => offer.state === 'onSale')
+  const promoCodes = bookable.some((offer) => offer.price > 0) && (await eventHasPromoCodes(payload, event.id))
   const soldOut = offers.filter((offer) => offer.state === 'soldOut')
   const formOffer = (offer: TicketOffer) => ({
     id: offer.id,
@@ -123,6 +125,7 @@ export default async function EventPage({ params, searchParams }: PageProps<'/[l
                 formToken={issueFormToken(tenant.id)}
                 offers={bookable.map(formOffer)}
                 t={tt}
+                promoCodes={promoCodes}
               />
             </div>
           )}
