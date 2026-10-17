@@ -32,8 +32,8 @@ depends on it.
    window; free registration and paid tickets through Stripe Checkout with places held while
    paying, confirmed by the signed webhook; a ticket page with a QR entry code that staff check
    in. Paid tickets go on sale once Stripe keys are set. A waitlist for sold-out tickets offers
-   freed places in the order people joined. Still to come: promo codes, refunds from the admin,
-   attendee export.
+   freed places in the order people joined. Staff download the attendee list as CSV. Still to
+   come: promo codes, refunds from the admin.
 4. **Vendors** (PR #22; private documents come with R2 storage, step 8). Directory, per-event assignments, amounts due and paid, private documents,
    and a vendor link with their event details. *Needs nothing; documents stay on local disk
    until R2.*

@@ -3,6 +3,7 @@ import { APIError, Forbidden, type CollectionConfig, type FieldAccess } from 'pa
 import { hasTenantRole, isSuperAdmin, tenantRoles } from '@/access'
 import { EVENT_GUEST_STAFF_ROLES } from '@/collections/EventGuests'
 import { DEFAULT_LOCALE, LOCALE_LABELS, LOCALES } from '@/i18n/config'
+import { exportAttendees } from '@/lib/attendees'
 import { idOf } from '@/lib/ids'
 import { newShareToken } from '@/lib/shareTokens'
 import { refreshWaitlist } from '@/lib/waitlist'
@@ -42,6 +43,7 @@ export const Registrations: CollectionConfig = {
     listSearchableFields: ['name', 'email'],
   },
   defaultSort: '-createdAt',
+  endpoints: [{ path: '/export', method: 'get', handler: exportAttendees }],
   access: {
     read: tenantRoles(EVENT_GUEST_STAFF_ROLES),
     create: tenantRoles(EVENT_GUEST_STAFF_ROLES),

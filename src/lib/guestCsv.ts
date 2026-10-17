@@ -156,7 +156,7 @@ export function planGuestImport(
 /** Spreadsheet apps run cells starting with these as formulas; a leading apostrophe keeps them text. */
 const neutralize = (value: string) => (/^[=+\-@\t\r]/.test(value) ? `'${value}` : value)
 
-const csvCell = (value: unknown) => {
+export const csvCell = (value: unknown) => {
   const text = neutralize(value === null || value === undefined ? '' : String(value))
   return /[",\r\n;]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text
 }
@@ -211,6 +211,11 @@ export function guestsToCsv(
       .map(csvCell)
       .join(','),
   )
+  return csvFile(header, lines)
+}
+
+/** A CSV file from its header and ready-made lines. */
+export function csvFile(header: readonly string[], lines: readonly string[]) {
   // The byte-order mark makes Excel read the file as UTF-8, so accented names survive.
   return `﻿${[header.join(','), ...lines].join('\r\n')}\r\n`
 }

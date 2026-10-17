@@ -397,6 +397,12 @@ email account exists.
   copy its ticket link to resend it. The event's *Registration and tickets* section shows places
   taken, left and checked in per ticket type. Only studio admins and production managers see ticket
   types and registrations.
+- *Download the attendee list (CSV)* in that section gives everyone registered for the event: name,
+  email, phone, ticket, places, status (confirmed, waiting for payment, not paid, cancelled), amount
+  and currency, language, when they registered, how many checked in and their ticket link. It is
+  served by `GET /api/registrations/export?event=<id>` and read with the signed-in user's own
+  access, so only the studio's admins and production managers get it. Cells a spreadsheet would
+  run as formulas are kept as text.
 - The entry code opens `/<language>/tickets/<token>/check-in`. Signed-in admins and production
   managers of the studio record how many have arrived, as for invitations; anyone else is only told
   to show the code. A cancelled registration shows "Do not admit".
@@ -427,4 +433,4 @@ to save its link, and staff can resend it from the registration. One entry code 
 on a registration. Nobody is told by email when places are offered to them from the waitlist
 until the email account exists; they see it on their waitlist link, and staff can resend that
 link. A person who takes a paid offer but does not pay loses it like any unpaid hold. There is no
-promo code or attendee export yet.
+promo code yet.
