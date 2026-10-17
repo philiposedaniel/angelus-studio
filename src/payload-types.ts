@@ -400,6 +400,10 @@ export interface Gallery {
    */
   expiresAt?: string | null;
   /**
+   * Written on the preview copies clients and album viewers see, such as your studio name. Leave empty for no watermark. Originals are never changed.
+   */
+  watermarkText?: string | null;
+  /**
    * Let clients download full-resolution originals.
    */
   allowDownloads?: boolean | null;
@@ -1323,6 +1327,7 @@ export interface GalleriesSelect<T extends boolean = true> {
   clients?: T;
   status?: T;
   expiresAt?: T;
+  watermarkText?: T;
   allowDownloads?: T;
   shareEnabled?: T;
   shareToken?: T;
