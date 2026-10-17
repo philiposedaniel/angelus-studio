@@ -269,3 +269,22 @@ Not built yet: crew and client access to their own projects in the portal (in re
 timing and printing, equipment reservations, and calendar views. Only admins and production
 managers can open projects for now.
 
+
+## Vendors
+
+- *Events → Vendors* is the studio's vendor directory: name, category, contact, email, phone,
+  website, address and staff-only notes. *Events → Event vendors* books a vendor for one event with
+  their role, arrival time, instructions for them, status (proposed, booked, confirmed by vendor,
+  cancelled), the agreed fee and what has been paid (in minor units: 12550 means 125.50), and a
+  payment due date. Only studio admins and production managers see either.
+- The event shows its vendors with arrival times, status and totals due, paid and still to pay per
+  currency (cancelled bookings left out), and links to book a vendor.
+- Each booking has a private *Vendor link*, `/<language>/vendor/<token>`, to copy and send. It shows
+  the event, the vendor's role, arrival time (in the event's time zone) and instructions, and lets
+  the vendor confirm with a note for the studio. It never shows amounts or staff notes, and stops
+  working when the booking is cancelled. It works whether or not the event is published.
+- A vendor who is booked for any event cannot be deleted; remove those bookings first. Deleting an
+  event deletes its bookings.
+
+Known limits: vendor documents (contracts, insurance) and vendor payments are not handled yet;
+amounts paid are recorded by hand. Vendors are not emailed until the email account exists.

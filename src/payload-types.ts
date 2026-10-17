@@ -82,6 +82,8 @@ export interface Config {
     payments: Payment;
     events: Event;
     'event-guests': EventGuest;
+    vendors: Vendor;
+    'event-vendors': EventVendor;
     projects: Project;
     'payload-kv': PayloadKv;
     'payload-jobs': PayloadJob;
@@ -106,6 +108,8 @@ export interface Config {
     payments: PaymentsSelect<false> | PaymentsSelect<true>;
     events: EventsSelect<false> | EventsSelect<true>;
     'event-guests': EventGuestsSelect<false> | EventGuestsSelect<true>;
+    vendors: VendorsSelect<false> | VendorsSelect<true>;
+    'event-vendors': EventVendorsSelect<false> | EventVendorsSelect<true>;
     projects: ProjectsSelect<false> | ProjectsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
@@ -720,6 +724,85 @@ export interface EventGuest {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "vendors".
+ */
+export interface Vendor {
+  id: number;
+  tenant?: (number | null) | Tenant;
+  name: string;
+  category:
+    | 'venue'
+    | 'catering'
+    | 'cake'
+    | 'florist'
+    | 'decor'
+    | 'rentals'
+    | 'music'
+    | 'sound-and-lighting'
+    | 'photography'
+    | 'videography'
+    | 'hair-and-makeup'
+    | 'officiant'
+    | 'transport'
+    | 'planner'
+    | 'security'
+    | 'other';
+  contactName?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  website?: string | null;
+  address?: string | null;
+  /**
+   * Rates, terms, what worked well. Only staff see this.
+   */
+  notes?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "event-vendors".
+ */
+export interface EventVendor {
+  id: number;
+  tenant?: (number | null) | Tenant;
+  event: number | Event;
+  vendor: number | Vendor;
+  /**
+   * What they do at this event, e.g. "DJ for the reception".
+   */
+  role: string;
+  status: 'proposed' | 'booked' | 'confirmed' | 'cancelled';
+  /**
+   * When they should arrive to set up.
+   */
+  arrivalAt?: string | null;
+  /**
+   * Shown to the vendor on their link: access, parking, power, the contact on site.
+   */
+  instructions?: string | null;
+  currency: 'eur' | 'usd' | 'gbp';
+  /**
+   * Agreed fee, in minor units (12550 means 125.50).
+   */
+  amountDue?: number | null;
+  /**
+   * Paid so far, in minor units.
+   */
+  amountPaid?: number | null;
+  paymentDueDate?: string | null;
+  confirmedAt?: string | null;
+  vendorNote?: string | null;
+  /**
+   * Only staff see this.
+   */
+  staffNotes?: string | null;
+  vendorToken?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "projects".
  */
 export interface Project {
@@ -968,6 +1051,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'event-guests';
         value: number | EventGuest;
+      } | null)
+    | ({
+        relationTo: 'vendors';
+        value: number | Vendor;
+      } | null)
+    | ({
+        relationTo: 'event-vendors';
+        value: number | EventVendor;
       } | null)
     | ({
         relationTo: 'projects';
@@ -1425,6 +1516,46 @@ export interface EventGuestsSelect<T extends boolean = true> {
   checkedInAt?: T;
   staffNotes?: T;
   inviteToken?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "vendors_select".
+ */
+export interface VendorsSelect<T extends boolean = true> {
+  tenant?: T;
+  name?: T;
+  category?: T;
+  contactName?: T;
+  email?: T;
+  phone?: T;
+  website?: T;
+  address?: T;
+  notes?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "event-vendors_select".
+ */
+export interface EventVendorsSelect<T extends boolean = true> {
+  tenant?: T;
+  event?: T;
+  vendor?: T;
+  role?: T;
+  status?: T;
+  arrivalAt?: T;
+  instructions?: T;
+  currency?: T;
+  amountDue?: T;
+  amountPaid?: T;
+  paymentDueDate?: T;
+  confirmedAt?: T;
+  vendorNote?: T;
+  staffNotes?: T;
+  vendorToken?: T;
   updatedAt?: T;
   createdAt?: T;
 }

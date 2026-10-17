@@ -15,6 +15,8 @@ import { Payments } from './collections/Payments'
 import { Quotes } from './collections/Quotes'
 import { isSuperAdmin } from './access/roles'
 import { EventGuests } from './collections/EventGuests'
+import { EventVendors } from './collections/EventVendors'
+import { Vendors } from './collections/Vendors'
 import { Events } from './collections/Events'
 import { Projects } from './collections/Projects'
 import { Services } from './collections/Services'
@@ -60,6 +62,8 @@ export default buildConfig({
     Payments,
     Events,
     EventGuests,
+    Vendors,
+    EventVendors,
     Projects,
   ],
   localization: {
@@ -110,6 +114,8 @@ export default buildConfig({
         events: {},
         projects: {},
         'event-guests': {},
+        vendors: {},
+        'event-vendors': {},
       },
       tenantsArrayField: {
         includeDefaultField: false,
