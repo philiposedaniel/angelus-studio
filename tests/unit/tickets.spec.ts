@@ -57,6 +57,8 @@ describe('summarizeTickets', () => {
         { ticketType: 2, quantity: 5, status: 'confirmed', checkedInCount: 0 },
       ],
     )
-    expect(rows).toEqual([{ id: 1, name: 'General', capacity: 10, taken: 3, left: 7, registrations: 1, arrived: 2, onSale: true }])
+    expect(rows).toEqual([
+      { id: 1, name: 'General', capacity: 10, taken: 3, left: 7, registrations: 1, waiting: 0, arrived: 2, onSale: true },
+    ])
   })
 })

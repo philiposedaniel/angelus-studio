@@ -3,6 +3,7 @@ import { APIError, Forbidden, type CollectionConfig } from 'payload'
 import { hasTenantRole, isSuperAdmin, tenantRoles } from '@/access'
 import { EVENT_GUEST_STAFF_ROLES } from '@/collections/EventGuests'
 import { idOf } from '@/lib/ids'
+import { CURRENCIES, CURRENCY_LABELS, MAX_AMOUNT } from '@/lib/money'
 import {
   DEFAULT_MAX_PER_ORDER,
   isWholeNumber,
@@ -13,9 +14,10 @@ import {
 } from '@/lib/tickets'
 
 /**
- * A kind of ticket for an event, such as "General admission", with how many places it has and
- * when it can be booked. Tickets are free for now; paid tickets come with online payments. The
- * website reads ticket types on the server for published events, so only staff use this API.
+ * A kind of ticket for an event, such as "General admission", with its price, how many places it
+ * has and when it can be booked. Paid tickets are sold through Stripe Checkout and confirmed by
+ * the verified webhook. The website reads ticket types on the server for published events, so
+ * only staff use this API.
  */
 export const TicketTypes: CollectionConfig = {
   slug: 'ticket-types',
@@ -59,6 +61,21 @@ export const TicketTypes: CollectionConfig = {
         const salesEnd = data.salesEnd ?? originalDoc?.salesEnd
         if (salesStart && salesEnd && new Date(salesEnd) < new Date(salesStart)) {
           throw new APIError('Sales must end after they start.', 400)
+        }
+        // People already registered keep the price they saw: it cannot change under them.
+        const priceChanged =
+          (data.price !== undefined && data.price !== originalDoc?.price) ||
+          (data.currency !== undefined && data.currency !== originalDoc?.currency)
+        if (originalDoc?.id && priceChanged) {
+          const { totalDocs } = await req.payload.count({
+            collection: 'registrations',
+            where: { ticketType: { equals: originalDoc.id } },
+            req,
+            overrideAccess: true,
+          })
+          if (totalDocs > 0) {
+            throw new APIError('People have registered for this ticket, so its price cannot change. Add a new ticket type instead.', 400)
+          }
         }
         // Places already taken cannot be taken away by lowering the capacity.
         if (originalDoc?.id && typeof data.capacity === 'number' && data.capacity < (originalDoc.capacity ?? 0)) {
@@ -104,6 +121,32 @@ export const TicketTypes: CollectionConfig = {
       admin: { description: 'As people see it on the event page, e.g. "General admission".' },
     },
     { name: 'description', type: 'textarea', localized: true, maxLength: 500 },
+    {
+      type: 'row',
+      fields: [
+        {
+          name: 'price',
+          type: 'number',
+          required: true,
+          defaultValue: 0,
+          admin: {
+            width: '50%',
+            description:
+              'Per place, in cents: 2500 is 25.00. 0 makes the ticket free. Paid tickets are only offered once online payments are set up.',
+          },
+          validate: (value: unknown) =>
+            isWholeNumber(value, 0, MAX_AMOUNT) || 'Enter the price in cents, as a whole number.',
+        },
+        {
+          name: 'currency',
+          type: 'select',
+          required: true,
+          defaultValue: 'eur',
+          admin: { width: '50%' },
+          options: CURRENCIES.map((value) => ({ label: CURRENCY_LABELS[value], value })),
+        },
+      ],
+    },
     {
       type: 'row',
       fields: [

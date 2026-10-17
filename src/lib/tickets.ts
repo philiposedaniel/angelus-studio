@@ -6,6 +6,7 @@ import { canCheckIn, type CheckInState } from '@/lib/checkIn'
 import { checkFormToken, looksLikeSpam, senderKey } from '@/lib/inquiries'
 import { idOf } from '@/lib/ids'
 import { isShareToken } from '@/lib/shareTokens'
+import { getStripe, stripeConfigured } from '@/lib/stripe'
 import type { Event, Registration, TicketType, User } from '@/payload-types'
 
 /** Most places one ticket type can hold, and most places one registration can take. */
@@ -15,7 +16,7 @@ export const MAX_REGISTRATION_QUANTITY = 100
 export const DEFAULT_MAX_PER_ORDER = 10
 export const MAX_PER_ORDER_LIMIT = 20
 
-export const REGISTRATION_STATUSES = ['confirmed', 'cancelled'] as const
+export const REGISTRATION_STATUSES = ['pending', 'confirmed', 'cancelled'] as const
 export type RegistrationStatus = (typeof REGISTRATION_STATUSES)[number]
 
 /** Registrations allowed per sender (network address) and per email address, per hour. */
@@ -27,6 +28,26 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 /** Error status the collection uses when a registration would go over a ticket type's capacity. */
 export const SOLD_OUT_STATUS = 409
+
+/**
+ * How long places stay held for someone paying for a ticket. Stripe Checkout sessions last at
+ * least 30 minutes; the session is set to expire a little before the hold ends, so a payment
+ * completed in time always has its places.
+ */
+export const PAYMENT_HOLD_MS = 35 * 60 * 1000
+export const CHECKOUT_EXPIRES_MS = 31 * 60 * 1000
+
+/** Set by the Stripe webhook when a verified payment confirms a registration. */
+export const PAID_TICKET_CONTEXT = { paidTicket: true } as const
+
+type Holding = Pick<Registration, 'status' | 'holdExpiresAt'>
+
+/** Whether a registration takes places now: confirmed, or waiting for payment with its hold still on. */
+export const holdsPlaces = (registration: Holding | null | undefined, now = Date.now()) =>
+  registration?.status === 'confirmed' ||
+  (registration?.status === 'pending' &&
+    Boolean(registration.holdExpiresAt) &&
+    new Date(registration.holdExpiresAt!).getTime() > now)
 
 export const isWholeNumber = (value: unknown, min: number, max: number) =>
   typeof value === 'number' && Number.isInteger(value) && value >= min && value <= max
@@ -54,18 +75,31 @@ export async function lockTicketType(req: PayloadRequest, ticketTypeId: number |
   return true
 }
 
-/** Places taken on a ticket type by confirmed registrations, leaving out one registration if given. */
+/**
+ * Places taken on a ticket type: confirmed registrations, and those waiting for payment whose
+ * hold has not run out. Leaves out one registration if given.
+ */
 export async function placesTaken(
   payload: Payload,
   ticketTypeId: number | string,
-  { req, excludeId }: { req?: PayloadRequest; excludeId?: number | string } = {},
+  { req, excludeId, now = Date.now() }: { req?: PayloadRequest; excludeId?: number | string; now?: number } = {},
 ) {
   const { docs } = await payload.find({
     collection: 'registrations',
     where: {
       and: [
         { ticketType: { equals: ticketTypeId } },
-        { status: { equals: 'confirmed' } },
+        {
+          or: [
+            { status: { equals: 'confirmed' } },
+            {
+              and: [
+                { status: { equals: 'pending' } },
+                { holdExpiresAt: { greater_than: new Date(now).toISOString() } },
+              ],
+            },
+          ],
+        },
         ...(excludeId !== undefined ? [{ id: { not_equals: excludeId } }] : []),
       ],
     },
@@ -106,6 +140,7 @@ export type RegistrationFieldError = 'required' | 'invalid' | 'tooLong'
 export type RegistrationState =
   | { status: 'idle' }
   | { status: 'registered'; token: string }
+  | { status: 'checkout'; url: string }
   | {
       status: 'error'
       errors?: Partial<Record<RegistrationField, RegistrationFieldError>>
@@ -154,11 +189,53 @@ export function validateRegistration(
   return { ok: true, input: { ticketType: Number(ticketType), quantity, name, email, phone: phone || undefined } }
 }
 
+/** What a Stripe Checkout session for tickets needs; tests replace the call to Stripe. */
+export type TicketCheckout = {
+  email: string
+  name: string
+  currency: string
+  unitAmount: number
+  quantity: number
+  metadata: Record<string, string>
+  expiresAt: number
+  successUrl: string
+  cancelUrl: string
+}
+
+export type CreateTicketCheckout = (checkout: TicketCheckout) => Promise<{ id: string; url: string | null }>
+
+const stripeTicketCheckout: CreateTicketCheckout = async (checkout) => {
+  const session = await getStripe().checkout.sessions.create({
+    mode: 'payment',
+    customer_email: checkout.email,
+    line_items: [
+      {
+        quantity: checkout.quantity,
+        price_data: {
+          currency: checkout.currency,
+          unit_amount: checkout.unitAmount,
+          product_data: { name: checkout.name.slice(0, 250) },
+        },
+      },
+    ],
+    metadata: checkout.metadata,
+    expires_at: Math.floor(checkout.expiresAt / 1000),
+    success_url: checkout.successUrl,
+    cancel_url: checkout.cancelUrl,
+  })
+  return { id: session.id, url: session.url }
+}
+
+/** Whether a ticket type can be offered: free tickets always, paid ones once online payments are set up. */
+export const canSell = (ticketType: Pick<TicketType, 'price'>) => (ticketType.price ?? 0) === 0 || stripeConfigured()
+
 /**
- * Registers a visitor for a free ticket on a published event's page, after every check: the
- * signed form token and hidden field against bots, a limit per sender and per email, the ticket
- * type being on sale for this event, and places left. The collection's own hooks check capacity
- * again under a lock, so two people cannot take the last place.
+ * Registers a visitor on a published event's page, after every check: the signed form token and
+ * hidden field against bots, a limit per sender and per email, the ticket type being on sale for
+ * this event, and places left. The collection's own hooks check capacity again under a lock, so
+ * two people cannot take the last place. A free ticket is confirmed at once. A paid ticket holds
+ * its places while the person pays through Stripe Checkout, and only the verified webhook
+ * confirms it (src/lib/stripeWebhook.ts).
  */
 export async function submitRegistration({
   payload,
@@ -167,6 +244,8 @@ export async function submitRegistration({
   locale,
   form,
   address,
+  origin = '',
+  createCheckout = stripeTicketCheckout,
   now = Date.now(),
 }: {
   payload: Payload
@@ -175,6 +254,9 @@ export async function submitRegistration({
   locale: Locale
   form: FormData
   address: string | null
+  /** The site's address, for Stripe to send the person back to. */
+  origin?: string
+  createCheckout?: CreateTicketCheckout
   now?: number
 }): Promise<RegistrationState> {
   // Bots fill every field, including this one, which people never see. They learn nothing.
@@ -205,7 +287,8 @@ export async function submitRegistration({
   if (input.quantity > (ticketType.maxPerOrder ?? DEFAULT_MAX_PER_ORDER)) {
     return { status: 'error', errors: { quantity: 'invalid' } }
   }
-  const taken = await placesTaken(payload, ticketType.id)
+  if (!canSell(ticketType)) return { status: 'error', reason: 'closed' }
+  const taken = await placesTaken(payload, ticketType.id, { now })
   const state = salesState(ticketType, event, taken, now)
   if (state === 'soldOut') return { status: 'error', reason: 'soldOut' }
   if (state !== 'onSale') return { status: 'error', reason: 'closed' }
@@ -235,9 +318,11 @@ export async function submitRegistration({
     return { status: 'error', reason: 'tooMany' }
   }
 
+  const paid = (ticketType.price ?? 0) > 0
+  let created: Registration
   try {
     // System write: visitors have no create access; every check above stands in for it.
-    const created = await payload.create({
+    created = await payload.create({
       collection: 'registrations',
       data: {
         ticketType: ticketType.id,
@@ -247,21 +332,59 @@ export async function submitRegistration({
         phone: input.phone,
         quantity: input.quantity,
         language: locale,
-        status: 'confirmed',
+        status: paid ? 'pending' : 'confirmed',
+        holdExpiresAt: paid ? new Date(now + PAYMENT_HOLD_MS).toISOString() : null,
         senderKey: key,
       },
       overrideAccess: true,
     })
     if (!isShareToken(created.ticketToken)) return { status: 'error', reason: 'failed' }
-    return { status: 'registered', token: created.ticketToken }
+    if (!paid) return { status: 'registered', token: created.ticketToken }
   } catch (error) {
     if ((error as { status?: number }).status === SOLD_OUT_STATUS) {
-      const left = Math.max(0, (ticketType.capacity ?? 0) - (await placesTaken(payload, ticketType.id)))
+      const left = Math.max(0, (ticketType.capacity ?? 0) - (await placesTaken(payload, ticketType.id, { now })))
       return left === 0
         ? { status: 'error', reason: 'soldOut' }
         : { status: 'error', reason: 'notEnough', remaining: left }
     }
     payload.logger.error({ err: error, msg: 'Could not save a registration' })
+    return { status: 'error', reason: 'failed' }
+  }
+
+  // Paid: send the person to Stripe. The amount comes from the stored registration, never the form.
+  try {
+    const checkout = await createCheckout({
+      email: input.email,
+      name: `${ticketType.name} · ${event.title}`,
+      currency: created.currency ?? ticketType.currency,
+      unitAmount: ticketType.price ?? 0,
+      quantity: input.quantity,
+      metadata: { registrationId: String(created.id), tenantId: String(tenantId), kind: 'ticket' },
+      expiresAt: now + CHECKOUT_EXPIRES_MS,
+      successUrl: `${origin}/${locale}/tickets/${created.ticketToken}?payment=success`,
+      cancelUrl: `${origin}/${locale}/events/${event.slug}?payment=cancelled#tickets`,
+    })
+    if (!checkout.url) throw new Error('Stripe returned no checkout address')
+    await payload.create({
+      collection: 'payments',
+      data: {
+        tenant: tenantId,
+        registration: created.id,
+        kind: 'ticket',
+        amount: created.amount ?? 0,
+        currency: created.currency ?? ticketType.currency,
+        status: 'pending',
+        stripeSessionId: checkout.id,
+      },
+      overrideAccess: true,
+    })
+    return { status: 'checkout', url: checkout.url }
+  } catch (error) {
+    payload.logger.error({ err: error, msg: 'Could not start a ticket payment' })
+    // Free the held places at once rather than when the hold runs out.
+    await payload
+      .update({ collection: 'registrations', id: created.id, data: { status: 'cancelled' }, overrideAccess: true })
+      .catch(() => undefined)
     return { status: 'error', reason: 'failed' }
   }
 }
@@ -301,18 +424,23 @@ export async function findTicket(payload: Payload, tenantId: number, token: unkn
 
 /* ---- Summary ---- */
 
-type SummaryRegistration = Pick<Registration, 'ticketType' | 'quantity' | 'status' | 'checkedInCount'>
+type SummaryRegistration = Pick<Registration, 'ticketType' | 'quantity' | 'status' | 'checkedInCount'> &
+  Partial<Pick<Registration, 'holdExpiresAt'>>
 
-/** Per ticket type: places taken by confirmed registrations, places left and people checked in. */
+/**
+ * Per ticket type: places taken (confirmed, plus held for people paying now), places left,
+ * places waiting for payment and people checked in.
+ */
 export function summarizeTickets(
   ticketTypes: readonly Pick<TicketType, 'id' | 'name' | 'capacity' | 'onSale'>[],
   registrations: readonly SummaryRegistration[],
+  now = Date.now(),
 ) {
   return ticketTypes.map((ticketType) => {
-    const confirmed = registrations.filter(
-      (r) => r.status === 'confirmed' && String(idOf(r.ticketType)) === String(ticketType.id),
-    )
-    const taken = confirmed.reduce((sum, r) => sum + (r.quantity ?? 0), 0)
+    const own = registrations.filter((r) => String(idOf(r.ticketType)) === String(ticketType.id))
+    const confirmed = own.filter((r) => r.status === 'confirmed')
+    const holding = own.filter((r) => holdsPlaces({ status: r.status, holdExpiresAt: r.holdExpiresAt ?? null }, now))
+    const taken = holding.reduce((sum, r) => sum + (r.quantity ?? 0), 0)
     return {
       id: ticketType.id,
       name: ticketType.name,
@@ -320,6 +448,7 @@ export function summarizeTickets(
       taken,
       left: Math.max(0, (ticketType.capacity ?? 0) - taken),
       registrations: confirmed.length,
+      waiting: holding.filter((r) => r.status === 'pending').reduce((sum, r) => sum + (r.quantity ?? 0), 0),
       arrived: confirmed.reduce((sum, r) => sum + (r.checkedInCount ?? 0), 0),
       onSale: ticketType.onSale !== false,
     }
@@ -332,6 +461,8 @@ export type TicketOffer = {
   id: number
   name: string
   description: string | null
+  price: number
+  currency: string
   state: SalesState
   left: number
   maxPerOrder: number
@@ -351,12 +482,14 @@ export async function ticketOffers(payload: Payload, event: Event, locale: Local
   })
   return Promise.all(
     docs.map(async (ticketType): Promise<TicketOffer> => {
-      const taken = await placesTaken(payload, ticketType.id)
-      const state = salesState(ticketType, event, taken, now)
+      const taken = await placesTaken(payload, ticketType.id, { now })
+      const state = canSell(ticketType) ? salesState(ticketType, event, taken, now) : 'closed'
       return {
         id: ticketType.id,
         name: ticketType.name,
         description: ticketType.description ?? null,
+        price: ticketType.price ?? 0,
+        currency: ticketType.currency ?? 'eur',
         state,
         left: Math.max(0, (ticketType.capacity ?? 0) - taken),
         maxPerOrder: ticketType.maxPerOrder ?? DEFAULT_MAX_PER_ORDER,

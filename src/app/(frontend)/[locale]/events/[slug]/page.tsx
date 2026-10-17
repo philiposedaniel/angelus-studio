@@ -10,6 +10,7 @@ import { getPublishedEvent } from '@/lib/events'
 import { resolveLocale } from '@/lib/locale'
 import { parseVideoUrl } from '@/lib/embeds'
 import { issueFormToken } from '@/lib/inquiries'
+import { formatMoney } from '@/lib/money'
 import { getCurrentTenant } from '@/lib/tenant'
 import { ticketOffers, type TicketOffer } from '@/lib/tickets'
 
@@ -28,7 +29,7 @@ const plural = (forms: { one: string; other: string }, count: number) =>
   (count === 1 ? forms.one : forms.other).replace('{count}', String(count))
 
 /** One event: when and where, its summary, its tickets and its live stream if it has one. */
-export default async function EventPage({ params }: PageProps<'/[locale]/events/[slug]'>) {
+export default async function EventPage({ params, searchParams }: PageProps<'/[locale]/events/[slug]'>) {
   const tenant = await getCurrentTenant()
   if (!tenant) notFound()
   const { locale: requested, slug } = await params
@@ -40,6 +41,8 @@ export default async function EventPage({ params }: PageProps<'/[locale]/events/
   const tt = getDictionary(locale).tickets
   const offers = await ticketOffers(await getPayload({ config }), event, locale)
   const bookable = offers.filter((offer) => offer.state === 'onSale')
+  const price = (offer: TicketOffer) => (offer.price > 0 ? formatMoney(offer.price, offer.currency, locale) : tt.free)
+  const paymentCancelled = (await searchParams).payment === 'cancelled'
   const availability = (offer: TicketOffer) => {
     if (offer.state === 'onSale') return plural(tt.placesLeft, offer.left)
     if (offer.state === 'soldOut') return tt.soldOut
@@ -87,12 +90,17 @@ export default async function EventPage({ params }: PageProps<'/[locale]/events/
                   {offer.description && <span className="text-sm text-mist">{offer.description}</span>}
                 </div>
                 <div className="grid justify-items-end gap-1 text-sm">
-                  <span className="text-gold">{tt.free}</span>
+                  <span className="text-gold">{price(offer)}</span>
                   <span className="text-mist">{availability(offer)}</span>
                 </div>
               </li>
             ))}
           </ul>
+          {paymentCancelled && (
+            <p role="status" className="rounded-xl border border-gold/40 p-4 text-sm">
+              {tt.paymentCancelled}
+            </p>
+          )}
           {bookable.length > 0 && (
             <div className="grid gap-4 rounded-xl border border-ivory/10 p-6">
               <h3 className="font-serif text-xl">{tt.register}</h3>
@@ -100,7 +108,14 @@ export default async function EventPage({ params }: PageProps<'/[locale]/events/
                 eventId={event.id}
                 locale={locale}
                 formToken={issueFormToken(tenant.id)}
-                offers={bookable.map(({ id, name, left, maxPerOrder }) => ({ id, name, left, maxPerOrder }))}
+                offers={bookable.map((offer) => ({
+                  id: offer.id,
+                  name: offer.name,
+                  left: offer.left,
+                  maxPerOrder: offer.maxPerOrder,
+                  price: offer.price,
+                  priceLabel: price(offer),
+                }))}
                 t={tt}
               />
             </div>

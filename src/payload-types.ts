@@ -642,17 +642,110 @@ export interface Quote {
 export interface Payment {
   id: number;
   tenant?: (number | null) | Tenant;
-  quote: number | Quote;
+  quote?: (number | null) | Quote;
+  registration?: (number | null) | Registration;
   /**
    * Amount in minor units, as charged.
    */
   amount: number;
   currency: 'eur' | 'usd' | 'gbp';
-  kind: 'deposit' | 'balance';
-  status: 'pending' | 'paid' | 'failed';
+  kind: 'deposit' | 'balance' | 'ticket';
+  status: 'pending' | 'paid' | 'failed' | 'expired';
   paidAt?: string | null;
   stripeSessionId: string;
   stripeEventId?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "registrations".
+ */
+export interface Registration {
+  id: number;
+  tenant?: (number | null) | Tenant;
+  ticketType: number | TicketType;
+  /**
+   * Set from the ticket type.
+   */
+  event?: (number | null) | Event;
+  name: string;
+  email: string;
+  phone?: string | null;
+  quantity: number;
+  /**
+   * Cancelling frees the places and stops the ticket from working at the door. Refunds are made in Stripe.
+   */
+  status: 'pending' | 'confirmed' | 'cancelled';
+  /**
+   * While waiting for payment. After this the places are free again.
+   */
+  holdExpiresAt?: string | null;
+  /**
+   * Price of the places, in cents, when registered.
+   */
+  amount?: number | null;
+  currency?: ('eur' | 'usd' | 'gbp') | null;
+  /**
+   * The language the ticket link opens in.
+   */
+  language: 'en' | 'es' | 'fr' | 'pt' | 'de' | 'it';
+  /**
+   * How many have arrived. Staff set it at the door by scanning the ticket.
+   */
+  checkedInCount?: number | null;
+  checkedInAt?: string | null;
+  /**
+   * Only staff see this.
+   */
+  staffNotes?: string | null;
+  ticketToken?: string | null;
+  senderKey?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ticket-types".
+ */
+export interface TicketType {
+  id: number;
+  tenant?: (number | null) | Tenant;
+  event: number | Event;
+  /**
+   * As people see it on the event page, e.g. "General admission".
+   */
+  name: string;
+  description?: string | null;
+  /**
+   * Per place, in cents: 2500 is 25.00. 0 makes the ticket free. Paid tickets are only offered once online payments are set up.
+   */
+  price: number;
+  currency: 'eur' | 'usd' | 'gbp';
+  /**
+   * How many people this ticket admits in total.
+   */
+  capacity: number;
+  /**
+   * The most places one person can book at once on the website.
+   */
+  maxPerOrder: number;
+  /**
+   * Optional. Empty opens it at once.
+   */
+  salesStart?: string | null;
+  /**
+   * Optional. Empty closes it when the event ends.
+   */
+  salesEnd?: string | null;
+  /**
+   * Untick to stop new registrations. Existing tickets keep working.
+   */
+  onSale?: boolean | null;
+  /**
+   * Lower numbers are listed first.
+   */
+  sortOrder?: number | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -889,84 +982,6 @@ export interface EventVendor {
    */
   staffNotes?: string | null;
   vendorToken?: string | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "ticket-types".
- */
-export interface TicketType {
-  id: number;
-  tenant?: (number | null) | Tenant;
-  event: number | Event;
-  /**
-   * As people see it on the event page, e.g. "General admission".
-   */
-  name: string;
-  description?: string | null;
-  /**
-   * How many people this ticket admits in total.
-   */
-  capacity: number;
-  /**
-   * The most places one person can book at once on the website.
-   */
-  maxPerOrder: number;
-  /**
-   * Optional. Empty opens it at once.
-   */
-  salesStart?: string | null;
-  /**
-   * Optional. Empty closes it when the event ends.
-   */
-  salesEnd?: string | null;
-  /**
-   * Untick to stop new registrations. Existing tickets keep working.
-   */
-  onSale?: boolean | null;
-  /**
-   * Lower numbers are listed first.
-   */
-  sortOrder?: number | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "registrations".
- */
-export interface Registration {
-  id: number;
-  tenant?: (number | null) | Tenant;
-  ticketType: number | TicketType;
-  /**
-   * Set from the ticket type.
-   */
-  event?: (number | null) | Event;
-  name: string;
-  email: string;
-  phone?: string | null;
-  quantity: number;
-  /**
-   * Cancelling frees the places and stops the ticket from working at the door.
-   */
-  status: 'confirmed' | 'cancelled';
-  /**
-   * The language the ticket link opens in.
-   */
-  language: 'en' | 'es' | 'fr' | 'pt' | 'de' | 'it';
-  /**
-   * How many have arrived. Staff set it at the door by scanning the ticket.
-   */
-  checkedInCount?: number | null;
-  checkedInAt?: string | null;
-  /**
-   * Only staff see this.
-   */
-  staffNotes?: string | null;
-  ticketToken?: string | null;
-  senderKey?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1656,6 +1671,7 @@ export interface QuotesSelect<T extends boolean = true> {
 export interface PaymentsSelect<T extends boolean = true> {
   tenant?: T;
   quote?: T;
+  registration?: T;
   amount?: T;
   currency?: T;
   kind?: T;
@@ -1799,6 +1815,8 @@ export interface TicketTypesSelect<T extends boolean = true> {
   event?: T;
   name?: T;
   description?: T;
+  price?: T;
+  currency?: T;
   capacity?: T;
   maxPerOrder?: T;
   salesStart?: T;
@@ -1821,6 +1839,9 @@ export interface RegistrationsSelect<T extends boolean = true> {
   phone?: T;
   quantity?: T;
   status?: T;
+  holdExpiresAt?: T;
+  amount?: T;
+  currency?: T;
   language?: T;
   checkedInCount?: T;
   checkedInAt?: T;

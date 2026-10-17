@@ -11,7 +11,18 @@ import { tenantLocales } from '@/lib/locale'
 import { getCurrentTenant } from '@/lib/tenant'
 import { submitRegistration, type RegistrationState } from '@/lib/tickets'
 
-/** Registers for a free ticket from the event page, then opens the new ticket. The studio comes from the host. */
+/** The address the visitor is on, so Stripe sends them back to the same studio site. */
+async function siteOrigin() {
+  const requestHeaders = await headers()
+  const host = requestHeaders.get('x-forwarded-host') ?? requestHeaders.get('host')
+  const proto = requestHeaders.get('x-forwarded-proto') ?? (process.env.NODE_ENV === 'production' ? 'https' : 'http')
+  return `${proto}://${host}`
+}
+
+/**
+ * Registers from the event page. A free ticket opens at once; a paid one goes to Stripe Checkout
+ * first. The studio comes from the host, never the form.
+ */
 export async function register(_previous: RegistrationState, form: FormData): Promise<RegistrationState> {
   const tenant = await getCurrentTenant()
   if (!tenant) return { status: 'error', reason: 'failed' }
@@ -28,7 +39,9 @@ export async function register(_previous: RegistrationState, form: FormData): Pr
     locale,
     form,
     address: clientAddress(await headers()),
+    origin: await siteOrigin(),
   })
   if (result.status === 'registered') redirect(`/${locale}/tickets/${result.token}`)
+  if (result.status === 'checkout') redirect(result.url)
   return result
 }

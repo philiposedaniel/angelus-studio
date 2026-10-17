@@ -22,7 +22,7 @@ export async function RegistrationSummaryField(props: UIFieldServerProps) {
       .find({
         collection: 'registrations',
         where: { event: { equals: eventId } },
-        select: { ticketType: true, quantity: true, status: true, checkedInCount: true },
+        select: { ticketType: true, quantity: true, status: true, checkedInCount: true, holdExpiresAt: true },
         ...query,
       })
       .catch(() => null),
@@ -74,7 +74,8 @@ export async function RegistrationSummaryField(props: UIFieldServerProps) {
             <tr key={row.id}>
               <td style={cell}>{row.name}</td>
               <td style={cell}>
-                {row.taken} of {row.capacity} ({row.registrations} registrations)
+                {row.taken} of {row.capacity} ({row.registrations} registrations
+                {row.waiting > 0 ? `, ${row.waiting} places waiting for payment` : ''})
               </td>
               <td style={cell}>{row.left}</td>
               <td style={cell}>{row.arrived}</td>

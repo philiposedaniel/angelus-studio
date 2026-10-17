@@ -5,11 +5,12 @@ import QRCode from 'qrcode'
 
 import { getDictionary } from '@/i18n/dictionaries'
 import { formatEventWhen } from '@/lib/eventTime'
+import { formatMoney } from '@/lib/money'
 import { resolveLocale } from '@/lib/locale'
 import { isShareToken } from '@/lib/shareTokens'
 import { siteOrigin } from '@/lib/siteOrigin'
 import { getCurrentTenant } from '@/lib/tenant'
-import { findTicket } from '@/lib/tickets'
+import { findTicket, holdsPlaces } from '@/lib/tickets'
 
 // The link is the person's ticket: keep it out of search engines and referrers.
 export const metadata = { robots: { index: false }, referrer: 'no-referrer' }
@@ -54,7 +55,10 @@ export default async function TicketPage({ params }: PageProps<'/[locale]/ticket
       <section className="grid gap-2 rounded-xl border border-ivory/10 bg-charcoal p-6">
         <p className="font-serif text-2xl">{registration.name}</p>
         <p>
-          {ticketType.name} · {t.free}
+          {ticketType.name} ·{' '}
+          {(registration.amount ?? 0) > 0
+            ? t.total.replace('{price}', formatMoney(registration.amount!, registration.currency ?? 'eur', locale))
+            : t.free}
         </p>
         <p className="text-mist">{plural(t.admits, quantity)}</p>
         {arrived > 0 && <p className="text-gold">{plural(t.checkedIn, arrived)}</p>}
@@ -74,9 +78,13 @@ export default async function TicketPage({ params }: PageProps<'/[locale]/ticket
           </section>
           <p className="rounded-xl border border-gold/40 p-4 text-sm">{t.keepLink}</p>
         </>
+      ) : registration.status === 'pending' && holdsPlaces(registration) ? (
+        <p role="status" className="rounded-xl border border-gold/40 p-4">
+          {t.confirmingPayment}
+        </p>
       ) : (
         <p role="status" className="text-copper">
-          {t.cancelled}
+          {registration.status === 'pending' ? t.notPaid : t.cancelled}
         </p>
       )}
     </main>

@@ -7,7 +7,7 @@ import type { Dictionary } from '@/i18n/dictionaries'
 import { cn } from '@/lib/cn'
 import type { RegistrationField, RegistrationState } from '@/lib/tickets'
 
-type Offer = { id: number; name: string; left: number; maxPerOrder: number }
+type Offer = { id: number; name: string; left: number; maxPerOrder: number; price: number; priceLabel: string }
 
 type Props = {
   eventId: number
@@ -29,6 +29,7 @@ export function RegistrationForm({ eventId, locale, formToken, offers, t }: Prop
   const [ticketType, setTicketType] = useState(String(offers[0]?.id ?? ''))
   const offer = offers.find((o) => String(o.id) === ticketType) ?? offers[0]
   const most = Math.max(1, Math.min(offer?.left ?? 1, offer?.maxPerOrder ?? 1))
+  const paid = (offer?.price ?? 0) > 0
 
   const errors = state.status === 'error' ? (state.errors ?? {}) : {}
   const field = (name: RegistrationField, label: string, control: ReactNode, wide = false) => (
@@ -83,7 +84,7 @@ export function RegistrationForm({ eventId, locale, formToken, offers, t }: Prop
         <select {...a11y('ticketType')} value={ticketType} onChange={(e) => setTicketType(e.target.value)} className={input}>
           {offers.map((o) => (
             <option key={o.id} value={o.id}>
-              {o.name} · {t.free}
+              {o.name} · {o.price > 0 ? t.perPlace.replace('{price}', o.priceLabel) : t.free}
             </option>
           ))}
         </select>,
@@ -123,7 +124,7 @@ export function RegistrationForm({ eventId, locale, formToken, offers, t }: Prop
           disabled={pending}
           className="justify-self-start rounded-full bg-gold px-8 py-3 font-medium text-ink transition-colors hover:bg-ivory disabled:opacity-60"
         >
-          {pending ? t.submitting : t.submit}
+          {pending ? (paid ? t.paying : t.submitting) : paid ? t.pay : t.submit}
         </button>
         {problem && (
           <p role="alert" className="text-copper">

@@ -167,9 +167,10 @@ jobs to a separate worker process.
 
 1. In the Stripe dashboard, copy the secret key into `STRIPE_SECRET_KEY`.
 2. Add a webhook endpoint at `https://<studio domain>/api/stripe/webhook`, listening for
-   `checkout.session.completed` and `checkout.session.async_payment_succeeded`. Copy its
+   `checkout.session.completed`, `checkout.session.async_payment_succeeded` and
+   `checkout.session.expired` (the last one frees the places of tickets left unpaid). Copy its
    signing secret into `STRIPE_WEBHOOK_SECRET`.
-3. Restart the app. Sent quotes now show *Pay deposit securely*.
+3. Restart the app. Sent quotes now show *Pay deposit securely*, and paid tickets go on sale.
 
 Use Stripe test keys first. The webhook is covered by tests with signed events; a live
 Stripe round trip has not been run yet.
@@ -367,9 +368,9 @@ email account exists.
 ## Registration and tickets
 
 - *Events → Ticket types* adds the tickets for an event: name and description (translatable), the
-  number of places, the most places one person can book at once (up to 20), optional opening and
-  closing times for registration, *On sale*, and order. Tickets are free for now; paid tickets come
-  with online payments.
+  price per place in cents with its currency (0 is free), the number of places, the most places one
+  person can book at once (up to 20), optional opening and closing times for registration, *On
+  sale*, and order. Once anyone has registered, the price cannot change; add a new ticket type.
 - A published event shown on the website lists its ticket types with places left, "Sold out", or
   when registration opens, and shows a registration form while any ticket is on sale. Registration
   closes at the ticket's closing time, or else when the event ends.
@@ -377,6 +378,16 @@ email account exists.
   at `/<language>/tickets/<token>`: the event, the places it admits and an entry code. The form has
   the same protection as the contact form (a signed form token, a hidden field and a minimum fill
   time) and allows 3 registrations per email address and 10 per network address per hour.
+- A paid ticket is only offered once Stripe is set up (see *Stripe setup*); until then the event
+  page shows it with its price as not available. Registering for one creates a registration
+  *waiting for payment* that holds its places for 35 minutes and sends the person to Stripe
+  Checkout for the stored price times the places; the Checkout session expires after 31 minutes.
+  Only the verified webhook confirms the ticket, after checking the amount and currency. Until
+  then the ticket page says the payment is being confirmed and shows no entry code. An expired
+  session cancels the registration and frees its places; a missed expiry event changes nothing,
+  because the hold simply runs out. A payment that arrives after the hold ran out still confirms
+  the ticket, even if that puts the ticket over its places. Payments appear under *Sales →
+  Payments* as *Ticket*.
 - Capacity is checked in the collection under a database lock (a Postgres advisory lock per ticket
   type, held until the transaction ends), so two people cannot take the last place, whether they
   register on the website or staff add them in the admin. Lowering a ticket type's places below the
@@ -391,7 +402,8 @@ email account exists.
   to show the code. A cancelled registration shows "Do not admit".
 - Deleting an event deletes its ticket types and registrations.
 
-Known limits: tickets are free only; paid tickets wait for online balance payments to be merged and
-Stripe keys. Tickets are not emailed until the email account exists, so the ticket page asks people
+Known limits: refunds are made by hand in Stripe, then the registration is cancelled here; no
+booking fee is added (decision 6 in the events plan is open). Paid tickets have been tested with
+signed webhook events, not yet with a live Stripe round trip. Tickets are not emailed until the email account exists, so the ticket page asks people
 to save its link, and staff can resend it from the registration. One entry code covers every place
 on a registration. There is no waitlist, promo code or attendee export yet.

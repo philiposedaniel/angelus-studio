@@ -10,6 +10,8 @@ import { E2E_TENANT, seedTestUser, testUser } from '../helpers/seedUser'
 const BASE = 'http://localhost:3000'
 const PREFIX = 'e2e-tickets-'
 
+let waitingToken = ''
+
 test.describe('Event registration and tickets', () => {
   test.beforeAll(async () => {
     // Seeds the studio and a studio administrator, who checks tickets in.
@@ -35,12 +37,30 @@ test.describe('Event registration and tickets', () => {
     })
     await payload.create({
       collection: 'ticket-types',
-      data: { event: event.id, name: 'General admission', capacity: 40, maxPerOrder: 4, sortOrder: 1 },
+      data: { event: event.id, name: 'General admission', capacity: 40, maxPerOrder: 4, sortOrder: 1, price: 0, currency: 'eur' },
     })
     const full = await payload.create({
       collection: 'ticket-types',
-      data: { event: event.id, name: 'Workshop', capacity: 1, maxPerOrder: 1, sortOrder: 2 },
+      data: { event: event.id, name: 'Workshop', capacity: 1, maxPerOrder: 1, sortOrder: 2, price: 0, currency: 'eur' },
     })
+    // Paid, but this server has no Stripe keys: shown with its price, never offered.
+    const gala = await payload.create({
+      collection: 'ticket-types',
+      data: { event: event.id, name: 'Gala dinner', capacity: 20, maxPerOrder: 2, sortOrder: 3, price: 4500, currency: 'eur' },
+    })
+    const waiting = await payload.create({
+      collection: 'registrations',
+      data: {
+        ticketType: gala.id,
+        name: 'Paying guest',
+        email: 'paying@example.com',
+        quantity: 2,
+        status: 'pending',
+        language: 'en',
+        holdExpiresAt: new Date(Date.now() + 30 * 60_000).toISOString(),
+      },
+    })
+    waitingToken = waiting.ticketToken!
     await payload.create({
       collection: 'registrations',
       data: { ticketType: full.id, name: 'Early bird', email: 'early@example.com', quantity: 1, status: 'confirmed', language: 'en' },
@@ -102,6 +122,18 @@ test.describe('Event registration and tickets', () => {
     await expect(page.getByText('Cancelled registration. Do not admit.')).toBeVisible()
     await page.goto(ticketUrl)
     await expect(page.getByText('This registration was cancelled.')).toBeVisible()
+    await expect(page.getByRole('img', { name: 'Your entry code' })).toHaveCount(0)
+  })
+
+  test('a paid ticket shows its price, and a ticket waiting for payment has no entry code yet', async ({ page }) => {
+    await page.goto(`${BASE}/en/events/${PREFIX}open-day`)
+    await expect(page.getByText('€45.00')).toBeVisible()
+    await expect(page.getByText('Not available')).toBeVisible()
+    await expect(page.getByLabel('Ticket').locator('option', { hasText: 'Gala dinner' })).toHaveCount(0)
+
+    await page.goto(`${BASE}/en/tickets/${waitingToken}`)
+    await expect(page.getByText('Total: €90.00')).toBeVisible()
+    await expect(page.getByText('We are confirming your payment.')).toBeVisible()
     await expect(page.getByRole('img', { name: 'Your entry code' })).toHaveCount(0)
   })
 
