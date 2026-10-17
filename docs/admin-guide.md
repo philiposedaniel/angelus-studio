@@ -134,5 +134,8 @@ one is set up, invitation links are copied by hand.
 
 - No PDF downloads for quotes or invoices yet.
 - No email sending yet, so invitations and waitlist offers are copied by hand.
+- The empty gallery list for clients says photos appear there once published, not that an email is sent. When the
+  email account is set up, the wording can go back to promising an email (`portal.noGalleries` in
+  `src/i18n/dictionaries`, English and Spanish).
 - Storage, email and video provider accounts are not set up yet; see [self-hosting.md](self-hosting.md) for the
   settings that are in use.
