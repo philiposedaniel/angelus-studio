@@ -198,6 +198,9 @@ Stripe round trip has not been run yet.
   download the original, which has no watermark; turn downloads off for galleries that must stay marked.
 ## Events and guest albums
 
+Task-by-task manuals for this area: [staff manual](guides/events-staff-manual.md) and
+[guide for clients, guests and vendors](guides/events-client-guide.md).
+
 - Staff create an event under *Events → Events*: title, slug, start (and optional end), time zone,
   location, summary, an optional Vimeo or YouTube live link, and an optional *Album*. The album is a
   client gallery; it must be published with *Share link* on.
