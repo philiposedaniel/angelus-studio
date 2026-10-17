@@ -24,7 +24,7 @@ describe('planGuestImport', () => {
   const options = { existingEmails: ['taken@example.com'], defaultLanguage: 'en' as const }
 
   it('maps common column names and fills defaults', () => {
-    const plan = planGuestImport('Full name,E-mail,Seats,Table,Lang\nMaria Silva,MARIA@example.com,2,Family,es\nRui,,,,', options)
+    const plan = planGuestImport('Full name,E-mail,Seats,Side,Lang\nMaria Silva,MARIA@example.com,2,Family,es\nRui,,,,', options)
     expect(plan).toEqual({
       duplicates: 0,
       problems: [],
@@ -71,9 +71,11 @@ describe('guestsToCsv', () => {
         } as EventGuest,
       ],
       (guest) => `https://example.com/en/invite/${guest.inviteToken}`,
+      () => 'Table 4',
     )
     const [header, row] = csv.replace('﻿', '').trim().split('\r\n')
-    expect(header).toMatch(/^Name,Email,Phone,Group,Party size/)
+    expect(header).toMatch(/^Name,Email,Phone,Group,Table,Party size/)
+    expect(row).toContain(',Table 4,2,')
     expect(row).toContain(`"'=HYPERLINK(""http://evil"")"`)
     expect(row).toContain('"Vegan, no nuts"')
     expect(row).toContain('Attending')

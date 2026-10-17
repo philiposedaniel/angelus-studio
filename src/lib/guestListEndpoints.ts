@@ -44,10 +44,27 @@ export const exportGuestList: PayloadHandler = async (req) => {
     .findByID({ collection: 'tenants', id: idOf(event.tenant)!, depth: 0 })
     .catch(() => null)
   const offered = tenant ? tenantLocales(tenant) : [DEFAULT_LOCALE]
-  const csv = guestsToCsv(guests.docs, (guest) => {
-    const language = guest.language && offered.includes(guest.language) ? guest.language : offered[0]
-    return `${origin}/${language}/invite/${guest.inviteToken}`
-  })
+  const tables = await req.payload
+    .find({
+      collection: 'event-tables',
+      where: { event: { equals: event.id } },
+      pagination: false,
+      depth: 0,
+      select: { name: true },
+      req,
+      user: req.user,
+      overrideAccess: false,
+    })
+    .catch(() => null)
+  const tableNames = new Map((tables?.docs ?? []).map((table) => [String(table.id), table.name]))
+  const csv = guestsToCsv(
+    guests.docs,
+    (guest) => {
+      const language = guest.language && offered.includes(guest.language) ? guest.language : offered[0]
+      return `${origin}/${language}/invite/${guest.inviteToken}`
+    },
+    (guest) => tableNames.get(String(idOf(guest.table))) ?? '',
+  )
   const name = `guests-${event.slug || event.id}.csv`.replace(/[^\w.-]/g, '_')
   return new Response(csv, {
     headers: {

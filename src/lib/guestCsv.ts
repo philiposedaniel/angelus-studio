@@ -52,7 +52,7 @@ const HEADER_ALIASES: Record<ImportColumn, string[]> = {
   name: ['name', 'guest', 'guestname', 'fullname'],
   email: ['email', 'emailaddress', 'mail'],
   phone: ['phone', 'phonenumber', 'mobile', 'telephone'],
-  group: ['group', 'table', 'side', 'category'],
+  group: ['group', 'side', 'category'],
   partySize: ['partysize', 'party', 'seats', 'guests', 'size'],
   language: ['language', 'lang', 'locale'],
 }
@@ -167,13 +167,18 @@ const RSVP_LABELS: Record<string, string> = {
   declined: 'Not attending',
 }
 
-/** The guest list as CSV, with each guest's answer, check-in and invitation link. */
-export function guestsToCsv(guests: readonly EventGuest[], invitationUrl: (guest: EventGuest) => string) {
+/** The guest list as CSV, with each guest's table, answer, check-in and invitation link. */
+export function guestsToCsv(
+  guests: readonly EventGuest[],
+  invitationUrl: (guest: EventGuest) => string,
+  tableName: (guest: EventGuest) => string = () => '',
+) {
   const header = [
     'Name',
     'Email',
     'Phone',
     'Group',
+    'Table',
     'Party size',
     'Language',
     'RSVP',
@@ -191,6 +196,7 @@ export function guestsToCsv(guests: readonly EventGuest[], invitationUrl: (guest
       guest.email,
       guest.phone,
       guest.group,
+      tableName(guest),
       guest.partySize,
       guest.language,
       RSVP_LABELS[guest.rsvpStatus ?? 'pending'],

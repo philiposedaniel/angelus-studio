@@ -31,7 +31,7 @@ depends on it.
 3. **Event registration and tickets.** Ticket types with price, capacity and sales window;
    free registration; paid tickets through Stripe Checkout reusing the signed webhook; orders
    and attendee tickets with QR codes that the check-in page also accepts. *Needs Stripe test keys.*
-4. **Vendors** (built; private documents come with R2 storage, step 8). Directory, per-event assignments, amounts due and paid, private documents,
+4. **Vendors** (PR #22; private documents come with R2 storage, step 8). Directory, per-event assignments, amounts due and paid, private documents,
    and a vendor link with their event details. *Needs nothing; documents stay on local disk
    until R2.*
 5. **Email.** Invitations, RSVP and ticket confirmations, reminders, vendor notices and
@@ -44,10 +44,11 @@ depends on it.
    video provider account.*
 8. **Storage on R2.** Private originals, ZIPs and vendor documents move to R2 with direct
    uploads and short-lived signed URLs. *Needs Cloudflare.*
-9. **Organizer self-service.** Clients with the existing *Event organizer* role manage their
-   own guest lists, vendors and tickets from the portal instead of through the studio.
-10. **Seating and invitation design.** Tables and seating chart; designed invitation pages
-    per event.
+9. **Organizer self-service** (guest lists built). Clients named as an event's organizers manage
+   its guest list from the portal; vendors and tickets for organizers come later.
+10. **Seating and invitation design** (both built). Tables per event with guests seated at them
+    and the table shown at check-in; invitation pages in a chosen style with cover, programme,
+    dress code and map, and a staff preview.
 
 Steps 1, 2 and 4 need nothing from Daniel and can go back to back. Steps 3, 5, 7 and 8 start
 as soon as the account each needs exists.
@@ -61,8 +62,8 @@ as soon as the account each needs exists.
 3. **E-signature:** Documenso self-hosted on his server (recommended) or a hosted service.
 4. **How vendors get in:** private links per vendor and event (recommended to start) or vendor
    accounts that sign in.
-5. **Who manages guest lists:** studio staff only (as built now), or also the client hosting the
-   event, through the portal (step 9).
+5. **Who manages guest lists:** answered 2026-10-17, organizers too: the client hosting the
+   event manages its guest list through the portal (step 9), without seeing staff notes.
 6. **Ticket fees:** whether buyers pay a booking fee on top of the ticket price.
 
 ## 4. Accounts and services needed

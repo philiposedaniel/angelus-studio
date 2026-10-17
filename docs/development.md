@@ -302,3 +302,56 @@ Not built yet: run-of-show timing, equipment reservations, calendar views, and c
 
 Known limits: vendor documents (contracts, insurance) and vendor payments are not handled yet;
 amounts paid are recorded by hand. Vendors are not emailed until the email account exists.
+
+## Seating
+
+- *Events → Tables* adds an event's tables: name (unique within the event), seats and order. The
+  same staff who see the guest list (studio admins and production managers) see and change them.
+- A guest is seated by choosing their *Table* on the guest; only that event's tables are offered and
+  accepted. Several guests can be seated at once with *Edit* on a selection in the guest list.
+- The event's *Seating* section shows each table with who sits there and how many seats are taken,
+  flags tables over capacity, and lists guests still without a table. Seats count the people coming
+  once a guest has answered, every seat on the invitation while they have not, and none after a
+  decline.
+- Staff checking a guest in at the door see the guest's table. Guests do not see it on their
+  invitation. The guest list download has a *Table* column.
+- Deleting a table leaves its guests without a table. Deleting an event deletes its tables.
+
+Known limits: seating is a list of tables, not a drawn floor plan, and the guest import does not
+assign tables.
+
+## Invitation design
+
+- Each event has an *Invitation design* section: a style (Classic black and gold, Garden ivory
+  and sage, Modern white and black), a cover picture, a headline, a message, a programme of
+  moments (time, title, place), a dress code, a map link and a closing line. Text fields are
+  translated per language like the rest of the event. Whoever may edit the event designs it.
+- Every guest's invitation page shows the design above their own greeting, reply form and entry
+  code. When the design has a message, the event summary is not repeated on the invitation.
+- *Preview the invitation* on the event opens `/<language>/invite/preview/<event id>` on the
+  studio's site, one link per site language, with a sample guest and no reply form. Only the
+  studio's admins, production managers and editors, signed in on that site, get the preview;
+  everyone else gets a 404. Save the event before previewing.
+- Styles live in `src/app/(frontend)/[locale]/styles.css` as `invite-theme-*` classes that
+  redefine the colour tokens inside the invitation, so new styles are a CSS block plus an entry
+  in `src/lib/invitationDesign.ts`.
+
+Known limits: the cover picture comes from website media, which is public. Styles are a fixed
+set; there is no per-event colour or font picker yet.
+
+## Event organizers
+
+- An event's *Organizers* field (on the event, in the admin) names the clients hosting it. Only
+  members of the event's studio can be chosen, and only staff set it.
+- An organizer sees *Your events* on their portal home and, for each event, a guest list at
+  `/<language>/portal/events/<id>`: the headcount, each guest's answer, a button to copy their
+  personal invitation link, and a form to add, change or remove guests. They can also download the
+  guest list as CSV.
+- Organizers see and change only the guests of events they organize, in studios they belong to.
+  Staff notes on a guest are never shown to them and they cannot write them. Everything is checked
+  on the server through the normal access rules, so the same limits apply to the REST API.
+- Studio admins and production managers can open the same page for any event of their studio.
+
+Known limits: organizers cannot import guests from CSV, manage seating or vendors, or edit the
+event itself from the portal; staff do those in the admin. Organizers are not emailed until the
+email account exists.
