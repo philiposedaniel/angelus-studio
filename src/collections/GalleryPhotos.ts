@@ -1,8 +1,11 @@
+import fs from 'fs'
+import path from 'path'
 import type { CollectionConfig, PayloadRequest } from 'payload'
 
 import { galleryRead, galleryStaff, isGalleryStaffFor } from '@/access/galleries'
 import { idOf } from '@/lib/ids'
 import { GALLERY_PHOTOS_DIR } from '@/lib/storage'
+import { watermarkImage } from '@/lib/watermark'
 
 const forbidden = () =>
   Response.json({ errors: [{ message: 'You are not allowed to download this file.' }] }, { status: 403 })
@@ -28,6 +31,45 @@ async function guardOriginalDownload(
     overrideAccess: true,
   })
   return gallery.allowDownloads ? undefined : forbidden()
+}
+
+/**
+ * Clients and album viewers get the preview copies of a gallery with a watermark when the
+ * gallery has one. Staff see clean copies. Originals are left to `guardOriginalDownload`.
+ */
+async function watermarkViewingCopy(
+  req: PayloadRequest,
+  { doc, params }: { doc: unknown; params: { filename: string } },
+): Promise<Response | undefined> {
+  const photo = doc as {
+    filename?: string | null
+    gallery?: unknown
+    tenant?: unknown
+    sizes?: Record<string, { filename?: string | null } | undefined>
+  }
+  if (params.filename === photo.filename) return undefined
+  if (isGalleryStaffFor(req.user, idOf(photo.tenant))) return undefined
+  const isCopy = Object.values(photo.sizes ?? {}).some((copy) => copy?.filename === params.filename)
+  const galleryId = idOf(photo.gallery)
+  if (!isCopy || galleryId === undefined) return undefined
+  const gallery = await req.payload.findByID({
+    collection: 'galleries',
+    id: galleryId,
+    depth: 0,
+    req,
+    overrideAccess: true,
+  })
+  if (!gallery.watermarkText) return undefined
+
+  const bytes = await fs.promises.readFile(path.join(GALLERY_PHOTOS_DIR, path.basename(params.filename)))
+  const marked = await watermarkImage(bytes, gallery.watermarkText)
+  return new Response(new Uint8Array(marked), {
+    headers: {
+      'Content-Type': 'image/webp',
+      'Content-Length': String(marked.length),
+      'Cache-Control': 'private, max-age=300',
+    },
+  })
 }
 
 export const GalleryPhotos: CollectionConfig = {
@@ -86,7 +128,10 @@ export const GalleryPhotos: CollectionConfig = {
     crop: false,
     // Read access has already been checked by Payload when this runs.
     // Payload's type wants a Response promise; resolving to undefined lets the file through.
-    handlers: [(req, args) => guardOriginalDownload(req, args) as Promise<Response>],
+    handlers: [
+      (req, args) => guardOriginalDownload(req, args) as Promise<Response>,
+      (req, args) => watermarkViewingCopy(req, args) as Promise<Response>,
+    ],
   },
   hooks: {
     beforeValidate: [
