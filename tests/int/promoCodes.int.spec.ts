@@ -3,7 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { idOf } from '@/lib/ids'
 import { issueFormToken, MIN_FILL_MS } from '@/lib/inquiries'
-import { submitRegistration, type TicketCheckout } from '@/lib/tickets'
+import { createRegistration, submitRegistration, type TicketCheckout } from '@/lib/tickets'
 import config from '@/payload.config'
 import type { Event, PromoCode, Tenant, TicketType, User } from '@/payload-types'
 
@@ -257,5 +257,30 @@ describe('promo codes', () => {
 
     // A code people have used cannot be deleted; it can be paused.
     await expect(payload.delete({ collection: 'promo-codes', id: promo.id, overrideAccess: true })).rejects.toThrow(/Untick/)
+  })
+
+  it('charges what the code is worth when the registration is saved, not when the form was checked', async () => {
+    const ticketType = await makeTicketType()
+    const promo = await makePromo('HALFNOW', { percentOff: 100 })
+    // Staff change the code from free to half price between the check and the save.
+    await payload.update({ collection: 'promo-codes', id: promo.id, data: { percentOff: 50 }, overrideAccess: true })
+    const result = await createRegistration({
+      payload,
+      tenantId: studioA.id,
+      event,
+      ticketType,
+      input: { name: 'Maria Silva', email: `${PREFIX}stale@example.com`, quantity: 2 },
+      locale: 'en',
+      origin: 'https://studio.test',
+      createCheckout: fakeCheckout,
+      promo,
+    })
+    expect(result).toMatchObject({ reason: 'failed' })
+    const { docs } = await payload.find({
+      collection: 'registrations',
+      where: { email: { equals: `${PREFIX}stale@example.com` } },
+      overrideAccess: true,
+    })
+    expect(docs.map((d) => d.status)).toEqual(['cancelled'])
   })
 })

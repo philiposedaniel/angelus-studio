@@ -138,6 +138,8 @@ export async function recordRefund(payload: Payload, charge: Stripe.Charge, even
   })
   const payment: Payment | undefined = docs[0]
   if (!payment || payment.stripeEventId === eventId) return false
+  // Stripe can deliver events out of order: an older, smaller refund total never replaces a newer one.
+  if ((payment.refundedAmount ?? 0) > charge.amount_refunded) return false
 
   const full = charge.refunded === true || charge.amount_refunded >= payment.amount
   await payload.update({

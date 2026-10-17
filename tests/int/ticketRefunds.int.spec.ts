@@ -264,9 +264,45 @@ describe('ticket refunds', () => {
     expect(now.payment).toMatchObject({ status: 'refunded', refundedAmount: 5000 })
     expect(now.registration.status).toBe('cancelled')
 
+    // An older event delivered late does not lower the refunded total.
+    await send('charge.refunded', { id: `ch_${PREFIX}${++counter}`, object: 'charge', payment_intent: bought.paymentIntent, amount_refunded: 1000, refunded: false })
+    expect((await payload.findByID({ collection: 'payments', id: bought.payment.id, overrideAccess: true })).refundedAmount).toBe(5000)
+
     // A charge that is not one of ours is acknowledged and ignored.
     expect(
       await (await send('charge.refunded', { id: 'ch_other', object: 'charge', payment_intent: 'pi_unknown', amount_refunded: 100, refunded: true })).json(),
     ).toMatchObject({ handled: false })
+  })
+
+  it("keeps the money trail: studio admins cannot delete payment records", async () => {
+    const ticketType = await makeTicketType()
+    const { payment } = await buyTicket(ticketType)
+    await expect(payload.delete({ collection: 'payments', id: payment.id, user: adminA, overrideAccess: false })).rejects.toThrow()
+    expect((await payload.findByID({ collection: 'payments', id: payment.id, overrideAccess: true })).status).toBe('paid')
+  })
+
+  it('never lets staff change the places or ticket of a priced registration, or hold places by hand', async () => {
+    const ticketType = await makeTicketType()
+    const dearer = await makeTicketType()
+    const { registration } = await buyTicket(ticketType)
+    for (const data of [{ quantity: 5 }, { ticketType: dearer.id }]) {
+      await expect(
+        payload.update({ collection: 'registrations', id: registration.id, data, user: adminA, overrideAccess: false }),
+      ).rejects.toThrow(/cannot change its places or ticket/)
+    }
+    const byHand = await payload.create({
+      collection: 'registrations',
+      data: {
+        ticketType: ticketType.id,
+        name: 'Phone booking',
+        email: `${PREFIX}phone@example.com`,
+        quantity: 1,
+        status: 'pending',
+        holdExpiresAt: '3000-01-01T00:00:00.000Z',
+      } as never,
+      user: adminA,
+      overrideAccess: false,
+    })
+    expect(byHand.holdExpiresAt ?? null).toBeNull()
   })
 })

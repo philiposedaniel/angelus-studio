@@ -253,6 +253,9 @@ export type CreateTicketCheckout = (checkout: TicketCheckout) => Promise<{ id: s
 const stripeTicketCheckout: CreateTicketCheckout = async (checkout) => {
   const session = await getStripe().checkout.sessions.create({
     mode: 'payment',
+    // Cards and card wallets only: a delayed method such as a bank debit could be paid days
+    // later, after the held places were given to someone else.
+    allowed_payment_method_types: ['card'],
     customer_email: checkout.email,
     line_items: [
       {
@@ -447,8 +450,25 @@ export async function createRegistration({
       ...(waitlistEntryId !== undefined ? { context: { waitlistEntryId } } : {}),
     })
     if (!isShareToken(created.ticketToken)) return { status: 'error', reason: 'failed' }
+    // The collection prices the registration under its lock; if a promo code changed meanwhile,
+    // what it charged decides, never the earlier guess.
+    if (!paid && (created.amount ?? 0) > 0) {
+      await payload.update({ collection: 'registrations', id: created.id, data: { status: 'cancelled' }, overrideAccess: true })
+      return { status: 'error', reason: 'failed' }
+    }
+    if (paid && (created.amount ?? 0) === 0) {
+      await payload.update({
+        collection: 'registrations',
+        id: created.id,
+        data: { status: 'confirmed', holdExpiresAt: null },
+        overrideAccess: true,
+      })
+      return { status: 'registered', token: created.ticketToken, registrationId: created.id }
+    }
     if (!paid) return { status: 'registered', token: created.ticketToken, registrationId: created.id }
   } catch (error) {
+    // A waitlist claim whose offer was taken or ran out (src/lib/waitlist.ts).
+    if ((error as { status?: number }).status === 410) return { status: 'error', reason: 'closed' }
     if ((error as { status?: number }).status === PROMO_INVALID_STATUS) {
       return { status: 'error', errors: { promoCode: 'usedUp' } }
     }

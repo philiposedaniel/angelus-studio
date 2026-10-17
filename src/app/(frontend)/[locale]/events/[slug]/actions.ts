@@ -27,18 +27,19 @@ function chosenLocale(tenant: NonNullable<Awaited<ReturnType<typeof getCurrentTe
 export async function register(_previous: RegistrationState, form: FormData): Promise<RegistrationState> {
   const tenant = await getCurrentTenant()
   if (!tenant) return { status: 'error', reason: 'failed' }
+  const payload = await getPayload({ config })
   const locale = chosenLocale(tenant, form)
   const eventId = Number(form.get('event'))
   if (!Number.isInteger(eventId) || eventId < 1) return { status: 'error', reason: 'closed' }
 
   const result = await submitRegistration({
-    payload: await getPayload({ config }),
+    payload,
     tenantId: tenant.id,
     eventId,
     locale,
     form,
     address: clientAddress(await headers()),
-    origin: await requestOrigin(),
+    origin: await requestOrigin(payload, tenant.id),
   })
   if (result.status === 'registered') redirect(`/${locale}/tickets/${result.token}`)
   if (result.status === 'checkout') redirect(result.url)
@@ -49,12 +50,13 @@ export async function register(_previous: RegistrationState, form: FormData): Pr
 export async function joinWaitlistAction(_previous: WaitlistJoinState, form: FormData): Promise<WaitlistJoinState> {
   const tenant = await getCurrentTenant()
   if (!tenant) return { status: 'error', reason: 'failed' }
+  const payload = await getPayload({ config })
   const locale = chosenLocale(tenant, form)
   const eventId = Number(form.get('event'))
   if (!Number.isInteger(eventId) || eventId < 1) return { status: 'error', reason: 'closed' }
 
   const result = await joinWaitlist({
-    payload: await getPayload({ config }),
+    payload,
     tenantId: tenant.id,
     eventId,
     locale,

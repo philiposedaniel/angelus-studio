@@ -15,7 +15,7 @@ import {
   withinLimit,
 } from '@/lib/promoCodes'
 import { newShareToken } from '@/lib/shareTokens'
-import { refreshWaitlist } from '@/lib/waitlist'
+import { offerOpen, refreshWaitlist, WAITLIST_CLAIM_CLOSED_STATUS, WAITLIST_REFRESH_CONTEXT } from '@/lib/waitlist'
 import { CURRENCIES, CURRENCY_LABELS } from '@/lib/money'
 import {
   holdsPlaces,
@@ -86,6 +86,17 @@ export const Registrations: CollectionConfig = {
 
         const ticketTypeId = idOf(data.ticketType ?? originalDoc?.ticketType)
         const quantity: number = data.quantity ?? originalDoc?.quantity ?? 1
+        // The price is fixed when the registration is made, so its places and ticket are too.
+        if (
+          operation === 'update' &&
+          (originalDoc?.amount ?? 0) > 0 &&
+          (quantity !== originalDoc?.quantity || String(ticketTypeId) !== String(idOf(originalDoc?.ticketType)))
+        ) {
+          throw new APIError(
+            'A registration with a price cannot change its places or ticket. Cancel it and add a new one instead.',
+            400,
+          )
+        }
         const status = data.status ?? originalDoc?.status ?? 'confirmed'
         const holdExpiresAt = data.holdExpiresAt === undefined ? originalDoc?.holdExpiresAt : data.holdExpiresAt
         // Counted under a lock, so two registrations for the last places cannot both succeed.
@@ -106,8 +117,16 @@ export const Registrations: CollectionConfig = {
             req,
             overrideAccess: true,
           })
-          // A waitlist claim takes the places that were offered to it.
+          // A waitlist claim takes the places that were offered to it, once, while the offer lasts.
           const waitlistEntryId = (context as Record<string, unknown>)?.waitlistEntryId
+          if (operation === 'create' && typeof waitlistEntryId === 'number') {
+            const entry = await req.payload
+              .findByID({ collection: 'waitlist-entries', id: waitlistEntryId, depth: 0, req, overrideAccess: true })
+              .catch(() => null)
+            if (!entry || !offerOpen(entry) || String(idOf(entry.ticketType)) !== String(ticketTypeId)) {
+              throw new APIError('These places are no longer offered.', WAITLIST_CLAIM_CLOSED_STATUS)
+            }
+          }
           const taken = await placesTaken(req.payload, ticketTypeId, {
             req,
             excludeId: originalDoc?.id,
@@ -176,6 +195,21 @@ export const Registrations: CollectionConfig = {
       },
     ],
     afterChange: [
+      // A waitlist claim marks its entry claimed in the same transaction as the registration.
+      async ({ context, doc, operation, req }) => {
+        const waitlistEntryId = (context as Record<string, unknown>)?.waitlistEntryId
+        if (operation === 'create' && typeof waitlistEntryId === 'number') {
+          await req.payload.update({
+            collection: 'waitlist-entries',
+            id: waitlistEntryId,
+            data: { status: 'claimed', registration: doc.id },
+            req,
+            overrideAccess: true,
+            context: WAITLIST_REFRESH_CONTEXT,
+          })
+        }
+        return doc
+      },
       // Places given back (a cancellation, fewer places) go to the next people on the waitlist.
       async ({ doc, previousDoc, operation, req }) => {
         const freed =
@@ -247,6 +281,8 @@ export const Registrations: CollectionConfig = {
         description: 'While waiting for payment. After this the places are free again.',
         condition: (data) => data?.status === 'pending',
       },
+      // Set only by the website while someone pays, never through the admin or the API.
+      access: { create: () => false, update: () => false },
     },
     {
       type: 'row',
@@ -331,7 +367,7 @@ export const Registrations: CollectionConfig = {
       type: 'text',
       index: true,
       admin: { hidden: true },
-      access: { read: () => false, update: () => false },
+      access: { read: () => false, create: () => false, update: () => false },
     },
   ],
 }

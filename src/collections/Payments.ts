@@ -1,6 +1,6 @@
 import { APIError, type CollectionConfig } from 'payload'
 
-import { tenantAdmins, tenantRoles } from '@/access'
+import { superAdminsOnly, tenantRoles } from '@/access'
 import { CURRENCIES, CURRENCY_LABELS } from '@/lib/money'
 
 /** Staff who see money received. */
@@ -26,7 +26,8 @@ export const Payments: CollectionConfig = {
     read: tenantRoles(PAYMENT_ROLES),
     create: () => false,
     update: () => false,
-    delete: tenantAdmins,
+    // The money trail is kept: only the platform's super admins can remove a payment record.
+    delete: superAdminsOnly,
   },
   hooks: {
     beforeValidate: [

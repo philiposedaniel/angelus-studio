@@ -412,6 +412,11 @@ email account exists.
   webhook marks the payment *Refunded*. A full refund made in the Stripe dashboard also cancels
   the registration; a partial one is recorded on the payment and keeps the ticket. If Stripe
   refuses, nothing changes.
+- Tickets are paid by card (including card wallets) only, so a payment never arrives days after its
+  held places went to someone else. Once a registration has a price, staff cannot change its
+  places or ticket (cancel it and add a new one), and the payment hold is set only by the website.
+  Staff change only the status of a waitlist entry. Payment records cannot be deleted by studio
+  admins.
 - The entry code opens `/<language>/tickets/<token>/check-in`. Signed-in admins and production
   managers of the studio record how many have arrived, as for invitations; anyone else is only told
   to show the code. A cancelled registration shows "Do not admit".
@@ -446,7 +451,7 @@ email account exists.
   back and whenever the event page or a waitlist link is opened; there is no background timer.
 - Deleting an event deletes its ticket types, registrations and waitlists.
 
-Known limits: refunds from the admin are for the full amount (refund part of it in Stripe); no
+Known limits: refunds from the admin are for the full amount (refund part of it in Stripe). No
 booking fee is added (decision 6 in the events plan is open). Paid tickets have been tested with
 signed webhook events, not yet with a live Stripe round trip. Tickets are not emailed until the email account exists, so the ticket page asks people
 to save its link, and staff can resend it from the registration. One entry code covers every place
