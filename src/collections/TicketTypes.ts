@@ -12,6 +12,7 @@ import {
   MAX_TICKET_CAPACITY,
   placesTaken,
 } from '@/lib/tickets'
+import { refreshWaitlist } from '@/lib/waitlist'
 
 /**
  * A kind of ticket for an event, such as "General admission", with its price, how many places it
@@ -88,6 +89,18 @@ export const TicketTypes: CollectionConfig = {
         return data
       },
     ],
+    afterChange: [
+      // More places, or sales opening again, may free places for people on the waitlist.
+      async ({ doc, previousDoc, operation, req }) => {
+        if (
+          operation === 'update' &&
+          ((doc.capacity ?? 0) > (previousDoc?.capacity ?? 0) || (doc.onSale !== false && previousDoc?.onSale === false))
+        ) {
+          await refreshWaitlist(req.payload, doc.id, { req })
+        }
+        return doc
+      },
+    ],
     beforeDelete: [
       // Registered people keep their tickets: a ticket type with registrations cannot be deleted.
       async ({ id, req }) => {
@@ -100,6 +113,12 @@ export const TicketTypes: CollectionConfig = {
         if (totalDocs > 0) {
           throw new APIError('People have registered for this ticket. Untick "On sale" instead, or delete the registrations first.', 400)
         }
+        await req.payload.delete({
+          collection: 'waitlist-entries',
+          where: { ticketType: { equals: id } },
+          req,
+          overrideAccess: true,
+        })
       },
     ],
   },

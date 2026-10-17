@@ -87,6 +87,7 @@ export interface Config {
     'event-vendors': EventVendor;
     'ticket-types': TicketType;
     registrations: Registration;
+    'waitlist-entries': WaitlistEntry;
     projects: Project;
     'payload-kv': PayloadKv;
     'payload-jobs': PayloadJob;
@@ -116,6 +117,7 @@ export interface Config {
     'event-vendors': EventVendorsSelect<false> | EventVendorsSelect<true>;
     'ticket-types': TicketTypesSelect<false> | TicketTypesSelect<true>;
     registrations: RegistrationsSelect<false> | RegistrationsSelect<true>;
+    'waitlist-entries': WaitlistEntriesSelect<false> | WaitlistEntriesSelect<true>;
     projects: ProjectsSelect<false> | ProjectsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
@@ -987,6 +989,31 @@ export interface EventVendor {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "waitlist-entries".
+ */
+export interface WaitlistEntry {
+  id: number;
+  tenant?: (number | null) | Tenant;
+  ticketType: number | TicketType;
+  event?: (number | null) | Event;
+  name: string;
+  email: string;
+  phone?: string | null;
+  quantity: number;
+  /**
+   * Choose "Removed by staff" to take someone off the waitlist. The rest changes by itself.
+   */
+  status: 'waiting' | 'offered' | 'claimed' | 'expired' | 'left' | 'removed';
+  offerExpiresAt?: string | null;
+  registration?: (number | null) | Registration;
+  language: 'en' | 'es' | 'fr' | 'pt' | 'de' | 'it';
+  claimToken?: string | null;
+  senderKey?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "projects".
  */
 export interface Project {
@@ -1259,6 +1286,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'registrations';
         value: number | Registration;
+      } | null)
+    | ({
+        relationTo: 'waitlist-entries';
+        value: number | WaitlistEntry;
       } | null)
     | ({
         relationTo: 'projects';
@@ -1847,6 +1878,27 @@ export interface RegistrationsSelect<T extends boolean = true> {
   checkedInAt?: T;
   staffNotes?: T;
   ticketToken?: T;
+  senderKey?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "waitlist-entries_select".
+ */
+export interface WaitlistEntriesSelect<T extends boolean = true> {
+  tenant?: T;
+  ticketType?: T;
+  event?: T;
+  name?: T;
+  email?: T;
+  phone?: T;
+  quantity?: T;
+  status?: T;
+  offerExpiresAt?: T;
+  registration?: T;
+  language?: T;
+  claimToken?: T;
   senderKey?: T;
   updatedAt?: T;
   createdAt?: T;
