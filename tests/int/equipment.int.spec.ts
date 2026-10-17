@@ -132,6 +132,63 @@ describe('equipment reservations', () => {
     expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1)
   })
 
+  it('records when kit leaves the studio and comes back', async () => {
+    const booked = await reserve(managerA, cameraA, projectA, '2026-11-25T10:00:00.000Z', '2026-11-25T18:00:00.000Z')
+    const out = await payload.update({
+      collection: 'equipment-reservations',
+      id: booked.id,
+      data: { checkedOutAt: '2026-11-25T09:30:00.000Z' },
+      user: managerA,
+      overrideAccess: false,
+      depth: 0,
+    })
+    expect(out.checkedOutAt).toBe('2026-11-25T09:30:00.000Z')
+    const back = await payload.update({
+      collection: 'equipment-reservations',
+      id: booked.id,
+      data: { returnedAt: '2026-11-25T19:00:00.000Z' },
+      user: managerA,
+      overrideAccess: false,
+      depth: 0,
+    })
+    expect(back.returnedAt).toBe('2026-11-25T19:00:00.000Z')
+  })
+
+  it('refuses a return without a check-out time, and a return before the check-out', async () => {
+    const booked = await reserve(managerA, cameraA, projectA, '2026-11-26T10:00:00.000Z', '2026-11-26T12:00:00.000Z')
+    await expect(
+      payload.update({
+        collection: 'equipment-reservations',
+        id: booked.id,
+        data: { returnedAt: '2026-11-26T13:00:00.000Z' },
+        overrideAccess: true,
+      }),
+    ).rejects.toThrow(/before recording its return/)
+    await expect(
+      payload.update({
+        collection: 'equipment-reservations',
+        id: booked.id,
+        data: { checkedOutAt: '2026-11-26T10:00:00.000Z', returnedAt: '2026-11-26T09:00:00.000Z' },
+        overrideAccess: true,
+      }),
+    ).rejects.toThrow(/after it was checked out/)
+  })
+
+  it('keeps check-out changes to the studio’s production staff', async () => {
+    const booked = await reserve(managerA, cameraA, projectA, '2026-11-27T10:00:00.000Z', '2026-11-27T12:00:00.000Z')
+    await expect(
+      payload.update({
+        collection: 'equipment-reservations',
+        id: booked.id,
+        data: { checkedOutAt: '2026-11-27T10:00:00.000Z' },
+        user: managerB,
+        overrideAccess: false,
+      }),
+    ).rejects.toThrow()
+    const unchanged = await payload.findByID({ collection: 'equipment-reservations', id: booked.id, overrideAccess: true })
+    expect(unchanged.checkedOutAt).toBeFalsy()
+  })
+
   it('keeps reservations to the studio’s production staff', async () => {
     const seenByB = await payload.find({
       collection: 'equipment-reservations',

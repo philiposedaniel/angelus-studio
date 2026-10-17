@@ -38,6 +38,17 @@ export const EquipmentReservations: CollectionConfig = {
           throw new APIError('The reservation must end after it starts.', 400)
         }
 
+        // Check-out and return are recorded by staff as the kit moves. A return needs a check-out
+        // first, and the kit cannot come back before it left. Clearing a field passes null here.
+        const checkedOutAt = 'checkedOutAt' in data ? data.checkedOutAt : originalDoc?.checkedOutAt
+        const returnedAt = 'returnedAt' in data ? data.returnedAt : originalDoc?.returnedAt
+        if (returnedAt && !checkedOutAt) {
+          throw new APIError('Record when the kit left the studio before recording its return.', 400)
+        }
+        if (returnedAt && checkedOutAt && new Date(returnedAt).getTime() <= new Date(checkedOutAt).getTime()) {
+          throw new APIError('The kit must come back after it was checked out.', 400)
+        }
+
         // The kit and the production must both belong to this studio.
         const equipment = await req.payload.findByID({
           collection: 'equipment',
@@ -109,6 +120,26 @@ export const EquipmentReservations: CollectionConfig = {
       type: 'date',
       required: true,
       admin: { date: { pickerAppearance: 'dayAndTime' }, position: 'sidebar' },
+    },
+    {
+      name: 'checkedOutAt',
+      type: 'date',
+      label: 'Checked out at',
+      admin: {
+        date: { pickerAppearance: 'dayAndTime' },
+        position: 'sidebar',
+        description: 'When the kit left the studio. Leave empty until it does.',
+      },
+    },
+    {
+      name: 'returnedAt',
+      type: 'date',
+      label: 'Returned at',
+      admin: {
+        date: { pickerAppearance: 'dayAndTime' },
+        position: 'sidebar',
+        description: 'When the kit came back. Needs a check-out time first.',
+      },
     },
     { name: 'notes', type: 'textarea', maxLength: 1000 },
   ],
