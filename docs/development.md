@@ -278,9 +278,10 @@ for the order of the next steps.
 - **Call sheet** (on the project): a meeting point, notes for the crew, and a schedule of times, items
   and places. Times are 24-hour *HH:MM*, and saving fails on anything else. Production staff and crew
   can read it; clients cannot. Crew open it from their project in the portal (*Your productions*),
-  under the schedule and notes. Only admins and production managers can change it.
+  under the schedule and notes. *Print call sheet* opens the browser's print dialog; the site header
+  and footer are left out of the printout. Only admins and production managers can change it.
 
-Not built yet: run-of-show timing and printing, equipment reservations, calendar views, and clients uploading or approving anything on their project.
+Not built yet: run-of-show timing, equipment reservations, calendar views, and clients uploading or approving anything on their project.
 
 
 ## Vendors

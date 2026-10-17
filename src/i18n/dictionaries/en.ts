@@ -55,6 +55,7 @@ export const en = {
     schedule: 'Schedule',
     noSchedule: 'No schedule has been set yet.',
     noCallSheet: 'The call sheet is not ready yet. The production team will share it before the shoot.',
+    printCallSheet: 'Print call sheet',
     projectStatus: {
       planning: 'Planning',
       confirmed: 'Confirmed',

@@ -57,6 +57,7 @@ export const es: Dictionary = {
     schedule: 'Horario',
     noSchedule: 'Todavía no hay horario.',
     noCallSheet: 'El plan del día todavía no está listo. El equipo de producción lo compartirá antes del rodaje.',
+    printCallSheet: 'Imprimir plan del día',
     projectStatus: {
       planning: 'Planificación',
       confirmed: 'Confirmada',

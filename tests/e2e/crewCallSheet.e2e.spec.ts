@@ -80,6 +80,7 @@ test.describe('Crew call sheet', () => {
     await expect(page.getByText('Hotel lobby, Rua Augusta 10')).toBeVisible()
     await expect(page.getByText('Bring spare batteries.')).toBeVisible()
     await expect(page.getByText('Arrive and set up')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Print call sheet' })).toBeVisible()
   })
 
   test('never shows the call sheet to the assigned client', async ({ page }) => {
@@ -91,5 +92,6 @@ test.describe('Crew call sheet', () => {
     await expect(page.getByRole('heading', { name: 'Call sheet' })).toHaveCount(0)
     await expect(page.getByText('Hotel lobby, Rua Augusta 10')).toHaveCount(0)
     await expect(page.getByText('Bring spare batteries.')).toHaveCount(0)
+    await expect(page.getByRole('button', { name: 'Print call sheet' })).toHaveCount(0)
   })
 })

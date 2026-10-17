@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
+import { PrintButton } from '@/components/portal/PrintButton'
 import { getDictionary } from '@/i18n/dictionaries'
 import { requirePortalUser } from '@/lib/auth'
 import { resolveLocale } from '@/lib/locale'
@@ -41,7 +42,7 @@ export default async function PortalProject({ params }: PageProps<'/[locale]/por
 
   return (
     <section className="mx-auto max-w-3xl px-4 py-20 sm:px-8">
-      <Link href={`/${locale}/portal/projects`} className="text-sm text-mist hover:text-ivory">
+      <Link href={`/${locale}/portal/projects`} className="text-sm text-mist hover:text-ivory print:hidden">
         ← {t.myProjects}
       </Link>
       <h1 className="mt-4 font-display text-4xl sm:text-5xl">{project.title}</h1>
@@ -60,9 +61,12 @@ export default async function PortalProject({ params }: PageProps<'/[locale]/por
 
       {callSheet && (
         <section aria-labelledby="call-sheet" className="mt-12 grid gap-8">
-          <h2 id="call-sheet" className="font-display text-3xl">
-            {t.callSheetHeading}
-          </h2>
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <h2 id="call-sheet" className="font-display text-3xl">
+              {t.callSheetHeading}
+            </h2>
+            <PrintButton label={t.printCallSheet} />
+          </div>
           {!hasCallSheet && <p className="text-mist">{t.noCallSheet}</p>}
           {callSheet.meetingPoint && (
             <div className="grid gap-2">
