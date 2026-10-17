@@ -197,10 +197,10 @@ describe('projects from paid bookings', () => {
 
     expect((await seen(managerA)).docs).toHaveLength(1)
     expect((await seen(managerB)).docs).toHaveLength(0)
-    // Editors, crew and clients have no access to the production board at all.
-    await expect(seen(editorA)).rejects.toThrow()
-    await expect(seen(crewA)).rejects.toThrow()
-    await expect(seen(clientA)).rejects.toThrow()
+    // Editors, crew and clients who are not on this project see none of it.
+    expect((await seen(editorA)).docs).toHaveLength(0)
+    expect((await seen(crewA)).docs).toHaveLength(0)
+    expect((await seen(clientA)).docs).toHaveLength(0)
 
     await expect(
       payload.update({
