@@ -1,9 +1,17 @@
 import { APIError, type Access, type CollectionConfig, type Where } from 'payload'
 
-import { hasTenantRole, isSuperAdmin, TENANT_STAFF_ROLES, tenantContentEditors, tenantIdsWithRole } from '@/access'
+import {
+  hasTenantRole,
+  isSuperAdmin,
+  TENANT_STAFF_ROLES,
+  tenantContentEditors,
+  tenantIdOf,
+  tenantIdsWithRole,
+} from '@/access'
 import { uniqueSlugPerTenant } from '@/hooks/uniqueSlugPerTenant'
 import { parseVideoUrl } from '@/lib/embeds'
 import { idOf } from '@/lib/ids'
+import { INVITATION_STYLE_LABELS, INVITATION_STYLES, isWebAddress, MAX_SCHEDULE_ITEMS } from '@/lib/invitationDesign'
 import { newShareToken } from '@/lib/shareTokens'
 
 /**
@@ -15,8 +23,14 @@ const listedOrTenantStaff: Access = ({ req: { user } }) => {
   if (isSuperAdmin(user)) return true
   const ids = tenantIdsWithRole(user, ['admin', 'production-manager', 'editor'])
   const listed: Where = { and: [{ published: { equals: true } }, { listed: { equals: true } }] }
-  if (ids.length === 0) return listed
-  return { or: [listed, { tenant: { in: ids } }] }
+  // Organizers also see the events they organize, in the studios they still belong to.
+  const memberOf = (user?.tenants ?? []).map(tenantIdOf).filter((id) => id !== null)
+  const organized: Where | null =
+    user && memberOf.length > 0
+      ? { and: [{ organizers: { in: [user.id] } }, { tenant: { in: memberOf } }] }
+      : null
+  const allowed = [listed, ...(organized ? [organized] : []), ...(ids.length > 0 ? [{ tenant: { in: ids } }] : [])]
+  return allowed.length === 1 ? listed : { or: allowed }
 }
 
 /**
@@ -40,7 +54,30 @@ export const Events: CollectionConfig = {
     delete: tenantContentEditors,
   },
   hooks: {
-    beforeValidate: [uniqueSlugPerTenant('events')],
+    beforeValidate: [
+      uniqueSlugPerTenant('events'),
+      // Organizers must be members of the event's studio.
+      async ({ data, originalDoc, req }) => {
+        const organizers: unknown[] = data?.organizers ?? []
+        const tenantId = idOf(data?.tenant ?? originalDoc?.tenant)
+        if (!data || organizers.length === 0 || tenantId === undefined) return data
+        const { docs } = await req.payload.find({
+          collection: 'users',
+          where: { id: { in: organizers.map(idOf) } },
+          pagination: false,
+          depth: 0,
+          req,
+          overrideAccess: true,
+        })
+        const members = docs.filter((user) =>
+          (user.tenants ?? []).some((membership) => String(tenantIdOf(membership)) === String(tenantId)),
+        )
+        if (members.length !== organizers.length) {
+          throw new APIError('Organizers must be members of this studio.', 400)
+        }
+        return data
+      },
+    ],
     beforeChange: [
       ({ data, originalDoc, operation }) => {
         // Set on create, kept on change, never taken from the request.
@@ -53,7 +90,7 @@ export const Events: CollectionConfig = {
       },
     ],
     beforeDelete: [
-      // An event's guest list and vendor bookings go with it.
+      // An event's guest list, tables and vendor bookings go with it.
       async ({ id, req }) => {
         await req.payload.delete({
           collection: 'event-vendors',
@@ -63,6 +100,12 @@ export const Events: CollectionConfig = {
         })
         await req.payload.delete({
           collection: 'event-guests',
+          where: { event: { equals: id } },
+          req,
+          overrideAccess: true,
+        })
+        await req.payload.delete({
+          collection: 'event-tables',
           where: { event: { equals: id } },
           req,
           overrideAccess: true,
@@ -131,6 +174,17 @@ export const Events: CollectionConfig = {
       filterOptions: ({ data }) => (data?.tenant ? { tenant: { equals: data.tenant } } : false),
     },
     {
+      name: 'organizers',
+      type: 'relationship',
+      relationTo: 'users',
+      hasMany: true,
+      admin: {
+        description:
+          'Clients who host this event. They manage its guest list from their portal: add, change and remove guests and copy invitation links.',
+      },
+      filterOptions: ({ data }) => (data?.tenant ? { 'tenants.tenant': { equals: idOf(data.tenant) } } : false),
+    },
+    {
       name: 'guestToken',
       type: 'text',
       unique: true,
@@ -147,6 +201,75 @@ export const Events: CollectionConfig = {
       name: 'guestLink',
       type: 'ui',
       admin: { components: { Field: '@/components/admin/EventGuestLinkField#EventGuestLinkField' } },
+    },
+    {
+      name: 'invitation',
+      label: 'Invitation design',
+      type: 'group',
+      admin: {
+        description:
+          'How the invitation page looks. Every guest sees this design above their own reply form and entry code.',
+      },
+      fields: [
+        {
+          name: 'style',
+          type: 'select',
+          defaultValue: 'classic',
+          options: INVITATION_STYLES.map((value) => ({ value, label: INVITATION_STYLE_LABELS[value] })),
+        },
+        {
+          name: 'coverImage',
+          type: 'upload',
+          relationTo: 'media',
+          admin: { description: 'Shown at the top. Website media is public, so use a picture meant to be shared.' },
+        },
+        {
+          name: 'headline',
+          type: 'text',
+          localized: true,
+          maxLength: 200,
+          admin: { description: 'e.g. "Together with their families, Ana and João invite you". Empty shows "You are invited".' },
+        },
+        { name: 'message', type: 'textarea', localized: true, maxLength: 2000 },
+        {
+          name: 'schedule',
+          label: 'Programme',
+          type: 'array',
+          maxRows: MAX_SCHEDULE_ITEMS,
+          labels: { singular: 'Moment', plural: 'Moments' },
+          fields: [
+            {
+              type: 'row',
+              fields: [
+                { name: 'time', type: 'text', required: true, maxLength: 20, admin: { width: '20%', description: 'e.g. 16:00' } },
+                { name: 'title', type: 'text', required: true, localized: true, maxLength: 120, admin: { width: '40%' } },
+                { name: 'place', type: 'text', localized: true, maxLength: 200, admin: { width: '40%' } },
+              ],
+            },
+          ],
+        },
+        { name: 'dressCode', type: 'text', localized: true, maxLength: 200 },
+        {
+          name: 'mapUrl',
+          label: 'Map link',
+          type: 'text',
+          maxLength: 500,
+          admin: { description: 'Optional link to the place on a map, starting with https://' },
+          validate: isWebAddress,
+        },
+        {
+          name: 'signature',
+          type: 'text',
+          localized: true,
+          maxLength: 200,
+          admin: { description: 'Closing line, e.g. "With love, Ana and João".' },
+        },
+        {
+          name: 'previewLink',
+          type: 'ui',
+          admin: { components: { Field: '@/components/admin/InvitationPreviewField#InvitationPreviewField' } },
+        },
+      ],
     },
     {
       type: 'collapsible',
@@ -177,6 +300,18 @@ export const Events: CollectionConfig = {
             date: { pickerAppearance: 'dayAndTime' },
             description: 'Optional. Replies close automatically after this moment.',
           },
+        },
+      ],
+    },
+    {
+      type: 'collapsible',
+      label: 'Seating',
+      admin: { initCollapsed: false },
+      fields: [
+        {
+          name: 'seatingPlan',
+          type: 'ui',
+          admin: { components: { Field: '@/components/admin/SeatingPlanField#SeatingPlanField' } },
         },
       ],
     },

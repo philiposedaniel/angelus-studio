@@ -82,6 +82,7 @@ export interface Config {
     payments: Payment;
     events: Event;
     'event-guests': EventGuest;
+    'event-tables': EventTable;
     vendors: Vendor;
     'event-vendors': EventVendor;
     projects: Project;
@@ -110,6 +111,7 @@ export interface Config {
     payments: PaymentsSelect<false> | PaymentsSelect<true>;
     events: EventsSelect<false> | EventsSelect<true>;
     'event-guests': EventGuestsSelect<false> | EventGuestsSelect<true>;
+    'event-tables': EventTablesSelect<false> | EventTablesSelect<true>;
     vendors: VendorsSelect<false> | VendorsSelect<true>;
     'event-vendors': EventVendorsSelect<false> | EventVendorsSelect<true>;
     projects: ProjectsSelect<false> | ProjectsSelect<true>;
@@ -679,7 +681,46 @@ export interface Event {
    * The album guests see. It must be published and shared (Share link on). Guests reach it through the guest link.
    */
   gallery?: (number | null) | Gallery;
+  /**
+   * Clients who host this event. They manage its guest list from their portal: add, change and remove guests and copy invitation links.
+   */
+  organizers?: (number | User)[] | null;
   guestToken?: string | null;
+  /**
+   * How the invitation page looks. Every guest sees this design above their own reply form and entry code.
+   */
+  invitation?: {
+    style?: ('classic' | 'garden' | 'modern') | null;
+    /**
+     * Shown at the top. Website media is public, so use a picture meant to be shared.
+     */
+    coverImage?: (number | null) | Media;
+    /**
+     * e.g. "Together with their families, Ana and João invite you". Empty shows "You are invited".
+     */
+    headline?: string | null;
+    message?: string | null;
+    schedule?:
+      | {
+          /**
+           * e.g. 16:00
+           */
+          time: string;
+          title: string;
+          place?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+    dressCode?: string | null;
+    /**
+     * Optional link to the place on a map, starting with https://
+     */
+    mapUrl?: string | null;
+    /**
+     * Closing line, e.g. "With love, Ana and João".
+     */
+    signature?: string | null;
+  };
   /**
    * Untick to close replies. Guests then see their answer but cannot change it.
    */
@@ -712,6 +753,10 @@ export interface EventGuest {
    */
   group?: string | null;
   /**
+   * Where the guest's party sits. Add tables under Events → Tables.
+   */
+  table?: (number | null) | EventTable;
+  /**
    * Seats on this invitation, the guest included. 2 lets them bring one person.
    */
   partySize: number;
@@ -740,6 +785,30 @@ export interface EventGuest {
    */
   staffNotes?: string | null;
   inviteToken?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "event-tables".
+ */
+export interface EventTable {
+  id: number;
+  tenant?: (number | null) | Tenant;
+  event: number | Event;
+  /**
+   * As guests and staff will see it, e.g. "Table 4", "Head table" or "Jasmine".
+   */
+  name: string;
+  capacity: number;
+  /**
+   * Lower numbers are listed first.
+   */
+  sortOrder?: number | null;
+  /**
+   * Only staff see this.
+   */
+  notes?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1115,6 +1184,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'event-guests';
         value: number | EventGuest;
+      } | null)
+    | ({
+        relationTo: 'event-tables';
+        value: number | EventTable;
       } | null)
     | ({
         relationTo: 'vendors';
@@ -1568,7 +1641,27 @@ export interface EventsSelect<T extends boolean = true> {
   image?: T;
   livestreamUrl?: T;
   gallery?: T;
+  organizers?: T;
   guestToken?: T;
+  invitation?:
+    | T
+    | {
+        style?: T;
+        coverImage?: T;
+        headline?: T;
+        message?: T;
+        schedule?:
+          | T
+          | {
+              time?: T;
+              title?: T;
+              place?: T;
+              id?: T;
+            };
+        dressCode?: T;
+        mapUrl?: T;
+        signature?: T;
+      };
   rsvpOpen?: T;
   rsvpDeadline?: T;
   published?: T;
@@ -1587,6 +1680,7 @@ export interface EventGuestsSelect<T extends boolean = true> {
   email?: T;
   phone?: T;
   group?: T;
+  table?: T;
   partySize?: T;
   language?: T;
   rsvpStatus?: T;
@@ -1598,6 +1692,20 @@ export interface EventGuestsSelect<T extends boolean = true> {
   checkedInAt?: T;
   staffNotes?: T;
   inviteToken?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "event-tables_select".
+ */
+export interface EventTablesSelect<T extends boolean = true> {
+  tenant?: T;
+  event?: T;
+  name?: T;
+  capacity?: T;
+  sortOrder?: T;
+  notes?: T;
   updatedAt?: T;
   createdAt?: T;
 }
