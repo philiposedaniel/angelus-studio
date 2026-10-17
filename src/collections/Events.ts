@@ -90,8 +90,20 @@ export const Events: CollectionConfig = {
       },
     ],
     beforeDelete: [
-      // An event's guest list, tables and vendor bookings go with it.
+      // An event's guest list, tables, vendor bookings, registrations and ticket types go with it.
       async ({ id, req }) => {
+        await req.payload.delete({
+          collection: 'registrations',
+          where: { event: { equals: id } },
+          req,
+          overrideAccess: true,
+        })
+        await req.payload.delete({
+          collection: 'ticket-types',
+          where: { event: { equals: id } },
+          req,
+          overrideAccess: true,
+        })
         await req.payload.delete({
           collection: 'event-vendors',
           where: { event: { equals: id } },
@@ -300,6 +312,18 @@ export const Events: CollectionConfig = {
             date: { pickerAppearance: 'dayAndTime' },
             description: 'Optional. Replies close automatically after this moment.',
           },
+        },
+      ],
+    },
+    {
+      type: 'collapsible',
+      label: 'Registration and tickets',
+      admin: { initCollapsed: false },
+      fields: [
+        {
+          name: 'registrationSummary',
+          type: 'ui',
+          admin: { components: { Field: '@/components/admin/RegistrationSummaryField#RegistrationSummaryField' } },
         },
       ],
     },
