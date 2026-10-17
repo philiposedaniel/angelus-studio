@@ -1,6 +1,6 @@
 import type { UIFieldServerProps } from 'payload'
 
-import { summarizeRsvps } from '@/lib/rsvp'
+import { eventRsvpSummary } from '@/lib/rsvp'
 
 /** The event's headcount from its guest list, for the people allowed to see guests. */
 export async function RsvpSummaryField(props: UIFieldServerProps) {
@@ -13,25 +13,23 @@ export async function RsvpSummaryField(props: UIFieldServerProps) {
       </div>
     )
   }
-  const guests = await props.payload
-    .find({
-      collection: 'event-guests',
-      where: { event: { equals: eventId } },
-      pagination: false,
-      depth: 0,
-      select: { rsvpStatus: true, attendingCount: true, partySize: true, checkedInCount: true },
-      user: props.req.user,
-      overrideAccess: false,
-    })
-    .catch(() => null)
-  if (!guests) {
+  // Reading the event and counting its guests as the signed-in user checks they may see them;
+  // the totals are then added up in the database rather than loading every guest.
+  const access = { user: props.req.user, overrideAccess: false } as const
+  const allowed = await Promise.all([
+    props.payload.findByID({ collection: 'events', id: eventId, depth: 0, select: { title: true }, ...access }),
+    props.payload.count({ collection: 'event-guests', where: { event: { equals: eventId } }, ...access }),
+  ])
+    .then(() => true)
+    .catch(() => false)
+  if (!allowed) {
     return (
       <div style={box}>
         <p style={{ margin: 0 }}>Only studio admins and production managers can see the guest list.</p>
       </div>
     )
   }
-  const s = summarizeRsvps(guests.docs)
+  const s = await eventRsvpSummary(props.payload, eventId)
   const cell: React.CSSProperties = { padding: '4px 12px 4px 0' }
 
   return (
