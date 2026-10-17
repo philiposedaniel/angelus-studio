@@ -1,14 +1,36 @@
-import { APIError, Forbidden, type CollectionConfig } from 'payload'
+import { APIError, Forbidden, type Access, type CollectionConfig, type FieldAccess, type Where } from 'payload'
 
-import { hasTenantRole, isSuperAdmin, tenantRoles } from '@/access'
+import { isSuperAdmin, tenantIdsWithRole } from '@/access'
 import { DEFAULT_LOCALE, LOCALE_LABELS, LOCALES } from '@/i18n/config'
 import { exportGuestList, importGuestList } from '@/lib/guestListEndpoints'
 import { idOf } from '@/lib/ids'
+import { GUEST_LIST_STAFF_ROLES, isGuestListStaff, organizedEventIds } from '@/lib/organizers'
 import { MAX_PARTY_SIZE, RSVP_LIMITS, RSVP_STATUSES } from '@/lib/rsvp'
 import { newShareToken } from '@/lib/shareTokens'
 
 /** Staff who manage guest lists. Guest names, contacts and dietary needs are personal data. */
-export const EVENT_GUEST_STAFF_ROLES = ['admin', 'production-manager'] as const
+export const EVENT_GUEST_STAFF_ROLES = GUEST_LIST_STAFF_ROLES
+
+/**
+ * Studio staff see their studios' guests; an event's organizers see that event's guests.
+ */
+const staffOrOrganizers: Access = async ({ req }) => {
+  const { user } = req
+  if (!user) return false
+  if (isSuperAdmin(user)) return true
+  const staffOf = tenantIdsWithRole(user, EVENT_GUEST_STAFF_ROLES)
+  const organized = await organizedEventIds(req.payload, user, req)
+  const allowed: Where[] = [
+    ...(staffOf.length > 0 ? [{ tenant: { in: staffOf } }] : []),
+    ...(organized.length > 0 ? [{ event: { in: organized } }] : []),
+  ]
+  if (allowed.length === 0) return false
+  return allowed.length === 1 ? allowed[0]! : { or: allowed }
+}
+
+/** Staff only, for fields organizers do not see. */
+const staffField: FieldAccess = ({ req: { user }, doc, data }) =>
+  isGuestListStaff(user, idOf(doc?.tenant ?? data?.tenant))
 
 const isWholeNumber = (value: unknown, min: number, max: number) =>
   typeof value === 'number' && Number.isInteger(value) && value >= min && value <= max
@@ -29,10 +51,10 @@ export const EventGuests: CollectionConfig = {
   },
   defaultSort: 'name',
   access: {
-    read: tenantRoles(EVENT_GUEST_STAFF_ROLES),
-    create: tenantRoles(EVENT_GUEST_STAFF_ROLES),
-    update: tenantRoles(EVENT_GUEST_STAFF_ROLES),
-    delete: tenantRoles(EVENT_GUEST_STAFF_ROLES),
+    read: staffOrOrganizers,
+    create: staffOrOrganizers,
+    update: staffOrOrganizers,
+    delete: staffOrOrganizers,
   },
   endpoints: [
     { path: '/export', method: 'get', handler: exportGuestList },
@@ -64,11 +86,13 @@ export const EventGuests: CollectionConfig = {
       },
     ],
     beforeChange: [
-      ({ data, originalDoc, operation, req }) => {
-        // Staff may only put guests on their own studio's events.
+      async ({ data, originalDoc, operation, req }) => {
+        // Staff may only put guests on their own studio's events, organizers only on their own events.
         const { user } = req
-        if (user && !isSuperAdmin(user) && !hasTenantRole(user, idOf(data.tenant) ?? '', EVENT_GUEST_STAFF_ROLES)) {
-          throw new Forbidden(req.t)
+        if (user && !isGuestListStaff(user, idOf(data.tenant))) {
+          const eventId = idOf(data.event ?? originalDoc?.event)
+          const organized = await organizedEventIds(req.payload, user, req)
+          if (!organized.some((id) => String(id) === String(eventId))) throw new Forbidden(req.t)
         }
 
         const partySize: number = data.partySize ?? originalDoc?.partySize ?? 1
@@ -214,19 +238,19 @@ export const EventGuests: CollectionConfig = {
       type: 'textarea',
       maxLength: 2000,
       admin: { description: 'Only staff see this.' },
+      access: { read: staffField, create: staffField, update: staffField },
     },
     {
       name: 'inviteToken',
       type: 'text',
       unique: true,
       admin: { hidden: true },
-      // Only staff of the guest's own studio may read it.
+      // Only staff of the guest's own studio, and the event's organizers, may read it.
       access: {
-        read: ({ req: { user }, doc }) => {
-          const tenantId = idOf(doc?.tenant)
-          return (
-            isSuperAdmin(user) || (tenantId !== undefined && hasTenantRole(user, tenantId, EVENT_GUEST_STAFF_ROLES))
-          )
+        read: async ({ req, doc }) => {
+          if (isGuestListStaff(req.user, idOf(doc?.tenant))) return true
+          const organized = await organizedEventIds(req.payload, req.user, req)
+          return organized.some((id) => String(id) === String(idOf(doc?.event)))
         },
       },
     },

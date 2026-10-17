@@ -7,6 +7,7 @@ import { getPayload } from 'payload'
 import { SignOutButton } from '@/components/portal/SignOutButton'
 import { getDictionary } from '@/i18n/dictionaries'
 import { requirePortalUser } from '@/lib/auth'
+import { formatEventWhen } from '@/lib/eventTime'
 import { resolveLocale } from '@/lib/locale'
 import { getCurrentTenant } from '@/lib/tenant'
 
@@ -31,6 +32,19 @@ export default async function PortalHome({ params }: PageProps<'/[locale]/portal
     limit: 100,
     locale,
   })
+
+  // Events this user organizes, whose guest lists they manage here.
+  const { docs: organized } = await payload.find({
+    collection: 'events',
+    user,
+    overrideAccess: false,
+    where: { and: [{ tenant: { equals: tenant.id } }, { organizers: { in: [user.id] } }] },
+    sort: 'startsAt',
+    depth: 0,
+    limit: 50,
+    locale,
+  })
+  const o = getDictionary(locale).organizer
 
   const cards = await Promise.all(
     galleries.map(async (gallery) => {
@@ -59,6 +73,26 @@ export default async function PortalHome({ params }: PageProps<'/[locale]/portal
           <SignOutButton label={t.signOut} redirectTo={`/${locale}/portal/login`} />
         </div>
       </div>
+      {organized.length > 0 && (
+        <div className="mt-10 grid gap-4">
+          <h2 className="font-display text-2xl">{o.yourEvents}</h2>
+          <ul className="grid gap-3 sm:grid-cols-2">
+            {organized.map((event) => (
+              <li key={event.id}>
+                <Link
+                  href={`/${locale}/portal/events/${event.id}`}
+                  className="block rounded-2xl border border-ivory/10 bg-charcoal p-5 transition-colors hover:border-gold/50"
+                >
+                  <span className="block font-display text-xl">{event.title}</span>
+                  <span className="mt-1 block text-sm text-mist">
+                    {formatEventWhen(event, locale)} · {o.guestList}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       {cards.length === 0 ? (
         <p className="mt-8 text-mist">{t.noGalleries}</p>
       ) : (

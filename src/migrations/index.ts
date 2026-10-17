@@ -16,6 +16,7 @@ import * as migration_20261016_070433_vendors from './20261016_070433_vendors';
 import * as migration_20261016_071129_contract_signing from './20261016_071129_contract_signing';
 import * as migration_20261017_014951_event_tables from './20261017_014951_event_tables';
 import * as migration_20261017_022238_invitation_design from './20261017_022238_invitation_design';
+import * as migration_20261017_022307_event_organizers from './20261017_022307_event_organizers';
 
 export const migrations = [
   {
@@ -106,6 +107,11 @@ export const migrations = [
   {
     up: migration_20261017_022238_invitation_design.up,
     down: migration_20261017_022238_invitation_design.down,
-    name: '20261017_022238_invitation_design'
+    name: '20261017_022238_invitation_design',
+  },
+  {
+    up: migration_20261017_022307_event_organizers.up,
+    down: migration_20261017_022307_event_organizers.down,
+    name: '20261017_022307_event_organizers'
   },
 ];

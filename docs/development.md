@@ -337,3 +337,20 @@ assign tables.
 
 Known limits: the cover picture comes from website media, which is public. Styles are a fixed
 set; there is no per-event colour or font picker yet.
+
+## Event organizers
+
+- An event's *Organizers* field (on the event, in the admin) names the clients hosting it. Only
+  members of the event's studio can be chosen, and only staff set it.
+- An organizer sees *Your events* on their portal home and, for each event, a guest list at
+  `/<language>/portal/events/<id>`: the headcount, each guest's answer, a button to copy their
+  personal invitation link, and a form to add, change or remove guests. They can also download the
+  guest list as CSV.
+- Organizers see and change only the guests of events they organize, in studios they belong to.
+  Staff notes on a guest are never shown to them and they cannot write them. Everything is checked
+  on the server through the normal access rules, so the same limits apply to the REST API.
+- Studio admins and production managers can open the same page for any event of their studio.
+
+Known limits: organizers cannot import guests from CSV, manage seating or vendors, or edit the
+event itself from the portal; staff do those in the admin. Organizers are not emailed until the
+email account exists.

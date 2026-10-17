@@ -677,6 +677,10 @@ export interface Event {
    * The album guests see. It must be published and shared (Share link on). Guests reach it through the guest link.
    */
   gallery?: (number | null) | Gallery;
+  /**
+   * Clients who host this event. They manage its guest list from their portal: add, change and remove guests and copy invitation links.
+   */
+  organizers?: (number | User)[] | null;
   guestToken?: string | null;
   /**
    * How the invitation page looks. Every guest sees this design above their own reply form and entry code.
@@ -1586,6 +1590,7 @@ export interface EventsSelect<T extends boolean = true> {
   image?: T;
   livestreamUrl?: T;
   gallery?: T;
+  organizers?: T;
   guestToken?: T;
   invitation?:
     | T

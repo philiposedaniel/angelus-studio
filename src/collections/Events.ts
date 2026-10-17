@@ -1,6 +1,13 @@
 import { APIError, type Access, type CollectionConfig, type Where } from 'payload'
 
-import { hasTenantRole, isSuperAdmin, TENANT_STAFF_ROLES, tenantContentEditors, tenantIdsWithRole } from '@/access'
+import {
+  hasTenantRole,
+  isSuperAdmin,
+  TENANT_STAFF_ROLES,
+  tenantContentEditors,
+  tenantIdOf,
+  tenantIdsWithRole,
+} from '@/access'
 import { uniqueSlugPerTenant } from '@/hooks/uniqueSlugPerTenant'
 import { parseVideoUrl } from '@/lib/embeds'
 import { idOf } from '@/lib/ids'
@@ -16,8 +23,14 @@ const listedOrTenantStaff: Access = ({ req: { user } }) => {
   if (isSuperAdmin(user)) return true
   const ids = tenantIdsWithRole(user, ['admin', 'production-manager', 'editor'])
   const listed: Where = { and: [{ published: { equals: true } }, { listed: { equals: true } }] }
-  if (ids.length === 0) return listed
-  return { or: [listed, { tenant: { in: ids } }] }
+  // Organizers also see the events they organize, in the studios they still belong to.
+  const memberOf = (user?.tenants ?? []).map(tenantIdOf).filter((id) => id !== null)
+  const organized: Where | null =
+    user && memberOf.length > 0
+      ? { and: [{ organizers: { in: [user.id] } }, { tenant: { in: memberOf } }] }
+      : null
+  const allowed = [listed, ...(organized ? [organized] : []), ...(ids.length > 0 ? [{ tenant: { in: ids } }] : [])]
+  return allowed.length === 1 ? listed : { or: allowed }
 }
 
 /**
@@ -41,7 +54,30 @@ export const Events: CollectionConfig = {
     delete: tenantContentEditors,
   },
   hooks: {
-    beforeValidate: [uniqueSlugPerTenant('events')],
+    beforeValidate: [
+      uniqueSlugPerTenant('events'),
+      // Organizers must be members of the event's studio.
+      async ({ data, originalDoc, req }) => {
+        const organizers: unknown[] = data?.organizers ?? []
+        const tenantId = idOf(data?.tenant ?? originalDoc?.tenant)
+        if (!data || organizers.length === 0 || tenantId === undefined) return data
+        const { docs } = await req.payload.find({
+          collection: 'users',
+          where: { id: { in: organizers.map(idOf) } },
+          pagination: false,
+          depth: 0,
+          req,
+          overrideAccess: true,
+        })
+        const members = docs.filter((user) =>
+          (user.tenants ?? []).some((membership) => String(tenantIdOf(membership)) === String(tenantId)),
+        )
+        if (members.length !== organizers.length) {
+          throw new APIError('Organizers must be members of this studio.', 400)
+        }
+        return data
+      },
+    ],
     beforeChange: [
       ({ data, originalDoc, operation }) => {
         // Set on create, kept on change, never taken from the request.
@@ -136,6 +172,17 @@ export const Events: CollectionConfig = {
           'The album guests see. It must be published and shared (Share link on). Guests reach it through the guest link.',
       },
       filterOptions: ({ data }) => (data?.tenant ? { tenant: { equals: data.tenant } } : false),
+    },
+    {
+      name: 'organizers',
+      type: 'relationship',
+      relationTo: 'users',
+      hasMany: true,
+      admin: {
+        description:
+          'Clients who host this event. They manage its guest list from their portal: add, change and remove guests and copy invitation links.',
+      },
+      filterOptions: ({ data }) => (data?.tenant ? { 'tenants.tenant': { equals: idOf(data.tenant) } } : false),
     },
     {
       name: 'guestToken',
