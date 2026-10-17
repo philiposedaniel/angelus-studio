@@ -177,6 +177,14 @@ Stripe round trip has not been run yet.
 - Contract signing is not built yet. Balance payments are taken online the same way as the deposit.
 - The admin *Client link* box points at the English page; the client can change language on the site.
 
+## Watermarks on preview copies
+
+- Set *Watermark text* on a gallery (for example your studio name). Clients see it on the preview
+  copies, in the client portal and in shared albums. Leave it empty for no watermark.
+- The mark sits in the bottom-right corner of the thumbnail and web copies. It is drawn when the
+  copy is served, so changing the text takes effect at once, and the stored copies are not changed.
+- Staff see clean copies. Originals are never changed. With downloads allowed, a client can still
+  download the original, which has no watermark; turn downloads off for galleries that must stay marked.
 ## Events and guest albums
 
 - Staff create an event under *Events → Events*: title, slug, start (and optional end), time zone,
