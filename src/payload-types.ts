@@ -610,6 +610,23 @@ export interface Quote {
   validUntil?: string | null;
   publicToken?: string | null;
   /**
+   * Optional. With terms, the client must sign them on the quote page before paying the deposit.
+   */
+  contract?: {
+    /**
+     * Shown to the client in full. Locked once they sign.
+     */
+    terms?: string | null;
+    signedName?: string | null;
+    signedAt?: string | null;
+    signedIp?: string | null;
+    signedUserAgent?: string | null;
+    /**
+     * Fingerprint of the terms the client signed.
+     */
+    termsFingerprint?: string | null;
+  };
+  /**
    * Internal notes. Not shown to the client.
    */
   notes?: string | null;
@@ -819,6 +836,10 @@ export interface Project {
   quote?: (number | null) | Quote;
   clientName: string;
   clientEmail?: string | null;
+  /**
+   * The client who sees this project in their portal.
+   */
+  clientUser?: (number | null) | User;
   status: 'planning' | 'confirmed' | 'in-production' | 'delivered' | 'closed';
   /**
    * The day the crew works.
@@ -1501,6 +1522,16 @@ export interface QuotesSelect<T extends boolean = true> {
   status?: T;
   validUntil?: T;
   publicToken?: T;
+  contract?:
+    | T
+    | {
+        terms?: T;
+        signedName?: T;
+        signedAt?: T;
+        signedIp?: T;
+        signedUserAgent?: T;
+        termsFingerprint?: T;
+      };
   notes?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -1620,6 +1651,7 @@ export interface ProjectsSelect<T extends boolean = true> {
   quote?: T;
   clientName?: T;
   clientEmail?: T;
+  clientUser?: T;
   status?: T;
   shootDate?: T;
   location?: T;
