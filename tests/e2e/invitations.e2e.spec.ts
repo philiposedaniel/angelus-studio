@@ -12,6 +12,7 @@ const PREFIX = 'e2e-invite-'
 let openToken = ''
 let closedToken = ''
 let guestId: number
+let weddingId: number
 
 test.describe('Invitations and RSVP', () => {
   test.beforeAll(async () => {
@@ -33,8 +34,19 @@ test.describe('Invitations and RSVP', () => {
     }
     const wedding = await payload.create({
       collection: 'events',
-      data: { ...common, title: `${PREFIX}Ana and João`, slug: `${PREFIX}wedding` },
+      data: {
+        ...common,
+        title: `${PREFIX}Ana and João`,
+        slug: `${PREFIX}wedding`,
+        invitation: {
+          style: 'garden',
+          headline: 'Together with their families',
+          schedule: [{ time: '16:00', title: 'Ceremony', place: 'The chapel' }],
+          dressCode: 'Garden formal',
+        },
+      },
     })
+    weddingId = wedding.id
     const closed = await payload.create({
       collection: 'events',
       data: { ...common, title: `${PREFIX}Closed`, slug: `${PREFIX}closed`, rsvpOpen: false },
@@ -64,6 +76,11 @@ test.describe('Invitations and RSVP', () => {
     await expect(page.getByRole('heading', { name: `${PREFIX}Ana and João`, level: 1 })).toBeVisible()
     await expect(page.getByText('Dear Maria Silva,')).toBeVisible()
     await expect(page.getByText('This invitation is for 2 people, you included.')).toBeVisible()
+    // The design chosen on the event.
+    await expect(page.getByText('Together with their families')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Programme' })).toBeVisible()
+    await expect(page.getByText('Ceremony')).toBeVisible()
+    await expect(page.getByText('Garden formal')).toBeVisible()
     await waitForHydration(page)
 
     await page.getByLabel('Yes, I will be there').check()
@@ -103,18 +120,30 @@ test.describe('Invitations and RSVP', () => {
   test('the entry code leads staff to check the guest in, and tells anyone else to show it', async ({ page }) => {
     const payload = await getPayload({ config })
     // The reply test above ended with a decline, and guests who decline get no entry code.
-    await payload.update({ collection: 'event-guests', id: guestId, data: { rsvpStatus: 'attending', attendingCount: 2 } })
+    const guest = await payload.findByID({ collection: 'event-guests', id: guestId, depth: 0 })
+    const table = await payload.create({
+      collection: 'event-tables',
+      data: { event: guest.event as number, name: 'Head table', capacity: 8 },
+    })
+    await payload.update({
+      collection: 'event-guests',
+      id: guestId,
+      data: { rsvpStatus: 'attending', attendingCount: 2, table: table.id },
+    })
     await page.goto(`${BASE}/en/invite/${openToken}`)
     await expect(page.getByRole('img', { name: 'Your entry code' })).toBeVisible()
 
     await page.goto(`${BASE}/en/invite/${openToken}/check-in`)
     await expect(page.getByRole('heading', { name: 'Show this code at the entrance' })).toBeVisible()
     await expect(page.getByText('Maria Silva')).toHaveCount(0)
+    await expect(page.getByText('Head table')).toHaveCount(0)
 
     // Staff sign in on the same site, then open the code.
     await login({ page, user: testUser })
     await page.goto(`${BASE}/en/invite/${openToken}/check-in`)
     await expect(page.getByRole('heading', { name: 'Maria Silva' })).toBeVisible()
+    // The staff view says where the party sits.
+    await expect(page.getByText('Table: Head table')).toBeVisible()
     await waitForHydration(page)
     await page.getByLabel('How many have arrived?').selectOption('2')
     await page.getByRole('button', { name: 'Check in' }).click()
@@ -122,5 +151,16 @@ test.describe('Invitations and RSVP', () => {
 
     const saved = await payload.findByID({ collection: 'event-guests', id: guestId })
     expect(saved.checkedInCount).toBe(2)
+  })
+
+  test('staff preview the invitation design; nobody else can', async ({ page }) => {
+    const anonymous = await page.goto(`${BASE}/en/invite/preview/${weddingId}`)
+    expect(anonymous?.status()).toBe(404)
+
+    await login({ page, user: testUser })
+    await page.goto(`${BASE}/en/invite/preview/${weddingId}`)
+    await expect(page.getByText('Preview for studio staff.', { exact: false })).toBeVisible()
+    await expect(page.getByText('Together with their families')).toBeVisible()
+    await expect(page.getByText('Dear Guest name,')).toBeVisible()
   })
 })

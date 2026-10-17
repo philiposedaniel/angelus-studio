@@ -27,8 +27,10 @@ import { ItalicFeatureClient as ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0
 import { ShareLinkField as ShareLinkField_2e5df494bd78670e2c10ffd7678d4d11 } from '@/components/admin/ShareLinkField'
 import { QuoteLinkField as QuoteLinkField_adbf6fc446fd4f10c087ddb04a0991a9 } from '@/components/admin/QuoteLinkField'
 import { EventGuestLinkField as EventGuestLinkField_c42b0564f688527b531f8eefb3d23a44 } from '@/components/admin/EventGuestLinkField'
+import { InvitationPreviewField as InvitationPreviewField_85d7ddbc0e4990c03ed642ac20063915 } from '@/components/admin/InvitationPreviewField'
 import { RsvpSummaryField as RsvpSummaryField_b02b2a46c354feb218eda568fb94637c } from '@/components/admin/RsvpSummaryField'
 import { GuestImportField as GuestImportField_c812d960eba5e92393703c36e9e28849 } from '@/components/admin/GuestImportField'
+import { SeatingPlanField as SeatingPlanField_16c004ea9dfe490a5fb4138e58ad8a9d } from '@/components/admin/SeatingPlanField'
 import { EventVendorsField as EventVendorsField_3cbe409af76e3e58062f9383933568a1 } from '@/components/admin/EventVendorsField'
 import { InvitationLinkField as InvitationLinkField_a662a60c3fc05b58c41797d06a0edec6 } from '@/components/admin/InvitationLinkField'
 import { VendorLinkField as VendorLinkField_b1bca457eed9774feb8920b690ed1c90 } from '@/components/admin/VendorLinkField'
@@ -68,8 +70,10 @@ export const importMap = {
   "@/components/admin/ShareLinkField#ShareLinkField": ShareLinkField_2e5df494bd78670e2c10ffd7678d4d11,
   "@/components/admin/QuoteLinkField#QuoteLinkField": QuoteLinkField_adbf6fc446fd4f10c087ddb04a0991a9,
   "@/components/admin/EventGuestLinkField#EventGuestLinkField": EventGuestLinkField_c42b0564f688527b531f8eefb3d23a44,
+  "@/components/admin/InvitationPreviewField#InvitationPreviewField": InvitationPreviewField_85d7ddbc0e4990c03ed642ac20063915,
   "@/components/admin/RsvpSummaryField#RsvpSummaryField": RsvpSummaryField_b02b2a46c354feb218eda568fb94637c,
   "@/components/admin/GuestImportField#GuestImportField": GuestImportField_c812d960eba5e92393703c36e9e28849,
+  "@/components/admin/SeatingPlanField#SeatingPlanField": SeatingPlanField_16c004ea9dfe490a5fb4138e58ad8a9d,
   "@/components/admin/EventVendorsField#EventVendorsField": EventVendorsField_3cbe409af76e3e58062f9383933568a1,
   "@/components/admin/InvitationLinkField#InvitationLinkField": InvitationLinkField_a662a60c3fc05b58c41797d06a0edec6,
   "@/components/admin/VendorLinkField#VendorLinkField": VendorLinkField_b1bca457eed9774feb8920b690ed1c90,

@@ -92,3 +92,42 @@
     color: var(--color-ivory);
   }
 }
+
+/*
+ * Invitation designs (src/lib/invitationDesign.ts). Each one redefines the colour tokens inside
+ * the invitation, so the reply form and every other part follow the chosen design.
+ */
+@layer components {
+  .invite-theme-classic {
+    background-color: var(--color-charcoal);
+    border: 1px solid color-mix(in srgb, var(--color-gold) 25%, transparent);
+  }
+  .invite-theme-classic main > section.bg-charcoal {
+    background-color: var(--color-ink);
+  }
+  .invite-theme-garden {
+    --color-ink: #fbf8f1;
+    --color-charcoal: #efe8d8;
+    --color-graphite: #e2d9c4;
+    --color-ivory: #2f3a2c;
+    --color-mist: #6b7262;
+    --color-gold: #5b7553;
+    --color-copper: #a0522d;
+    background-color: #f6f1e5;
+    color: var(--color-ivory);
+    border: 1px solid #d9cfb8;
+  }
+  .invite-theme-modern {
+    --color-ink: #ffffff;
+    --color-charcoal: #f4f4f5;
+    --color-graphite: #e4e4e7;
+    --color-ivory: #18181b;
+    --color-mist: #71717a;
+    --color-gold: #18181b;
+    --color-copper: #b91c1c;
+    --font-display: var(--font-sans);
+    --font-serif: var(--font-sans);
+    background-color: #ffffff;
+    color: var(--color-ivory);
+  }
+}

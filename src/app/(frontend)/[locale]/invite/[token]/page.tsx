@@ -3,10 +3,10 @@ import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 import QRCode from 'qrcode'
 
+import { InvitationShell } from '@/components/invite/InvitationShell'
 import { RsvpForm } from '@/components/invite/RsvpForm'
 import { getDictionary } from '@/i18n/dictionaries'
 import { parseVideoUrl } from '@/lib/embeds'
-import { formatEventWhen } from '@/lib/eventTime'
 import { resolveLocale } from '@/lib/locale'
 import { findInvitation, rsvpIsOpen } from '@/lib/rsvp'
 import { isShareToken } from '@/lib/shareTokens'
@@ -35,7 +35,8 @@ export default async function InvitationPage({ params }: PageProps<'/[locale]/in
   const event = await payload.findByID({
     collection: 'events',
     id: found.event.id,
-    depth: 0,
+    // Depth 1 for the invitation's cover image.
+    depth: 1,
     locale,
     overrideAccess: true,
   })
@@ -63,20 +64,15 @@ export default async function InvitationPage({ params }: PageProps<'/[locale]/in
         })
 
   return (
-    <main className="mx-auto grid max-w-2xl gap-8 px-6 py-16 text-ivory">
-      <header className="grid gap-3">
-        <p className="text-sm uppercase tracking-widest text-gold">{t.heading}</p>
-        <h1 className="font-serif text-4xl">{event.title}</h1>
-        <p>{formatEventWhen(event, locale)}</p>
-        {event.location && <p className="text-mist">{event.location}</p>}
-      </header>
-
+    <InvitationShell event={event} locale={locale} t={t}>
       <section className="grid gap-2">
         <p>
           {t.dear} {guest.name},
         </p>
         <p className="text-mist">{plural(t.seats, partySize)}</p>
-        {event.summary && <p className="whitespace-pre-line text-ivory/90">{event.summary}</p>}
+        {event.summary && !event.invitation?.message && (
+          <p className="whitespace-pre-line text-ivory/90">{event.summary}</p>
+        )}
       </section>
 
       <section className="grid gap-4 rounded-xl border border-ivory/10 bg-charcoal p-6">
@@ -114,7 +110,7 @@ export default async function InvitationPage({ params }: PageProps<'/[locale]/in
           <div
             role="img"
             aria-label={t.entryCode}
-            className="w-56 rounded-xl bg-ivory p-3"
+            className="w-56 rounded-xl bg-white p-3"
             // An SVG drawn by the QR library from our own link; it holds no visitor input.
             dangerouslySetInnerHTML={{ __html: entryCode }}
           />
@@ -147,6 +143,6 @@ export default async function InvitationPage({ params }: PageProps<'/[locale]/in
           {t.openAlbum}
         </a>
       )}
-    </main>
+    </InvitationShell>
   )
 }
