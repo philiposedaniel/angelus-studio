@@ -214,6 +214,19 @@ export const en = {
       failed: 'Something went wrong. Please try again.',
     },
   },
+  vendorBooking: {
+    heading: 'Vendor booking',
+    vendor: 'Vendor',
+    role: 'Your role',
+    arrival: 'Please arrive',
+    instructions: 'Instructions',
+    note: 'A note for the studio (optional)',
+    confirm: 'Confirm I will be there',
+    confirming: 'Confirming…',
+    confirmed: 'Thank you. Your booking is confirmed.',
+    alreadyConfirmed: 'You have confirmed this booking. Contact the studio if anything changes.',
+    failed: 'Something went wrong. Please try again, or contact the studio.',
+  },
   footer: { rights: 'All rights reserved.' },
 }
 
