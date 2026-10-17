@@ -167,9 +167,10 @@ jobs to a separate worker process.
 
 1. In the Stripe dashboard, copy the secret key into `STRIPE_SECRET_KEY`.
 2. Add a webhook endpoint at `https://<studio domain>/api/stripe/webhook`, listening for
-   `checkout.session.completed`, `checkout.session.async_payment_succeeded` and
-   `checkout.session.expired` (the last one frees the places of tickets left unpaid). Copy its
-   signing secret into `STRIPE_WEBHOOK_SECRET`.
+   `checkout.session.completed`, `checkout.session.async_payment_succeeded`,
+   `checkout.session.expired` (frees the places of tickets left unpaid) and `charge.refunded`
+   (records refunds, including ones made in the Stripe dashboard). Copy its signing secret into
+   `STRIPE_WEBHOOK_SECRET`.
 3. Restart the app. Sent quotes now show *Pay deposit securely*, and paid tickets go on sale.
 
 Use Stripe test keys first. The webhook is covered by tests with signed events; a live
@@ -403,6 +404,14 @@ email account exists.
   served by `GET /api/registrations/export?event=<id>` and read with the signed-in user's own
   access, so only the studio's admins and production managers get it. Cells a spreadsheet would
   run as formulas are kept as text.
+- A registration paid online shows a *Payment* section to studio admins and finance managers,
+  with *Refund … and cancel*. After a second click it asks Stripe to refund the full amount (with
+  an idempotency key, so a repeated click never refunds twice), marks the payment *Refund
+  requested* and cancels the registration at once, which stops the ticket at the door and gives
+  its places back (to the waitlist first, if anyone waits). Only the verified `charge.refunded`
+  webhook marks the payment *Refunded*. A full refund made in the Stripe dashboard also cancels
+  the registration; a partial one is recorded on the payment and keeps the ticket. If Stripe
+  refuses, nothing changes.
 - The entry code opens `/<language>/tickets/<token>/check-in`. Signed-in admins and production
   managers of the studio record how many have arrived, as for invitations; anyone else is only told
   to show the code. A cancelled registration shows "Do not admit".
@@ -437,7 +446,7 @@ email account exists.
   back and whenever the event page or a waitlist link is opened; there is no background timer.
 - Deleting an event deletes its ticket types, registrations and waitlists.
 
-Known limits: refunds are made by hand in Stripe, then the registration is cancelled here; no
+Known limits: refunds from the admin are for the full amount (refund part of it in Stripe); no
 booking fee is added (decision 6 in the events plan is open). Paid tickets have been tested with
 signed webhook events, not yet with a live Stripe round trip. Tickets are not emailed until the email account exists, so the ticket page asks people
 to save its link, and staff can resend it from the registration. One entry code covers every place

@@ -654,9 +654,16 @@ export interface Payment {
   amount: number;
   currency: 'eur' | 'usd' | 'gbp';
   kind: 'deposit' | 'balance' | 'ticket';
-  status: 'pending' | 'paid' | 'failed' | 'expired';
+  status: 'pending' | 'paid' | 'failed' | 'expired' | 'refund-pending' | 'refunded';
+  /**
+   * Refunded so far, in minor units, as Stripe reports it.
+   */
+  refundedAmount?: number | null;
+  refundedAt?: string | null;
   paidAt?: string | null;
   stripeSessionId: string;
+  stripePaymentIntentId?: string | null;
+  stripeRefundId?: string | null;
   stripeEventId?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -1756,8 +1763,12 @@ export interface PaymentsSelect<T extends boolean = true> {
   currency?: T;
   kind?: T;
   status?: T;
+  refundedAmount?: T;
+  refundedAt?: T;
   paidAt?: T;
   stripeSessionId?: T;
+  stripePaymentIntentId?: T;
+  stripeRefundId?: T;
   stripeEventId?: T;
   updatedAt?: T;
   createdAt?: T;

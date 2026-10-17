@@ -4,6 +4,7 @@ import { hasTenantRole, isSuperAdmin, tenantRoles } from '@/access'
 import { EVENT_GUEST_STAFF_ROLES } from '@/collections/EventGuests'
 import { DEFAULT_LOCALE, LOCALE_LABELS, LOCALES } from '@/i18n/config'
 import { exportAttendees } from '@/lib/attendees'
+import { refundTicketEndpoint } from '@/lib/ticketRefunds'
 import { idOf } from '@/lib/ids'
 import {
   lockPromoCode,
@@ -51,7 +52,10 @@ export const Registrations: CollectionConfig = {
     listSearchableFields: ['name', 'email'],
   },
   defaultSort: '-createdAt',
-  endpoints: [{ path: '/export', method: 'get', handler: exportAttendees }],
+  endpoints: [
+    { path: '/export', method: 'get', handler: exportAttendees },
+    { path: '/:id/refund', method: 'post', handler: refundTicketEndpoint },
+  ],
   access: {
     read: tenantRoles(EVENT_GUEST_STAFF_ROLES),
     create: tenantRoles(EVENT_GUEST_STAFF_ROLES),
@@ -288,6 +292,11 @@ export const Registrations: CollectionConfig = {
       name: 'ticketLink',
       type: 'ui',
       admin: { components: { Field: '@/components/admin/TicketLinkField#TicketLinkField' } },
+    },
+    {
+      name: 'refund',
+      type: 'ui',
+      admin: { components: { Field: '@/components/admin/RefundField#RefundField' } },
     },
     {
       type: 'collapsible',

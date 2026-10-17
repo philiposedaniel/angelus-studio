@@ -10,7 +10,8 @@ export const PAYMENT_ROLES = ['admin', 'finance-manager'] as const
  * Online payments made through Stripe Checkout, for a quote (deposit or balance) or for an event
  * ticket (a registration). Created when a client or ticket buyer starts paying and
  * confirmed only by a verified Stripe webhook (see src/lib/stripeWebhook.ts). Nobody
- * can create, change or delete these through the admin or the API.
+ * can create, change or delete these through the admin or the API. A ticket can be refunded
+ * from its registration (src/lib/ticketRefunds.ts); the webhook records the refund.
  */
 export const Payments: CollectionConfig = {
   slug: 'payments',
@@ -79,7 +80,19 @@ export const Payments: CollectionConfig = {
         { label: 'Paid', value: 'paid' },
         { label: 'Failed: amount or currency did not match', value: 'failed' },
         { label: 'Expired: not paid in time', value: 'expired' },
+        { label: 'Refund requested', value: 'refund-pending' },
+        { label: 'Refunded', value: 'refunded' },
       ],
+    },
+    {
+      name: 'refundedAmount',
+      type: 'number',
+      admin: { position: 'sidebar', readOnly: true, description: 'Refunded so far, in minor units, as Stripe reports it.' },
+    },
+    {
+      name: 'refundedAt',
+      type: 'date',
+      admin: { position: 'sidebar', readOnly: true, date: { pickerAppearance: 'dayAndTime' } },
     },
     {
       name: 'paidAt',
@@ -93,6 +106,14 @@ export const Payments: CollectionConfig = {
       unique: true,
       admin: { readOnly: true },
     },
+    {
+      // The Stripe payment behind the Checkout session, which refunds are reported against.
+      name: 'stripePaymentIntentId',
+      type: 'text',
+      index: true,
+      admin: { readOnly: true },
+    },
+    { name: 'stripeRefundId', type: 'text', admin: { readOnly: true } },
     {
       // The last Stripe event that changed this payment. A repeated event is ignored.
       name: 'stripeEventId',
