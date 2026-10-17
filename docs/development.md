@@ -506,3 +506,12 @@ protects; it skips access rules, so callers check access first and filter by ids
 checked. The CSV downloads and the admin's registration summary and seating plan still load every
 row through Payload, with access rules, at roughly 0.1 ms a row: comfortable to about 20,000 rows
 per event, and the first thing to revisit beyond that.
+
+### Accessibility and phones
+
+`tests/e2e/accessibility.e2e.spec.ts` opens the pages guests, buyers, vendors and hosts use (event
+list, event page with tickets, ticket, waitlist, invitation, vendor link, portal sign-in and home,
+and the host's guest list) on a 360-pixel-wide phone screen. Each must have no WCAG 2.2 A or AA
+violation that [axe](https://github.com/dequelabs/axe-core) can detect and nothing wider than the
+screen. It also registers for a ticket and searches a guest list with the keyboard alone. Automated
+checks catch roughly a third of real problems; screen reader testing by a person is still to do.
