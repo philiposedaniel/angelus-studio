@@ -1,0 +1,88 @@
+import config from '@payload-config'
+import { notFound } from 'next/navigation'
+import { getPayload } from 'payload'
+
+import { ConfirmBookingForm } from '@/components/vendor/ConfirmBookingForm'
+import { getDictionary } from '@/i18n/dictionaries'
+import { formatEventWhen } from '@/lib/eventTime'
+import { resolveLocale } from '@/lib/locale'
+import { isShareToken } from '@/lib/shareTokens'
+import { getCurrentTenant } from '@/lib/tenant'
+import { findVendorBooking } from '@/lib/vendors'
+
+// The link is the vendor's key: keep it out of search engines and referrers.
+export const metadata = { robots: { index: false }, referrer: 'no-referrer' }
+
+/**
+ * A vendor's page for one booking: the event, their role and arrival time, the studio's
+ * instructions, and a button to confirm. Amounts and staff notes are never shown here.
+ */
+export default async function VendorBookingPage({ params }: PageProps<'/[locale]/vendor/[token]'>) {
+  const tenant = await getCurrentTenant()
+  if (!tenant) notFound()
+  const { locale: requested, token } = await params
+  const locale = await resolveLocale(tenant, requested)
+  if (!isShareToken(token)) notFound()
+
+  const payload = await getPayload({ config })
+  const found = await findVendorBooking(payload, tenant.id, token)
+  if (!found) notFound()
+  const { booking, vendor } = found
+  const event = await payload.findByID({
+    collection: 'events',
+    id: found.event.id,
+    depth: 0,
+    locale,
+    overrideAccess: true,
+  })
+  const t = getDictionary(locale).vendorBooking
+  const zone = event.timeZone || 'Europe/Lisbon'
+  const arrival = booking.arrivalAt
+    ? new Intl.DateTimeFormat(locale, { dateStyle: 'full', timeStyle: 'short', timeZone: zone }).format(
+        new Date(booking.arrivalAt),
+      )
+    : null
+  const confirmed = booking.status === 'confirmed'
+
+  return (
+    <main className="mx-auto grid max-w-2xl gap-8 px-6 py-16 text-ivory">
+      <header className="grid gap-3">
+        <p className="text-sm uppercase tracking-widest text-gold">{t.heading}</p>
+        <h1 className="font-serif text-4xl">{event.title}</h1>
+        <p>{formatEventWhen(event, locale)}</p>
+        {event.location && <p className="text-mist">{event.location}</p>}
+      </header>
+
+      <dl className="grid gap-4 rounded-xl border border-ivory/10 bg-charcoal p-6">
+        <div>
+          <dt className="text-sm text-mist">{t.vendor}</dt>
+          <dd>{vendor.name}</dd>
+        </div>
+        <div>
+          <dt className="text-sm text-mist">{t.role}</dt>
+          <dd>{booking.role}</dd>
+        </div>
+        {arrival && (
+          <div>
+            <dt className="text-sm text-mist">{t.arrival}</dt>
+            <dd>{arrival}</dd>
+          </div>
+        )}
+        {booking.instructions && (
+          <div>
+            <dt className="text-sm text-mist">{t.instructions}</dt>
+            <dd className="whitespace-pre-line">{booking.instructions}</dd>
+          </div>
+        )}
+      </dl>
+
+      {confirmed ? (
+        <p role="status" className="text-gold">
+          {t.alreadyConfirmed}
+        </p>
+      ) : (
+        <ConfirmBookingForm token={token} t={t} />
+      )}
+    </main>
+  )
+}
