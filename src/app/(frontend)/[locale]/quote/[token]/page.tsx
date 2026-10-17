@@ -3,7 +3,9 @@ import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { DepositButton } from '@/components/quote/DepositButton'
+import { SignContractForm } from '@/components/quote/SignContractForm'
 import { getDictionary } from '@/i18n/dictionaries'
+import { contractRequired, contractSigned } from '@/lib/contracts'
 import { resolveLocale } from '@/lib/locale'
 import { formatMoney } from '@/lib/money'
 import { isQuoteExpired } from '@/lib/quotes'
@@ -48,7 +50,10 @@ export default async function QuotePage({ params, searchParams }: PageProps<'/[l
   const money = (amount: number) => formatMoney(amount, quote.currency, locale)
   const paid = quote.status === 'deposit-paid'
   const expired = !paid && isQuoteExpired(quote.validUntil)
-  const canPay = !paid && !expired && stripeConfigured()
+  // A quote with contract terms is paid only after the client has signed them.
+  const hasContract = contractRequired(quote.contract)
+  const signed = contractSigned(quote.contract)
+  const canPay = !paid && !expired && stripeConfigured() && (!hasContract || signed)
 
   return (
     <main className="mx-auto grid max-w-3xl gap-8 px-6 py-16 text-ivory">
@@ -104,6 +109,19 @@ export default async function QuotePage({ params, searchParams }: PageProps<'/[l
           <dd>{money((quote.totalAmount ?? 0) - (quote.depositAmount ?? 0))}</dd>
         </div>
       </dl>
+
+      {hasContract && (
+        <section className="grid gap-3">
+          <h2 className="font-serif text-2xl">{t.contractHeading}</h2>
+          <div className="whitespace-pre-line text-mist">{quote.contract?.terms}</div>
+          {signed && quote.contract?.signedAt && (
+            <p role="status" className="text-gold">
+              {t.signedBy} {quote.contract.signedName} · {formatDate(quote.contract.signedAt, locale)}
+            </p>
+          )}
+        </section>
+      )}
+      {hasContract && !signed && !paid && !expired && <SignContractForm token={token} locale={locale} t={t} />}
 
       {canPay && <DepositButton token={token} locale={locale} t={t} />}
       {!paid && !expired && !stripeConfigured() && <p className="text-mist">{t.paymentUnavailable}</p>}

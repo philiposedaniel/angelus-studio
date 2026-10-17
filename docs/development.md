@@ -152,6 +152,12 @@ jobs to a separate worker process.
   The client's link works only while the quote is sent and not past its valid-until day.
 - Payments appear under *Sales → Payments*. Only admins and finance managers see them. Nobody
   creates or edits them by hand.
+- **Contract (optional):** the quote's *Contract* section holds terms of up to 10,000 characters.
+  With terms, the client reads them on the quote page, types their full name as their signature,
+  and ticks the agreement box. Only then does *Pay deposit* appear. The server records the typed
+  name, the time, the client's IP address, their browser, and a SHA-256 fingerprint of the exact
+  terms. Staff cannot write these fields, and the terms and prices of a signed quote are locked
+  (to change them, create a new quote). Without terms, the quote works as before.
 
 ### Stripe setup
 
@@ -170,9 +176,21 @@ Stripe round trip has not been run yet.
   charged twice; refund the extra payment in Stripe and note it on the quote.
 - The quote's text is entered once and is not translated; the interface around it is.
 - No email goes out yet. Staff copy the client link into their own email.
-- Only deposits are taken online. Balance payments and contract signing come later.
+- Only deposits are taken online. Balance payments come later.
+- Contract signing is a typed name with a recorded agreement, not a qualified or third-party
+  e-signature. No PDF copy of the signed contract is produced yet, so staff copy the terms into
+  their own records. The IP address and browser are personal data; how long to keep them is not
+  decided yet.
 - The admin *Client link* box points at the English page; the client can change language on the site.
 
+## Watermarks on preview copies
+
+- Set *Watermark text* on a gallery (for example your studio name). Clients see it on the preview
+  copies, in the client portal and in shared albums. Leave it empty for no watermark.
+- The mark sits in the bottom-right corner of the thumbnail and web copies. It is drawn when the
+  copy is served, so changing the text takes effect at once, and the stored copies are not changed.
+- Staff see clean copies. Originals are never changed. With downloads allowed, a client can still
+  download the original, which has no watermark; turn downloads off for galleries that must stay marked.
 ## Events and guest albums
 
 - Staff create an event under *Events → Events*: title, slug, start (and optional end), time zone,
@@ -251,15 +269,18 @@ for the order of the next steps.
 - **Crew conflicts:** saving a project fails if one of its crew is already on another project of the
   same studio on the same day. Pick another person or day.
 - Crew must be members of the project's studio; the API refuses anyone else.
+- **Crew and client access:** a crew member sees their projects in the portal (*Your productions*),
+  with the crew list and tasks. The client assigned on the project (*Client user*, a member of the
+  same studio) sees the title, status, shoot day and location. Neither can change a project. Internal
+  notes, the quote, the client's email and the client user are for production staff only. Anyone else
+  sees an empty list.
 
 - **Call sheet** (on the project): a meeting point, notes for the crew, and a schedule of times, items
-  and places. Times are 24-hour *HH:MM*, and saving fails on anything else. Only admins and
-  production managers can see or change the call sheet for now; crew will see it once their access
-  to their own projects is merged.
+  and places. Times are 24-hour *HH:MM*, and saving fails on anything else. Production staff and crew
+  can read it; clients cannot. Only admins and production managers can change it.
 
-Not built yet: crew and client access to their own projects in the portal (in review), run-of-show
-timing and printing, equipment reservations, and calendar views. Only admins and production
-managers can open projects for now.
+Not built yet: run-of-show timing and printing, equipment reservations, calendar views, the crew's
+own view of the call sheet in the portal, and clients uploading or approving anything on their project.
 
 
 ## Vendors

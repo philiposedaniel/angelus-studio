@@ -5,13 +5,16 @@ import * as migration_20261015_194709_shared_albums from './20261015_194709_shar
 import * as migration_20261015_201137_website_pages from './20261015_201137_website_pages';
 import * as migration_20261015_213640_inquiries from './20261015_213640_inquiries';
 import * as migration_20261015_235501_quotes_and_payments from './20261015_235501_quotes_and_payments';
+import * as migration_20261016_000713_gallery_watermark from './20261016_000713_gallery_watermark';
 import * as migration_20261016_002313_events_guest_albums from './20261016_002313_events_guest_albums';
 import * as migration_20261016_004415_event_guests_rsvp from './20261016_004415_event_guests_rsvp';
 import * as migration_20261016_013642_projects_crew_tasks from './20261016_013642_projects_crew_tasks';
+import * as migration_20261016_023702_projects_client_user from './20261016_023702_projects_client_user';
 import * as migration_20261016_064009_call_sheets from './20261016_064009_call_sheets';
 import * as migration_20261016_070048_guest_check_in from './20261016_070048_guest_check_in';
 import * as migration_20261016_070433_vendors from './20261016_070433_vendors';
-import * as migration_20261016_071024_event_tables from './20261016_071024_event_tables';
+import * as migration_20261016_071129_contract_signing from './20261016_071129_contract_signing';
+import * as migration_20261017_014951_event_tables from './20261017_014951_event_tables';
 
 export const migrations = [
   {
@@ -50,6 +53,11 @@ export const migrations = [
     name: '20261015_235501_quotes_and_payments',
   },
   {
+    up: migration_20261016_000713_gallery_watermark.up,
+    down: migration_20261016_000713_gallery_watermark.down,
+    name: '20261016_000713_gallery_watermark',
+  },
+  {
     up: migration_20261016_002313_events_guest_albums.up,
     down: migration_20261016_002313_events_guest_albums.down,
     name: '20261016_002313_events_guest_albums',
@@ -63,6 +71,11 @@ export const migrations = [
     up: migration_20261016_013642_projects_crew_tasks.up,
     down: migration_20261016_013642_projects_crew_tasks.down,
     name: '20261016_013642_projects_crew_tasks',
+  },
+  {
+    up: migration_20261016_023702_projects_client_user.up,
+    down: migration_20261016_023702_projects_client_user.down,
+    name: '20261016_023702_projects_client_user',
   },
   {
     up: migration_20261016_064009_call_sheets.up,
@@ -80,8 +93,13 @@ export const migrations = [
     name: '20261016_070433_vendors',
   },
   {
-    up: migration_20261016_071024_event_tables.up,
-    down: migration_20261016_071024_event_tables.down,
-    name: '20261016_071024_event_tables'
+    up: migration_20261016_071129_contract_signing.up,
+    down: migration_20261016_071129_contract_signing.down,
+    name: '20261016_071129_contract_signing',
+  },
+  {
+    up: migration_20261017_014951_event_tables.up,
+    down: migration_20261017_014951_event_tables.down,
+    name: '20261017_014951_event_tables'
   },
 ];
