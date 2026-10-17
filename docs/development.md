@@ -162,6 +162,12 @@ jobs to a separate worker process.
   name, the time, the client's IP address, their browser, and a SHA-256 fingerprint of the exact
   terms. Staff cannot write these fields, and the terms and prices of a signed quote are locked
   (to change them, create a new quote). Without terms, the quote works as before.
+- **Invoice:** the quote page links to `/quote/<token>/invoice`, the same private link the client
+  already has. It lists the line items, the total, the deposit and balance paid so far, the amount
+  still due, and each confirmed payment with its date. Only payments marked *paid* count; pending,
+  failed and expired payments and ticket payments do not. Quotes that are still drafts have no
+  invoice. It has no PDF download and no print styles, so printing from the browser also prints
+  the site header and footer.
 
 ### Stripe setup
 
