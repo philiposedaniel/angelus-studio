@@ -31,7 +31,7 @@ depends on it.
 3. **Event registration and tickets.** Ticket types with price, capacity and sales window;
    free registration; paid tickets through Stripe Checkout reusing the signed webhook; orders
    and attendee tickets with QR codes that the check-in page also accepts. *Needs Stripe test keys.*
-4. **Vendors.** Directory, per-event assignments, amounts due and paid, private documents,
+4. **Vendors** (built; private documents come with R2 storage, step 8). Directory, per-event assignments, amounts due and paid, private documents,
    and a vendor link with their event details. *Needs nothing; documents stay on local disk
    until R2.*
 5. **Email.** Invitations, RSVP and ticket confirmations, reminders, vendor notices and
