@@ -13,6 +13,7 @@ import * as migration_20261016_023702_projects_client_user from './20261016_0237
 import * as migration_20261016_064009_call_sheets from './20261016_064009_call_sheets';
 import * as migration_20261016_070048_guest_check_in from './20261016_070048_guest_check_in';
 import * as migration_20261016_070433_vendors from './20261016_070433_vendors';
+import * as migration_20261016_071129_contract_signing from './20261016_071129_contract_signing';
 
 export const migrations = [
   {
@@ -88,6 +89,11 @@ export const migrations = [
   {
     up: migration_20261016_070433_vendors.up,
     down: migration_20261016_070433_vendors.down,
-    name: '20261016_070433_vendors'
+    name: '20261016_070433_vendors',
+  },
+  {
+    up: migration_20261016_071129_contract_signing.up,
+    down: migration_20261016_071129_contract_signing.down,
+    name: '20261016_071129_contract_signing'
   },
 ];
