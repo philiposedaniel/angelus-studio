@@ -8,10 +8,12 @@ import { cn } from '@/lib/cn'
 type Props = {
   photoId: number
   initialFavoriteId: number | null
+  /** True while the studio reviews the client's selection: favorites cannot change then. */
+  locked?: boolean
   labels: { favorite: string; unfavorite: string; error: string }
 }
 
-export function FavoriteButton({ photoId, initialFavoriteId, labels }: Props) {
+export function FavoriteButton({ photoId, initialFavoriteId, locked = false, labels }: Props) {
   const [favoriteId, setFavoriteId] = useState(initialFavoriteId)
   const [pending, setPending] = useState(false)
   const [error, setError] = useState(false)
@@ -41,7 +43,7 @@ export function FavoriteButton({ photoId, initialFavoriteId, labels }: Props) {
     <button
       type="button"
       onClick={toggle}
-      disabled={pending}
+      disabled={pending || locked}
       aria-pressed={active}
       aria-label={active ? labels.unfavorite : labels.favorite}
       title={error ? labels.error : active ? labels.unfavorite : labels.favorite}

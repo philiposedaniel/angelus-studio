@@ -7,10 +7,12 @@ import { getPayload } from 'payload'
 import { PhotoAlbum } from '@/components/album/PhotoAlbum'
 import { FavoriteButton } from '@/components/portal/FavoriteButton'
 import { GalleryZipButton } from '@/components/portal/GalleryZipButton'
+import { SelectionPanel } from '@/components/portal/SelectionPanel'
 import { getDictionary } from '@/i18n/dictionaries'
 import { requirePortalUser } from '@/lib/auth'
 import { cn } from '@/lib/cn'
 import { resolveLocale } from '@/lib/locale'
+import { selectionIsLocked, type SelectionStatus } from '@/lib/selections'
 import { getCurrentTenant } from '@/lib/tenant'
 
 export const metadata = { robots: { index: false } }
@@ -59,6 +61,17 @@ export default async function GalleryPage({
   const favoriteByPhoto = new Map(
     favorites.docs.map((f) => [typeof f.photo === 'object' ? f.photo.id : f.photo, f.id]),
   )
+
+  const { docs: selections } = await payload.find({
+    collection: 'gallery-selections',
+    user,
+    overrideAccess: false,
+    where: { and: [{ gallery: { equals: gallery.id } }, { user: { equals: user.id } }] },
+    limit: 1,
+    depth: 0,
+  })
+  const selectionStatus: SelectionStatus = selections[0]?.status ?? 'open'
+  const selectionLocked = selectionIsLocked(selectionStatus)
 
   const favoriteIds = [...favoriteByPhoto.keys()]
   const photos = await payload.find({
@@ -115,6 +128,15 @@ export default async function GalleryPage({
         </Link>
       </nav>
 
+      <SelectionPanel
+        galleryId={gallery.id}
+        initialStatus={selectionStatus}
+        selected={favoriteByPhoto.size}
+        limit={gallery.selectionLimit ?? null}
+        feedback={selections[0]?.feedback ?? null}
+        t={dictionary.selection}
+      />
+
       {gallery.allowDownloads && photos.totalDocs > 0 && (
         <div className="mt-6 flex flex-wrap items-start gap-3">
           {(['all', 'favorites'] as const)
@@ -170,6 +192,7 @@ export default async function GalleryPage({
                   <FavoriteButton
                     photoId={photo.id}
                     initialFavoriteId={favoriteByPhoto.get(photo.id) ?? null}
+                    locked={selectionLocked}
                     labels={{
                       favorite: t.favorite,
                       unfavorite: t.unfavorite,

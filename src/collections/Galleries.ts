@@ -99,6 +99,17 @@ export const Galleries: CollectionConfig = {
       },
     },
     {
+      name: 'selectionLimit',
+      type: 'number',
+      min: 1,
+      max: 10000,
+      admin: {
+        position: 'sidebar',
+        description:
+          'Most photos a client may select here. Leave empty for no limit. Clients select by marking favorites.',
+      },
+    },
+    {
       name: 'shareEnabled',
       type: 'checkbox',
       label: 'Share by link',
