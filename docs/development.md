@@ -279,7 +279,13 @@ for the order of the next steps.
   and places. Times are 24-hour *HH:MM*, and saving fails on anything else. Production staff and crew
   can read it; clients cannot. Only admins and production managers can change it.
 
-Not built yet: run-of-show timing and printing, equipment reservations, calendar views, the crew's
+- **Production calendar** (*/portal/calendar*, linked from the portal home): the studio's productions
+  by shoot day, one month at a time, with the month before and after one click away. It lists each
+  production's title, status and location only. Each person sees what the project rules let them
+  see: staff see all of the studio's productions, and anyone else sees an empty calendar. Events are
+  not on it; they stay on the events pages.
+
+Not built yet: run-of-show timing and printing, equipment reservations, the crew's
 own view of the call sheet in the portal, and clients uploading or approving anything on their project.
 
 
