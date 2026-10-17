@@ -815,6 +815,10 @@ export interface Project {
   quote?: (number | null) | Quote;
   clientName: string;
   clientEmail?: string | null;
+  /**
+   * The client who sees this project in their portal.
+   */
+  clientUser?: (number | null) | User;
   status: 'planning' | 'confirmed' | 'in-production' | 'delivered' | 'closed';
   /**
    * The day the crew works.
@@ -1569,6 +1573,7 @@ export interface ProjectsSelect<T extends boolean = true> {
   quote?: T;
   clientName?: T;
   clientEmail?: T;
+  clientUser?: T;
   status?: T;
   shootDate?: T;
   location?: T;
