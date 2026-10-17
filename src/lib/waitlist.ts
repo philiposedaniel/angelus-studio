@@ -29,10 +29,13 @@ export const WAITLIST_OFFER_MS = 24 * 60 * 60 * 1000
 export const MAX_WAITLIST_JOINS_PER_SENDER_PER_HOUR = 10
 export const MAX_WAITLIST_JOINS_PER_EMAIL_PER_HOUR = 3
 
+/** Error status the registrations collection uses when a waitlist offer was already taken or ran out. */
+export const WAITLIST_CLAIM_CLOSED_STATUS = 410
+
 /** Marks the waitlist's own status changes, which staff cannot make by hand. */
 const WAITLIST_SYSTEM_CONTEXT = { waitlistSystem: true } as const
 /** Marks changes made while refreshing a waitlist, which must not start another refresh. */
-const WAITLIST_REFRESH_CONTEXT = { waitlistSystem: true, waitlistRefresh: true } as const
+export const WAITLIST_REFRESH_CONTEXT = { waitlistSystem: true, waitlistRefresh: true } as const
 export const isWaitlistSystem = (context: unknown) =>
   (context as Record<string, unknown> | undefined)?.waitlistSystem === true
 export const isWaitlistRefresh = (context: unknown) =>
@@ -309,7 +312,7 @@ export async function waitlistPosition(payload: Payload, entry: Pick<WaitlistEnt
 /**
  * Claims the places offered to someone on the waitlist, with their link: a registration is
  * made in their name for the places they asked for, free or paid like any other, using the
- * places held for them. The entry is marked claimed only once that registration exists.
+ * places held for them. The entry is marked claimed together with that registration.
  */
 export async function claimWaitlistPlaces({
   payload,
@@ -344,15 +347,8 @@ export async function claimWaitlistPlaces({
     now,
     waitlistEntryId: entry.id,
   })
-  if (result.status === 'registered' || result.status === 'checkout') {
-    await payload.update({
-      collection: 'waitlist-entries',
-      id: entry.id,
-      data: { status: 'claimed', registration: result.registrationId },
-      overrideAccess: true,
-      context: WAITLIST_SYSTEM_CONTEXT,
-    })
-  }
+  // The registrations collection marks the entry claimed in the same transaction, under the
+  // ticket's lock, so two claims at once cannot both go through.
   return result
 }
 

@@ -15,12 +15,15 @@ import * as migration_20261016_064009_call_sheets from './20261016_064009_call_s
 import * as migration_20261016_070048_guest_check_in from './20261016_070048_guest_check_in';
 import * as migration_20261016_070433_vendors from './20261016_070433_vendors';
 import * as migration_20261016_071129_contract_signing from './20261016_071129_contract_signing';
+import * as migration_20261016_120136_equipment_reservations from './20261016_120136_equipment_reservations';
 import * as migration_20261017_014951_event_tables from './20261017_014951_event_tables';
 import * as migration_20261017_022238_invitation_design from './20261017_022238_invitation_design';
 import * as migration_20261017_022307_event_organizers from './20261017_022307_event_organizers';
 import * as migration_20261017_130402_event_tickets from './20261017_130402_event_tickets';
 import * as migration_20261017_131541_paid_tickets from './20261017_131541_paid_tickets';
 import * as migration_20261017_190125_waitlist from './20261017_190125_waitlist';
+import * as migration_20261017_192724_promo_codes from './20261017_192724_promo_codes';
+import * as migration_20261017_195026_ticket_refunds from './20261017_195026_ticket_refunds';
 
 export const migrations = [
   {
@@ -109,6 +112,11 @@ export const migrations = [
     name: '20261016_071129_contract_signing',
   },
   {
+    up: migration_20261016_120136_equipment_reservations.up,
+    down: migration_20261016_120136_equipment_reservations.down,
+    name: '20261016_120136_equipment_reservations',
+  },
+  {
     up: migration_20261017_014951_event_tables.up,
     down: migration_20261017_014951_event_tables.down,
     name: '20261017_014951_event_tables',
@@ -136,6 +144,16 @@ export const migrations = [
   {
     up: migration_20261017_190125_waitlist.up,
     down: migration_20261017_190125_waitlist.down,
-    name: '20261017_190125_waitlist'
+    name: '20261017_190125_waitlist',
+  },
+  {
+    up: migration_20261017_192724_promo_codes.up,
+    down: migration_20261017_192724_promo_codes.down,
+    name: '20261017_192724_promo_codes',
+  },
+  {
+    up: migration_20261017_195026_ticket_refunds.up,
+    down: migration_20261017_195026_ticket_refunds.down,
+    name: '20261017_195026_ticket_refunds'
   },
 ];

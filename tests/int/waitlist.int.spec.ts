@@ -328,4 +328,41 @@ describe('ticket waitlist', () => {
     expect(removed.status).toBe('removed')
     expect(removed.claimToken).toBe(asManager.claimToken)
   })
+
+  it('lets only one of two claims at once take the offered places', async () => {
+    const ticketType = await makeTicketType({ capacity: 2 })
+    const taken = await fill(ticketType)
+    // The first person waits for one place; the second needs two, so the spare place stays unoffered.
+    const token = tokenOf(await join(ticketType, { quantity: '1' }))
+    await join(ticketType, { quantity: '2' })
+    await cancel(taken[0]!)
+    await cancel(taken[1]!)
+    expect((await entryOf(token)).status).toBe('offered')
+
+    const results = await Promise.all([claim(token), claim(token)])
+    expect(results.filter((r) => r.status === 'registered')).toHaveLength(1)
+    expect(results.filter((r) => r.status === 'error')).toHaveLength(1)
+    const { totalDocs } = await payload.count({
+      collection: 'registrations',
+      where: { and: [{ ticketType: { equals: ticketType.id } }, { status: { equals: 'confirmed' } }] },
+      overrideAccess: true,
+    })
+    expect(totalDocs).toBe(1)
+  })
+
+  it('keeps everything but the status out of staff hands', async () => {
+    const ticketType = await makeTicketType()
+    const taken = await fill(ticketType)
+    const token = tokenOf(await join(ticketType))
+    await cancel(taken[0]!)
+    const offered = await entryOf(token)
+    const saved = await payload.update({
+      collection: 'waitlist-entries',
+      id: offered.id,
+      data: { offerExpiresAt: '3000-01-01T00:00:00.000Z', email: 'someone-else@example.com', quantity: 4 },
+      user: managerA,
+      overrideAccess: false,
+    })
+    expect(saved).toMatchObject({ offerExpiresAt: offered.offerExpiresAt, email: offered.email, quantity: offered.quantity })
+  })
 })
