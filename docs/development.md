@@ -290,7 +290,22 @@ for the order of the next steps.
   see: staff see all of the studio's productions, and anyone else sees an empty calendar. Events are
   not on it; they stay on the events pages.
 
-Not built yet: run-of-show timing and printing, equipment reservations, the crew's
+## Equipment and reservations
+
+- **Equipment** (*Production → Equipment*): the kit the studio owns, with a name, category, serial
+  number and notes. Untick *Active* to retire a piece; retired kit cannot be reserved.
+- **Equipment reservations** (*Production → Equipment reservations*): one piece of kit, one production,
+  and a start and end time. The end is not included, so one reservation can start the moment another
+  ends. The server refuses a reservation that overlaps another for the same kit, that ends before it
+  starts, or that uses kit or a production from another studio.
+- The database also refuses overlaps, with an exclusion constraint on `equipment_reservations`
+  (migration `20261016_120136_equipment_reservations`). It needs the `btree_gist` extension, which
+  the migration creates. Two requests at the same moment cannot both book the same kit.
+- Only production staff can read or change equipment and reservations. Other studios and clients
+  see nothing.
+- Not built yet: kit check-out and return, kit lists per production, and a calendar of kit use.
+
+Not built yet: run-of-show timing and printing, the crew's
 own view of the call sheet in the portal, and clients uploading or approving anything on their project.
 
 

@@ -90,6 +90,8 @@ export interface Config {
     'waitlist-entries': WaitlistEntry;
     'promo-codes': PromoCode;
     projects: Project;
+    equipment: Equipment;
+    'equipment-reservations': EquipmentReservation;
     'payload-kv': PayloadKv;
     'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
@@ -121,6 +123,8 @@ export interface Config {
     'waitlist-entries': WaitlistEntriesSelect<false> | WaitlistEntriesSelect<true>;
     'promo-codes': PromoCodesSelect<false> | PromoCodesSelect<true>;
     projects: ProjectsSelect<false> | ProjectsSelect<true>;
+    equipment: EquipmentSelect<false> | EquipmentSelect<true>;
+    'equipment-reservations': EquipmentReservationsSelect<false> | EquipmentReservationsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -1136,6 +1140,45 @@ export interface Project {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "equipment".
+ */
+export interface Equipment {
+  id: number;
+  tenant?: (number | null) | Tenant;
+  name: string;
+  /**
+   * For example camera, lens or light.
+   */
+  category?: string | null;
+  serialNumber?: string | null;
+  /**
+   * Untick to retire it. Retired kit cannot be reserved.
+   */
+  active?: boolean | null;
+  /**
+   * Internal notes.
+   */
+  notes?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "equipment-reservations".
+ */
+export interface EquipmentReservation {
+  id: number;
+  tenant?: (number | null) | Tenant;
+  equipment: number | Equipment;
+  project: number | Project;
+  startsAt: string;
+  endsAt: string;
+  notes?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -1350,6 +1393,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'projects';
         value: number | Project;
+      } | null)
+    | ({
+        relationTo: 'equipment';
+        value: number | Equipment;
+      } | null)
+    | ({
+        relationTo: 'equipment-reservations';
+        value: number | EquipmentReservation;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -2027,6 +2078,34 @@ export interface ProjectsSelect<T extends boolean = true> {
               id?: T;
             };
       };
+  notes?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "equipment_select".
+ */
+export interface EquipmentSelect<T extends boolean = true> {
+  tenant?: T;
+  name?: T;
+  category?: T;
+  serialNumber?: T;
+  active?: T;
+  notes?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "equipment-reservations_select".
+ */
+export interface EquipmentReservationsSelect<T extends boolean = true> {
+  tenant?: T;
+  equipment?: T;
+  project?: T;
+  startsAt?: T;
+  endsAt?: T;
   notes?: T;
   updatedAt?: T;
   createdAt?: T;

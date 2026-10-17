@@ -15,6 +15,7 @@ import * as migration_20261016_064009_call_sheets from './20261016_064009_call_s
 import * as migration_20261016_070048_guest_check_in from './20261016_070048_guest_check_in';
 import * as migration_20261016_070433_vendors from './20261016_070433_vendors';
 import * as migration_20261016_071129_contract_signing from './20261016_071129_contract_signing';
+import * as migration_20261016_120136_equipment_reservations from './20261016_120136_equipment_reservations';
 import * as migration_20261017_014951_event_tables from './20261017_014951_event_tables';
 import * as migration_20261017_022238_invitation_design from './20261017_022238_invitation_design';
 import * as migration_20261017_022307_event_organizers from './20261017_022307_event_organizers';
@@ -109,6 +110,11 @@ export const migrations = [
     up: migration_20261016_071129_contract_signing.up,
     down: migration_20261016_071129_contract_signing.down,
     name: '20261016_071129_contract_signing',
+  },
+  {
+    up: migration_20261016_120136_equipment_reservations.up,
+    down: migration_20261016_120136_equipment_reservations.down,
+    name: '20261016_120136_equipment_reservations',
   },
   {
     up: migration_20261017_014951_event_tables.up,
