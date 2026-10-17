@@ -1,8 +1,9 @@
+import { sql } from '@payloadcms/db-postgres'
 import type { Payload, PayloadRequest } from 'payload'
 
 import { idOf } from '@/lib/ids'
 import { advisoryLock } from '@/lib/advisoryLock'
-import { holdsPlaces } from '@/lib/ticketHolds'
+import { runSql } from '@/lib/sqlSession'
 import type { PromoCode, TicketType } from '@/payload-types'
 
 /** Letters, digits, dashes and underscores; stored and compared in capitals. */
@@ -71,24 +72,17 @@ export async function promoPlacesUsed(
   promoId: number | string,
   { req, excludeId, now = Date.now() }: { req?: PayloadRequest; excludeId?: number | string; now?: number } = {},
 ) {
-  const { docs } = await payload.find({
-    collection: 'registrations',
-    where: {
-      and: [
-        { promoCode: { equals: promoId } },
-        { status: { in: ['confirmed', 'pending'] } },
-        ...(excludeId !== undefined ? [{ id: { not_equals: excludeId } }] : []),
-      ],
-    },
-    pagination: false,
-    depth: 0,
-    select: { quantity: true, status: true, holdExpiresAt: true },
-    overrideAccess: true,
-    ...(req ? { req } : {}),
-  })
-  return docs
-    .filter((doc) => holdsPlaces({ status: doc.status, holdExpiresAt: doc.holdExpiresAt ?? null }, now))
-    .reduce((sum, doc) => sum + (doc.quantity ?? 0), 0)
+  // Summed in the database, like places taken on a ticket type; mirrors `holdsPlaces`.
+  const skip = excludeId === undefined ? null : Number(excludeId)
+  const [row] = await runSql<{ used: string | null }>(
+    payload,
+    sql`SELECT COALESCE(SUM(quantity), 0) AS used FROM registrations
+      WHERE promo_code_id = ${Number(promoId)}
+        AND (status = 'confirmed' OR (status = 'pending' AND hold_expires_at > ${new Date(now).toISOString()}::timestamptz))
+        AND (${skip}::int IS NULL OR id <> ${skip}::int)`,
+    req,
+  )
+  return Number(row?.used ?? 0)
 }
 
 /** Holds a lock on one promo code until the transaction ends, so its limit cannot be overrun. */
