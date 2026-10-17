@@ -85,6 +85,9 @@ export interface Config {
     'event-tables': EventTable;
     vendors: Vendor;
     'event-vendors': EventVendor;
+    'ticket-types': TicketType;
+    registrations: Registration;
+    'waitlist-entries': WaitlistEntry;
     projects: Project;
     'payload-kv': PayloadKv;
     'payload-jobs': PayloadJob;
@@ -112,6 +115,9 @@ export interface Config {
     'event-tables': EventTablesSelect<false> | EventTablesSelect<true>;
     vendors: VendorsSelect<false> | VendorsSelect<true>;
     'event-vendors': EventVendorsSelect<false> | EventVendorsSelect<true>;
+    'ticket-types': TicketTypesSelect<false> | TicketTypesSelect<true>;
+    registrations: RegistrationsSelect<false> | RegistrationsSelect<true>;
+    'waitlist-entries': WaitlistEntriesSelect<false> | WaitlistEntriesSelect<true>;
     projects: ProjectsSelect<false> | ProjectsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
@@ -601,7 +607,7 @@ export interface Quote {
    * Due now, in minor units. Calculated.
    */
   depositAmount?: number | null;
-  status: 'draft' | 'sent' | 'deposit-paid' | 'cancelled';
+  status: 'draft' | 'sent' | 'deposit-paid' | 'paid-in-full' | 'cancelled';
   /**
    * After this day the client can no longer pay. Leave empty for no limit.
    */
@@ -638,16 +644,110 @@ export interface Quote {
 export interface Payment {
   id: number;
   tenant?: (number | null) | Tenant;
-  quote: number | Quote;
+  quote?: (number | null) | Quote;
+  registration?: (number | null) | Registration;
   /**
    * Amount in minor units, as charged.
    */
   amount: number;
   currency: 'eur' | 'usd' | 'gbp';
-  status: 'pending' | 'paid' | 'failed';
+  kind: 'deposit' | 'balance' | 'ticket';
+  status: 'pending' | 'paid' | 'failed' | 'expired';
   paidAt?: string | null;
   stripeSessionId: string;
   stripeEventId?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "registrations".
+ */
+export interface Registration {
+  id: number;
+  tenant?: (number | null) | Tenant;
+  ticketType: number | TicketType;
+  /**
+   * Set from the ticket type.
+   */
+  event?: (number | null) | Event;
+  name: string;
+  email: string;
+  phone?: string | null;
+  quantity: number;
+  /**
+   * Cancelling frees the places and stops the ticket from working at the door. Refunds are made in Stripe.
+   */
+  status: 'pending' | 'confirmed' | 'cancelled';
+  /**
+   * While waiting for payment. After this the places are free again.
+   */
+  holdExpiresAt?: string | null;
+  /**
+   * Price of the places, in cents, when registered.
+   */
+  amount?: number | null;
+  currency?: ('eur' | 'usd' | 'gbp') | null;
+  /**
+   * The language the ticket link opens in.
+   */
+  language: 'en' | 'es' | 'fr' | 'pt' | 'de' | 'it';
+  /**
+   * How many have arrived. Staff set it at the door by scanning the ticket.
+   */
+  checkedInCount?: number | null;
+  checkedInAt?: string | null;
+  /**
+   * Only staff see this.
+   */
+  staffNotes?: string | null;
+  ticketToken?: string | null;
+  senderKey?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ticket-types".
+ */
+export interface TicketType {
+  id: number;
+  tenant?: (number | null) | Tenant;
+  event: number | Event;
+  /**
+   * As people see it on the event page, e.g. "General admission".
+   */
+  name: string;
+  description?: string | null;
+  /**
+   * Per place, in cents: 2500 is 25.00. 0 makes the ticket free. Paid tickets are only offered once online payments are set up.
+   */
+  price: number;
+  currency: 'eur' | 'usd' | 'gbp';
+  /**
+   * How many people this ticket admits in total.
+   */
+  capacity: number;
+  /**
+   * The most places one person can book at once on the website.
+   */
+  maxPerOrder: number;
+  /**
+   * Optional. Empty opens it at once.
+   */
+  salesStart?: string | null;
+  /**
+   * Optional. Empty closes it when the event ends.
+   */
+  salesEnd?: string | null;
+  /**
+   * Untick to stop new registrations. Existing tickets keep working.
+   */
+  onSale?: boolean | null;
+  /**
+   * Lower numbers are listed first.
+   */
+  sortOrder?: number | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -884,6 +984,31 @@ export interface EventVendor {
    */
   staffNotes?: string | null;
   vendorToken?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "waitlist-entries".
+ */
+export interface WaitlistEntry {
+  id: number;
+  tenant?: (number | null) | Tenant;
+  ticketType: number | TicketType;
+  event?: (number | null) | Event;
+  name: string;
+  email: string;
+  phone?: string | null;
+  quantity: number;
+  /**
+   * Choose "Removed by staff" to take someone off the waitlist. The rest changes by itself.
+   */
+  status: 'waiting' | 'offered' | 'claimed' | 'expired' | 'left' | 'removed';
+  offerExpiresAt?: string | null;
+  registration?: (number | null) | Registration;
+  language: 'en' | 'es' | 'fr' | 'pt' | 'de' | 'it';
+  claimToken?: string | null;
+  senderKey?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1153,6 +1278,18 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'event-vendors';
         value: number | EventVendor;
+      } | null)
+    | ({
+        relationTo: 'ticket-types';
+        value: number | TicketType;
+      } | null)
+    | ({
+        relationTo: 'registrations';
+        value: number | Registration;
+      } | null)
+    | ({
+        relationTo: 'waitlist-entries';
+        value: number | WaitlistEntry;
       } | null)
     | ({
         relationTo: 'projects';
@@ -1565,8 +1702,10 @@ export interface QuotesSelect<T extends boolean = true> {
 export interface PaymentsSelect<T extends boolean = true> {
   tenant?: T;
   quote?: T;
+  registration?: T;
   amount?: T;
   currency?: T;
+  kind?: T;
   status?: T;
   paidAt?: T;
   stripeSessionId?: T;
@@ -1695,6 +1834,72 @@ export interface EventVendorsSelect<T extends boolean = true> {
   vendorNote?: T;
   staffNotes?: T;
   vendorToken?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ticket-types_select".
+ */
+export interface TicketTypesSelect<T extends boolean = true> {
+  tenant?: T;
+  event?: T;
+  name?: T;
+  description?: T;
+  price?: T;
+  currency?: T;
+  capacity?: T;
+  maxPerOrder?: T;
+  salesStart?: T;
+  salesEnd?: T;
+  onSale?: T;
+  sortOrder?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "registrations_select".
+ */
+export interface RegistrationsSelect<T extends boolean = true> {
+  tenant?: T;
+  ticketType?: T;
+  event?: T;
+  name?: T;
+  email?: T;
+  phone?: T;
+  quantity?: T;
+  status?: T;
+  holdExpiresAt?: T;
+  amount?: T;
+  currency?: T;
+  language?: T;
+  checkedInCount?: T;
+  checkedInAt?: T;
+  staffNotes?: T;
+  ticketToken?: T;
+  senderKey?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "waitlist-entries_select".
+ */
+export interface WaitlistEntriesSelect<T extends boolean = true> {
+  tenant?: T;
+  ticketType?: T;
+  event?: T;
+  name?: T;
+  email?: T;
+  phone?: T;
+  quantity?: T;
+  status?: T;
+  offerExpiresAt?: T;
+  registration?: T;
+  language?: T;
+  claimToken?: T;
+  senderKey?: T;
   updatedAt?: T;
   createdAt?: T;
 }

@@ -10,6 +10,7 @@ import * as migration_20261016_002313_events_guest_albums from './20261016_00231
 import * as migration_20261016_004415_event_guests_rsvp from './20261016_004415_event_guests_rsvp';
 import * as migration_20261016_013642_projects_crew_tasks from './20261016_013642_projects_crew_tasks';
 import * as migration_20261016_023702_projects_client_user from './20261016_023702_projects_client_user';
+import * as migration_20261016_030420_balance_payments from './20261016_030420_balance_payments';
 import * as migration_20261016_064009_call_sheets from './20261016_064009_call_sheets';
 import * as migration_20261016_070048_guest_check_in from './20261016_070048_guest_check_in';
 import * as migration_20261016_070433_vendors from './20261016_070433_vendors';
@@ -17,6 +18,9 @@ import * as migration_20261016_071129_contract_signing from './20261016_071129_c
 import * as migration_20261017_014951_event_tables from './20261017_014951_event_tables';
 import * as migration_20261017_022238_invitation_design from './20261017_022238_invitation_design';
 import * as migration_20261017_022307_event_organizers from './20261017_022307_event_organizers';
+import * as migration_20261017_130402_event_tickets from './20261017_130402_event_tickets';
+import * as migration_20261017_131541_paid_tickets from './20261017_131541_paid_tickets';
+import * as migration_20261017_190125_waitlist from './20261017_190125_waitlist';
 
 export const migrations = [
   {
@@ -80,6 +84,11 @@ export const migrations = [
     name: '20261016_023702_projects_client_user',
   },
   {
+    up: migration_20261016_030420_balance_payments.up,
+    down: migration_20261016_030420_balance_payments.down,
+    name: '20261016_030420_balance_payments',
+  },
+  {
     up: migration_20261016_064009_call_sheets.up,
     down: migration_20261016_064009_call_sheets.down,
     name: '20261016_064009_call_sheets',
@@ -112,6 +121,21 @@ export const migrations = [
   {
     up: migration_20261017_022307_event_organizers.up,
     down: migration_20261017_022307_event_organizers.down,
-    name: '20261017_022307_event_organizers'
+    name: '20261017_022307_event_organizers',
+  },
+  {
+    up: migration_20261017_130402_event_tickets.up,
+    down: migration_20261017_130402_event_tickets.down,
+    name: '20261017_130402_event_tickets',
+  },
+  {
+    up: migration_20261017_131541_paid_tickets.up,
+    down: migration_20261017_131541_paid_tickets.down,
+    name: '20261017_131541_paid_tickets',
+  },
+  {
+    up: migration_20261017_190125_waitlist.up,
+    down: migration_20261017_190125_waitlist.down,
+    name: '20261017_190125_waitlist'
   },
 ];

@@ -152,6 +152,10 @@ jobs to a separate worker process.
   The client's link works only while the quote is sent and not past its valid-until day.
 - Payments appear under *Sales → Payments*. Only admins and finance managers see them. Nobody
   creates or edits them by hand.
+- After the deposit is paid, the quote shows *Pay the balance securely* for the rest of the total.
+  The balance is a second Checkout session (kind *balance*). Its webhook marks the quote
+  *Paid in full*. A balance that arrives before its deposit is recorded is kept on the payment
+  and logged, and the quote is not moved.
 - **Contract (optional):** the quote's *Contract* section holds terms of up to 10,000 characters.
   With terms, the client reads them on the quote page, types their full name as their signature,
   and ticks the agreement box. Only then does *Pay deposit* appear. The server records the typed
@@ -163,20 +167,20 @@ jobs to a separate worker process.
 
 1. In the Stripe dashboard, copy the secret key into `STRIPE_SECRET_KEY`.
 2. Add a webhook endpoint at `https://<studio domain>/api/stripe/webhook`, listening for
-   `checkout.session.completed` and `checkout.session.async_payment_succeeded`. Copy its
+   `checkout.session.completed`, `checkout.session.async_payment_succeeded` and
+   `checkout.session.expired` (the last one frees the places of tickets left unpaid). Copy its
    signing secret into `STRIPE_WEBHOOK_SECRET`.
-3. Restart the app. Sent quotes now show *Pay deposit securely*.
+3. Restart the app. Sent quotes now show *Pay deposit securely*, and paid tickets go on sale.
 
 Use Stripe test keys first. The webhook is covered by tests with signed events; a live
 Stripe round trip has not been run yet.
 
 ### Known limits
 
-- Each click on *Pay deposit* starts a new Checkout session. A client who pays two sessions is
-  charged twice; refund the extra payment in Stripe and note it on the quote.
+- Each click on *Pay deposit* or *Pay the balance* starts a new Checkout session. A client who pays two
+  sessions for the same payment is charged twice; refund the extra payment in Stripe and note it on the quote.
 - The quote's text is entered once and is not translated; the interface around it is.
 - No email goes out yet. Staff copy the client link into their own email.
-- Only deposits are taken online. Balance payments come later.
 - Contract signing is a typed name with a recorded agreement, not a qualified or third-party
   e-signature. No PDF copy of the signed contract is produced yet, so staff copy the terms into
   their own records. The IP address and browser are personal data; how long to keep them is not
@@ -281,7 +285,13 @@ for the order of the next steps.
   under the schedule and notes. *Print call sheet* opens the browser's print dialog; the site header
   and footer are left out of the printout. Only admins and production managers can change it.
 
-Not built yet: run-of-show timing, equipment reservations, calendar views, and clients uploading or approving anything on their project.
+- **Production calendar** (*/portal/calendar*, linked from the portal home): the studio's productions
+  by shoot day, one month at a time, with the month before and after one click away. It lists each
+  production's title, status and location only. Each person sees what the project rules let them
+  see: staff see all of the studio's productions, and anyone else sees an empty calendar. Events are
+  not on it; they stay on the events pages.
+
+Not built yet: run-of-show timing, equipment reservations, and clients uploading or approving anything on their project.
 
 
 ## Vendors
@@ -355,3 +365,67 @@ set; there is no per-event colour or font picker yet.
 Known limits: organizers cannot import guests from CSV, manage seating or vendors, or edit the
 event itself from the portal; staff do those in the admin. Organizers are not emailed until the
 email account exists.
+
+## Registration and tickets
+
+- *Events → Ticket types* adds the tickets for an event: name and description (translatable), the
+  price per place in cents with its currency (0 is free), the number of places, the most places one
+  person can book at once (up to 20), optional opening and closing times for registration, *On
+  sale*, and order. Once anyone has registered, the price cannot change; add a new ticket type.
+- A published event shown on the website lists its ticket types with places left, "Sold out", or
+  when registration opens, and shows a registration form while any ticket is on sale. Registration
+  closes at the ticket's closing time, or else when the event ends.
+- Registering takes a name, an email, an optional phone and consent, and opens the person's ticket
+  at `/<language>/tickets/<token>`: the event, the places it admits and an entry code. The form has
+  the same protection as the contact form (a signed form token, a hidden field and a minimum fill
+  time) and allows 3 registrations per email address and 10 per network address per hour.
+- A paid ticket is only offered once Stripe is set up (see *Stripe setup*); until then the event
+  page shows it with its price as not available. Registering for one creates a registration
+  *waiting for payment* that holds its places for 35 minutes and sends the person to Stripe
+  Checkout for the stored price times the places; the Checkout session expires after 31 minutes.
+  Only the verified webhook confirms the ticket, after checking the amount and currency. Until
+  then the ticket page says the payment is being confirmed and shows no entry code. An expired
+  session cancels the registration and frees its places; a missed expiry event changes nothing,
+  because the hold simply runs out. A payment that arrives after the hold ran out still confirms
+  the ticket, even if that puts the ticket over its places. Payments appear under *Sales →
+  Payments* as *Ticket*.
+- Capacity is checked in the collection under a database lock (a Postgres advisory lock per ticket
+  type, held until the transaction ends), so two people cannot take the last place, whether they
+  register on the website or staff add them in the admin. Lowering a ticket type's places below the
+  places taken is refused, and a ticket type with registrations cannot be deleted; untick *On sale*.
+- *Events → Registrations* lists everyone registered. Staff can add a registration by hand (for a
+  phone booking), cancel one (which frees its places and stops the ticket working at the door) and
+  copy its ticket link to resend it. The event's *Registration and tickets* section shows places
+  taken, left and checked in per ticket type. Only studio admins and production managers see ticket
+  types and registrations.
+- The entry code opens `/<language>/tickets/<token>/check-in`. Signed-in admins and production
+  managers of the studio record how many have arrived, as for invitations; anyone else is only told
+  to show the code. A cancelled registration shows "Do not admit".
+- A sold-out ticket that is still selling has a waitlist. The event page shows a *Join the
+  waitlist* form (same fields and protection as registering; 3 joins per email address and 10 per
+  network address per hour, one active place in line per email address per ticket), and joining
+  opens the person's waitlist link at `/<language>/waitlist/<token>`, which shows their place in
+  line. When places free up (a cancellation, an unpaid hold or offer running out, fewer places on
+  a registration, more places on the ticket, or the ticket going back on sale), they are offered
+  to the people waiting strictly in the order they joined, and held for them for 24 hours; if the
+  next person needs more places than are free, everyone behind them waits too. While anyone is
+  waiting the ticket stays sold out to the public, so freed places never go to someone who did
+  not wait. An offered person takes the places from their link: a free ticket opens at once, a
+  paid one goes to Stripe Checkout like any paid registration (its usual 35-minute hold applies).
+  An offer not taken in time passes to the next person, and anyone can leave the queue from their
+  link.
+- *Events → Waitlist* lists everyone waiting, with their status and waitlist link to resend.
+  Staff can take someone off (*Removed by staff*) but cannot offer places by hand; offers follow
+  the queue. The event's *Registration and tickets* section shows how many are on each waitlist.
+  Offers and holds run out with time, so the queue is brought up to date whenever places are given
+  back and whenever the event page or a waitlist link is opened; there is no background timer.
+- Deleting an event deletes its ticket types, registrations and waitlists.
+
+Known limits: refunds are made by hand in Stripe, then the registration is cancelled here; no
+booking fee is added (decision 6 in the events plan is open). Paid tickets have been tested with
+signed webhook events, not yet with a live Stripe round trip. Tickets are not emailed until the email account exists, so the ticket page asks people
+to save its link, and staff can resend it from the registration. One entry code covers every place
+on a registration. Nobody is told by email when places are offered to them from the waitlist
+until the email account exists; they see it on their waitlist link, and staff can resend that
+link. A person who takes a paid offer but does not pay loses it like any unpaid hold. There is no
+promo code or attendee export yet.

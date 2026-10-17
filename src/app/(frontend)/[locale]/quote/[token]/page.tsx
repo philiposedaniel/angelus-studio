@@ -3,12 +3,13 @@ import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { DepositButton } from '@/components/quote/DepositButton'
+import { PaymentButton } from '@/components/quote/PaymentButton'
 import { SignContractForm } from '@/components/quote/SignContractForm'
 import { getDictionary } from '@/i18n/dictionaries'
 import { contractRequired, contractSigned } from '@/lib/contracts'
 import { resolveLocale } from '@/lib/locale'
 import { formatMoney } from '@/lib/money'
-import { isQuoteExpired } from '@/lib/quotes'
+import { balanceAmount, isQuoteExpired } from '@/lib/quotes'
 import { stripeConfigured } from '@/lib/stripe'
 import { isShareToken } from '@/lib/shareTokens'
 import { getCurrentTenant } from '@/lib/tenant'
@@ -35,7 +36,7 @@ export default async function QuotePage({ params, searchParams }: PageProps<'/[l
       and: [
         { tenant: { equals: tenant.id } },
         { publicToken: { equals: token } },
-        { status: { in: ['sent', 'deposit-paid'] } },
+        { status: { in: ['sent', 'deposit-paid', 'paid-in-full'] } },
       ],
     },
     limit: 1,
@@ -48,12 +49,15 @@ export default async function QuotePage({ params, searchParams }: PageProps<'/[l
   const t = getDictionary(locale).quote
   const query = await searchParams
   const money = (amount: number) => formatMoney(amount, quote.currency, locale)
-  const paid = quote.status === 'deposit-paid'
-  const expired = !paid && isQuoteExpired(quote.validUntil)
-  // A quote with contract terms is paid only after the client has signed them.
+  const depositDue = quote.status === 'sent'
+  const expired = depositDue && isQuoteExpired(quote.validUntil)
+  const balance = balanceAmount(quote)
+  const balanceDue = quote.status === 'deposit-paid' && balance > 0
+  // A quote with contract terms takes its deposit only after the client has signed them.
   const hasContract = contractRequired(quote.contract)
   const signed = contractSigned(quote.contract)
-  const canPay = !paid && !expired && stripeConfigured() && (!hasContract || signed)
+  const canPayDeposit = depositDue && !expired && stripeConfigured() && (!hasContract || signed)
+  const canPayBalance = balanceDue && stripeConfigured()
 
   return (
     <main className="mx-auto grid max-w-3xl gap-8 px-6 py-16 text-ivory">
@@ -71,7 +75,8 @@ export default async function QuotePage({ params, searchParams }: PageProps<'/[l
 
       {query.payment === 'success' && <p role="status" className="text-gold">{t.paymentConfirming}</p>}
       {query.payment === 'cancelled' && <p role="status" className="text-mist">{t.paymentCancelled}</p>}
-      {paid && <p role="status" className="text-gold">{t.paid}</p>}
+      {quote.status === 'deposit-paid' && <p role="status" className="text-gold">{t.paid}</p>}
+      {quote.status === 'paid-in-full' && <p role="status" className="text-gold">{t.paidInFull}</p>}
       {expired && <p className="text-copper">{t.expired}</p>}
 
       <table className="w-full border-collapse text-left">
@@ -106,7 +111,7 @@ export default async function QuotePage({ params, searchParams }: PageProps<'/[l
         </div>
         <div className="flex justify-between">
           <dt className="text-mist">{t.balance}</dt>
-          <dd>{money((quote.totalAmount ?? 0) - (quote.depositAmount ?? 0))}</dd>
+          <dd>{money(balance)}</dd>
         </div>
       </dl>
 
@@ -121,10 +126,15 @@ export default async function QuotePage({ params, searchParams }: PageProps<'/[l
           )}
         </section>
       )}
-      {hasContract && !signed && !paid && !expired && <SignContractForm token={token} locale={locale} t={t} />}
+      {hasContract && !signed && depositDue && !expired && (
+        <SignContractForm token={token} locale={locale} t={t} />
+      )}
 
-      {canPay && <DepositButton token={token} locale={locale} t={t} />}
-      {!paid && !expired && !stripeConfigured() && <p className="text-mist">{t.paymentUnavailable}</p>}
+      {canPayDeposit && <DepositButton token={token} locale={locale} t={t} />}
+      {canPayBalance && <PaymentButton kind="balance" token={token} locale={locale} t={t} />}
+      {((depositDue && !expired) || balanceDue) && !stripeConfigured() && (
+        <p className="text-mist">{t.paymentUnavailable}</p>
+      )}
     </main>
   )
 }

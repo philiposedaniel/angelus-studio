@@ -12,14 +12,16 @@ type Props = {
   initialCount: number
   checkedIn: boolean
   t: Dictionary['checkIn']
+  /** The server action that saves the check-in; invitations by default, tickets pass their own. */
+  saveAction?: (previous: CheckInState, form: FormData) => Promise<CheckInState>
 }
 
 const input =
   'w-full rounded-lg border border-ivory/15 bg-ink px-4 py-3 text-ivory focus:border-gold focus:outline-none'
 
 /** Staff record how many of the party arrived. Choosing 0 undoes the check-in. */
-export function CheckInForm({ token, partySize, initialCount, checkedIn, t }: Props) {
-  const [state, action, pending] = useActionState<CheckInState, FormData>(checkIn, { status: 'idle' })
+export function CheckInForm({ token, partySize, initialCount, checkedIn, t, saveAction = checkIn }: Props) {
+  const [state, action, pending] = useActionState<CheckInState, FormData>(saveAction, { status: 'idle' })
 
   return (
     <form action={action} className="grid gap-4">

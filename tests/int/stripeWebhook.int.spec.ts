@@ -79,6 +79,7 @@ const sentQuoteWithPayment = async (sessionId: string) => {
     data: {
       tenant: studio.id,
       quote: quote.id,
+      kind: 'deposit',
       amount: quote.depositAmount!,
       currency: 'eur',
       status: 'pending',
@@ -257,5 +258,95 @@ describe('Stripe webhook', () => {
     } finally {
       process.env.STRIPE_WEBHOOK_SECRET = SECRET
     }
+  })
+
+  describe('balance after the deposit', () => {
+    /** A quote whose deposit has been paid through the webhook, plus a pending balance payment. */
+    const depositPaidWithBalance = async (depositSession: string, balanceSession: string) => {
+      const quote = await sentQuoteWithPayment(depositSession)
+      await send(event(`evt_${depositSession}`, 'checkout.session.completed', session(depositSession)))
+      await payload.create({
+        collection: 'payments',
+        data: {
+          tenant: studio.id,
+          quote: quote.id,
+          kind: 'balance',
+          amount: 14000,
+          currency: 'eur',
+          status: 'pending',
+          stripeSessionId: balanceSession,
+        },
+        overrideAccess: true,
+      })
+      return quote
+    }
+
+    it('marks the quote paid in full when the balance arrives', async () => {
+      const quote = await depositPaidWithBalance(`${PREFIX}deposit-ok`, `${PREFIX}balance-ok`)
+      expect((await quoteNow(quote.id)).status).toBe('deposit-paid')
+
+      const response = await send(
+        event('evt_int_balance_ok', 'checkout.session.completed', session(`${PREFIX}balance-ok`, { amount_total: 14000 })),
+      )
+      expect(response.status).toBe(200)
+      expect((await quoteNow(quote.id)).status).toBe('paid-in-full')
+      expect((await paymentFor(`${PREFIX}balance-ok`))?.status).toBe('paid')
+    })
+
+    it('does not mark the quote paid in full when the balance amount is wrong', async () => {
+      const quote = await depositPaidWithBalance(`${PREFIX}deposit-short`, `${PREFIX}balance-short`)
+      const response = await send(
+        event('evt_int_balance_short', 'checkout.session.completed', session(`${PREFIX}balance-short`, { amount_total: 13000 })),
+      )
+      expect(response.status).toBe(200)
+      expect(await response.json()).toMatchObject({ mismatch: true })
+      expect((await quoteNow(quote.id)).status).toBe('deposit-paid')
+      expect((await paymentFor(`${PREFIX}balance-short`))?.status).toBe('failed')
+    })
+
+    it('keeps a paid-in-full quote paid when the deposit event is replayed', async () => {
+      const quote = await depositPaidWithBalance(`${PREFIX}deposit-replay`, `${PREFIX}balance-replay`)
+      await send(event('evt_int_balance_replay', 'checkout.session.completed', session(`${PREFIX}balance-replay`, { amount_total: 14000 })))
+      expect((await quoteNow(quote.id)).status).toBe('paid-in-full')
+
+      const replay = await send(
+        event(`evt_${PREFIX}deposit-replay`, 'checkout.session.completed', session(`${PREFIX}deposit-replay`)),
+      )
+      expect(await replay.json()).toMatchObject({ duplicate: true })
+      expect((await quoteNow(quote.id)).status).toBe('paid-in-full')
+    })
+
+    it('does not mark a quote paid in full from a balance payment before its deposit is recorded', async () => {
+      const quote = await sentQuoteWithPayment(`${PREFIX}deposit-early`)
+      await payload.create({
+        collection: 'payments',
+        data: {
+          tenant: studio.id,
+          quote: quote.id,
+          kind: 'balance',
+          amount: 14000,
+          currency: 'eur',
+          status: 'pending',
+          stripeSessionId: `${PREFIX}balance-early`,
+        },
+        overrideAccess: true,
+      })
+      await send(event('evt_int_balance_early', 'checkout.session.completed', session(`${PREFIX}balance-early`, { amount_total: 14000 })))
+      expect((await quoteNow(quote.id)).status).toBe('sent')
+      expect((await paymentFor(`${PREFIX}balance-early`))?.status).toBe('paid')
+    })
+
+    it('does not let staff or the API mark a quote paid in full', async () => {
+      const quote = await depositPaidWithBalance(`${PREFIX}deposit-direct`, `${PREFIX}balance-direct`)
+      await expect(
+        payload.update({
+          collection: 'quotes',
+          id: quote.id,
+          data: { status: 'paid-in-full' },
+          overrideAccess: true,
+        }),
+      ).rejects.toThrow(/balance payment/)
+      expect((await quoteNow(quote.id)).status).toBe('deposit-paid')
+    })
   })
 })
