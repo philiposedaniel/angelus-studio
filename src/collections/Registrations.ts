@@ -5,6 +5,14 @@ import { EVENT_GUEST_STAFF_ROLES } from '@/collections/EventGuests'
 import { DEFAULT_LOCALE, LOCALE_LABELS, LOCALES } from '@/i18n/config'
 import { exportAttendees } from '@/lib/attendees'
 import { idOf } from '@/lib/ids'
+import {
+  lockPromoCode,
+  promoApplies,
+  promoDiscount,
+  promoPlacesUsed,
+  PROMO_INVALID_STATUS,
+  withinLimit,
+} from '@/lib/promoCodes'
 import { newShareToken } from '@/lib/shareTokens'
 import { refreshWaitlist } from '@/lib/waitlist'
 import { CURRENCIES, CURRENCY_LABELS } from '@/lib/money'
@@ -118,7 +126,9 @@ export const Registrations: CollectionConfig = {
           checkedInCount === 0 ? null : (data.checkedInAt ?? originalDoc?.checkedInAt ?? new Date().toISOString())
 
         // What the registration costs, from the ticket type's price when it is made, never from the request.
-        let { amount, currency } = originalDoc ?? {}
+        let { amount, currency, discount } = originalDoc ?? {}
+        // A promo code is applied when the registration is made and kept with it.
+        let promoCode = operation === 'create' ? (idOf(data.promoCode) ?? null) : (idOf(originalDoc?.promoCode) ?? null)
         if (operation === 'create' && ticketTypeId !== undefined && ticketTypeId !== null) {
           const ticketType = await req.payload.findByID({
             collection: 'ticket-types',
@@ -127,7 +137,23 @@ export const Registrations: CollectionConfig = {
             req,
             overrideAccess: true,
           })
-          amount = (ticketType.price ?? 0) * quantity
+          discount = 0
+          if (promoCode !== null) {
+            const promo = await req.payload
+              .findByID({ collection: 'promo-codes', id: promoCode, depth: 0, req, overrideAccess: true })
+              .catch(() => null)
+            if (!promo || !promoApplies(promo, ticketType)) {
+              throw new APIError('This promo code cannot be used for this ticket.', PROMO_INVALID_STATUS)
+            }
+            // Counted under a lock, so a code's last discounted places cannot be taken twice.
+            await lockPromoCode(req, promo.id)
+            if (!withinLimit(promo, await promoPlacesUsed(req.payload, promo.id, { req }), quantity)) {
+              throw new APIError('This promo code has been used up.', PROMO_INVALID_STATUS)
+            }
+            discount = promoDiscount(promo, ticketType.price ?? 0, quantity)
+            promoCode = promo.id
+          }
+          amount = (ticketType.price ?? 0) * quantity - discount
           currency = ticketType.currency
         }
 
@@ -135,6 +161,8 @@ export const Registrations: CollectionConfig = {
           ...data,
           amount,
           currency,
+          discount,
+          promoCode,
           checkedInCount,
           checkedInAt,
           // Set on create, kept on change, never taken from the request.
@@ -222,13 +250,29 @@ export const Registrations: CollectionConfig = {
         {
           name: 'amount',
           type: 'number',
-          admin: { readOnly: true, width: '50%', description: 'Price of the places, in cents, when registered.' },
+          admin: { readOnly: true, width: '50%', description: 'Price of the places, in cents, when registered, after any promo code.' },
         },
         {
           name: 'currency',
           type: 'select',
           admin: { readOnly: true, width: '50%' },
           options: CURRENCIES.map((value) => ({ label: CURRENCY_LABELS[value], value })),
+        },
+      ],
+    },
+    {
+      type: 'row',
+      fields: [
+        {
+          name: 'promoCode',
+          type: 'relationship',
+          relationTo: 'promo-codes',
+          admin: { readOnly: true, width: '50%' },
+        },
+        {
+          name: 'discount',
+          type: 'number',
+          admin: { readOnly: true, width: '50%', description: 'Taken off by the promo code, in cents.' },
         },
       ],
     },

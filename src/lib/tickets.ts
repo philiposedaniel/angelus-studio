@@ -1,13 +1,23 @@
-import { sql } from '@payloadcms/db-postgres'
 import type { Payload, PayloadRequest } from 'payload'
 
 import type { Locale } from '@/i18n/config'
 import { canCheckIn, type CheckInState } from '@/lib/checkIn'
 import { checkFormToken, looksLikeSpam, senderKey } from '@/lib/inquiries'
+import { advisoryLock } from '@/lib/advisoryLock'
 import { idOf } from '@/lib/ids'
 import { isShareToken } from '@/lib/shareTokens'
+import {
+  findPromoCode,
+  normalizePromoCode,
+  promoApplies,
+  promoDiscount,
+  promoPlacesUsed,
+  PROMO_INVALID_STATUS,
+  withinLimit,
+} from '@/lib/promoCodes'
 import { getStripe, stripeConfigured } from '@/lib/stripe'
-import type { Event, Registration, TicketType, User, WaitlistEntry } from '@/payload-types'
+import { holdsPlaces } from '@/lib/ticketHolds'
+import type { Event, PromoCode, Registration, TicketType, User, WaitlistEntry } from '@/payload-types'
 
 /** Most places one ticket type can hold, and most places one registration can take. */
 export const MAX_TICKET_CAPACITY = 100_000
@@ -40,21 +50,12 @@ export const CHECKOUT_EXPIRES_MS = 31 * 60 * 1000
 /** Set by the Stripe webhook when a verified payment confirms a registration. */
 export const PAID_TICKET_CONTEXT = { paidTicket: true } as const
 
-type Holding = Pick<Registration, 'status' | 'holdExpiresAt'>
-
-/** Whether a registration takes places now: confirmed, or waiting for payment with its hold still on. */
-export const holdsPlaces = (registration: Holding | null | undefined, now = Date.now()) =>
-  registration?.status === 'confirmed' ||
-  (registration?.status === 'pending' &&
-    Boolean(registration.holdExpiresAt) &&
-    new Date(registration.holdExpiresAt!).getTime() > now)
+export { holdsPlaces } from '@/lib/ticketHolds'
 
 export const isWholeNumber = (value: unknown, min: number, max: number) =>
   typeof value === 'number' && Number.isInteger(value) && value >= min && value <= max
 
 /* ---- Capacity ---- */
-
-type SqlSession = { db: { execute: (query: ReturnType<typeof sql>) => Promise<unknown> } }
 
 // Keeps these advisory locks apart from any other use of advisory locks in the database.
 const TICKET_LOCK_NAMESPACE = 7_301
@@ -64,16 +65,9 @@ const TICKET_LOCK_NAMESPACE = 7_301
  * registrations for the last places cannot both count the same free seats. Payload runs every
  * create and update in a transaction, so the hooks that check capacity call this first.
  */
-export async function lockTicketType(req: PayloadRequest, ticketTypeId: number | string) {
-  const transactionID = await req.transactionID
-  if (!transactionID) return false
-  // The Postgres adapter keeps each open transaction's Drizzle session by its id.
-  const sessions = (req.payload.db as unknown as { sessions?: Record<string, SqlSession> }).sessions
-  const session = sessions?.[String(transactionID)]
-  if (!session) return false
-  await session.db.execute(sql`SELECT pg_advisory_xact_lock(${TICKET_LOCK_NAMESPACE}, ${Number(ticketTypeId)})`)
-  return true
-}
+export const lockTicketType = (req: PayloadRequest, ticketTypeId: number | string) =>
+  advisoryLock(req, TICKET_LOCK_NAMESPACE, ticketTypeId)
+
 
 /**
  * Places taken on a ticket type: confirmed registrations, those waiting for payment whose hold
@@ -171,8 +165,8 @@ export function salesState(
 
 /* ---- Public registration ---- */
 
-export type RegistrationField = 'ticketType' | 'quantity' | 'name' | 'email' | 'phone' | 'consent'
-export type RegistrationFieldError = 'required' | 'invalid' | 'tooLong'
+export type RegistrationField = 'ticketType' | 'quantity' | 'name' | 'email' | 'phone' | 'consent' | 'promoCode'
+export type RegistrationFieldError = 'required' | 'invalid' | 'tooLong' | 'usedUp' | 'unknownCode'
 
 export type RegistrationState =
   | { status: 'idle' }
@@ -191,6 +185,8 @@ export type RegistrationInput = {
   name: string
   email: string
   phone?: string
+  /** A promo code as typed, already in its stored form. */
+  promoCode?: string
 }
 
 const text = (form: FormData, key: string) => {
@@ -210,6 +206,8 @@ export function validateRegistration(
   const name = text(form, 'name')
   const email = text(form, 'email').toLowerCase()
   const phone = text(form, 'phone')
+  const promoText = text(form, 'promoCode')
+  const promoCode = promoText ? normalizePromoCode(promoText) : null
 
   if (!/^\d+$/.test(ticketType)) errors.ticketType = 'required'
   const quantity = /^\d+$/.test(quantityText) ? Number(quantityText) : NaN
@@ -221,9 +219,20 @@ export function validateRegistration(
   if (phone.length > REGISTRATION_LIMITS.phone) errors.phone = 'tooLong'
   else if (phone && !/^[+\d][\d\s().-]{5,}$/.test(phone)) errors.phone = 'invalid'
   if (form.get('consent') !== 'on') errors.consent = 'required'
+  if (promoText && !promoCode) errors.promoCode = 'unknownCode'
 
   if (Object.keys(errors).length > 0) return { ok: false, errors }
-  return { ok: true, input: { ticketType: Number(ticketType), quantity, name, email, phone: phone || undefined } }
+  return {
+    ok: true,
+    input: {
+      ticketType: Number(ticketType),
+      quantity,
+      name,
+      email,
+      phone: phone || undefined,
+      ...(promoCode ? { promoCode } : {}),
+    },
+  }
 }
 
 /** What a Stripe Checkout session for tickets needs; tests replace the call to Stripe. */
@@ -355,6 +364,16 @@ export async function submitRegistration({
     return { status: 'error', reason: 'tooMany' }
   }
 
+  // A promo code must belong to this event, fit this ticket now and have places left at its price.
+  let promo: PromoCode | null = null
+  if (input.promoCode) {
+    promo = await findPromoCode(payload, event.id, input.promoCode)
+    if (!promo || !promoApplies(promo, ticketType, now)) return { status: 'error', errors: { promoCode: 'unknownCode' } }
+    if (!withinLimit(promo, await promoPlacesUsed(payload, promo.id, { now }), input.quantity)) {
+      return { status: 'error', errors: { promoCode: 'usedUp' } }
+    }
+  }
+
   return createRegistration({
     payload,
     tenantId,
@@ -366,6 +385,7 @@ export async function submitRegistration({
     origin,
     createCheckout,
     now,
+    promo,
   })
 }
 
@@ -386,6 +406,7 @@ export async function createRegistration({
   createCheckout = stripeTicketCheckout,
   now = Date.now(),
   waitlistEntryId,
+  promo = null,
 }: {
   payload: Payload
   tenantId: number
@@ -398,8 +419,12 @@ export async function createRegistration({
   createCheckout?: CreateTicketCheckout
   now?: number
   waitlistEntryId?: number
+  /** A promo code the caller checked; the collection applies it again under a lock. */
+  promo?: PromoCode | null
 }): Promise<RegistrationState> {
-  const paid = (ticketType.price ?? 0) > 0
+  const price = ticketType.price ?? 0
+  // A code that takes off the whole price makes the places free: confirmed at once, no payment.
+  const paid = price * input.quantity - (promo ? promoDiscount(promo, price, input.quantity) : 0) > 0
   let created: Registration
   try {
     // System write: visitors have no create access; every check above stands in for it.
@@ -416,6 +441,7 @@ export async function createRegistration({
         status: paid ? 'pending' : 'confirmed',
         holdExpiresAt: paid ? new Date(now + PAYMENT_HOLD_MS).toISOString() : null,
         senderKey: key,
+        promoCode: promo?.id ?? null,
       },
       overrideAccess: true,
       ...(waitlistEntryId !== undefined ? { context: { waitlistEntryId } } : {}),
@@ -423,6 +449,9 @@ export async function createRegistration({
     if (!isShareToken(created.ticketToken)) return { status: 'error', reason: 'failed' }
     if (!paid) return { status: 'registered', token: created.ticketToken, registrationId: created.id }
   } catch (error) {
+    if ((error as { status?: number }).status === PROMO_INVALID_STATUS) {
+      return { status: 'error', errors: { promoCode: 'usedUp' } }
+    }
     if ((error as { status?: number }).status === SOLD_OUT_STATUS) {
       const left = Math.max(0, (ticketType.capacity ?? 0) - (await placesTaken(payload, ticketType.id, { now })))
       return left === 0
@@ -437,10 +466,15 @@ export async function createRegistration({
   try {
     const checkout = await createCheckout({
       email: input.email,
-      name: `${ticketType.name} · ${event.title}`,
+      // With a discount the order is one line for its total, so Stripe charges exactly the stored amount.
+      ...((created.discount ?? 0) > 0
+        ? {
+            name: `${ticketType.name} × ${input.quantity} · ${event.title}`,
+            unitAmount: created.amount ?? 0,
+            quantity: 1,
+          }
+        : { name: `${ticketType.name} · ${event.title}`, unitAmount: price, quantity: input.quantity }),
       currency: created.currency ?? ticketType.currency,
-      unitAmount: ticketType.price ?? 0,
-      quantity: input.quantity,
       metadata: { registrationId: String(created.id), tenantId: String(tenantId), kind: 'ticket' },
       expiresAt: now + CHECKOUT_EXPIRES_MS,
       successUrl: `${origin}/${locale}/tickets/${created.ticketToken}?payment=success`,

@@ -406,6 +406,17 @@ email account exists.
 - The entry code opens `/<language>/tickets/<token>/check-in`. Signed-in admins and production
   managers of the studio record how many have arrived, as for invitations; anyone else is only told
   to show the code. A cancelled registration shows "Do not admit".
+- *Events → Promo codes* adds codes for an event's paid tickets: the code (letters, digits, - and
+  _; people can type it in any case), a percentage off the order (100 makes it free) or a fixed
+  amount off each place in cents of the ticket's currency, optionally only some of the event's
+  tickets, the dates it works between, and how many places can be bought with it in all. The
+  event page asks for a code only while the event has an active one and a paid ticket is on sale.
+  The price is worked out on the server when the registration is saved, and the code's limit is
+  counted under its own database lock, so it cannot be overrun. With a discount the person pays
+  the reduced total through Stripe Checkout as a single line; a code that makes the places free
+  confirms them at once without a payment. Registrations keep the code and the amount taken off,
+  and a code someone used cannot be deleted (untick *Active* instead). Only studio admins and
+  production managers see promo codes.
 - A sold-out ticket that is still selling has a waitlist. The event page shows a *Join the
   waitlist* form (same fields and protection as registering; 3 joins per email address and 10 per
   network address per hour, one active place in line per email address per ticket), and joining
@@ -432,5 +443,6 @@ signed webhook events, not yet with a live Stripe round trip. Tickets are not em
 to save its link, and staff can resend it from the registration. One entry code covers every place
 on a registration. Nobody is told by email when places are offered to them from the waitlist
 until the email account exists; they see it on their waitlist link, and staff can resend that
-link. A person who takes a paid offer but does not pay loses it like any unpaid hold. There is no
-promo code yet.
+link. A person who takes a paid offer but does not pay loses it like any unpaid hold. Wrong promo codes are
+not counted against a limit of their own; the form token and minimum fill time slow guessing, so
+avoid short codes for large discounts.
