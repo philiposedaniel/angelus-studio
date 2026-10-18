@@ -24,6 +24,7 @@ import * as migration_20261017_131541_paid_tickets from './20261017_131541_paid_
 import * as migration_20261017_190125_waitlist from './20261017_190125_waitlist';
 import * as migration_20261017_192724_promo_codes from './20261017_192724_promo_codes';
 import * as migration_20261017_195026_ticket_refunds from './20261017_195026_ticket_refunds';
+import * as migration_20261017_204530_photo_selections from './20261017_204530_photo_selections';
 import * as migration_20261017_215543_equipment_checkout from './20261017_215543_equipment_checkout';
 
 export const migrations = [
@@ -158,8 +159,13 @@ export const migrations = [
     name: '20261017_195026_ticket_refunds',
   },
   {
+    up: migration_20261017_204530_photo_selections.up,
+    down: migration_20261017_204530_photo_selections.down,
+    name: '20261017_204530_photo_selections',
+  },
+  {
     up: migration_20261017_215543_equipment_checkout.up,
     down: migration_20261017_215543_equipment_checkout.down,
-    name: '20261017_215543_equipment_checkout'
+    name: '20261017_215543_equipment_checkout',
   },
 ];
