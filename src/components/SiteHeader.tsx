@@ -25,7 +25,7 @@ export function SiteHeader({ companyName, locale, locales, dictionary, menuPages
   ]
 
   return (
-    <header className="sticky top-0 z-40 border-b border-ivory/10 bg-ink/80 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-ivory/10 bg-ink/80 backdrop-blur print:hidden">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-6 px-4 py-4 sm:px-8">
         <Link href={`/${locale}`} className="font-display text-xl tracking-wide text-ivory sm:text-2xl">
           {companyName}
