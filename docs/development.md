@@ -291,7 +291,9 @@ for the order of the next steps.
 
 - **Call sheet** (on the project): a meeting point, notes for the crew, and a schedule of times, items
   and places. Times are 24-hour *HH:MM*, and saving fails on anything else. Production staff and crew
-  can read it; clients cannot. Only admins and production managers can change it.
+  can read it; clients cannot. Crew open it from their project in the portal (*Your productions*),
+  under the schedule and notes. *Print call sheet* opens the browser's print dialog; the site header
+  and footer are left out of the printout. Only admins and production managers can change it.
 
 - **Production calendar** (*/portal/calendar*, linked from the portal home): the studio's productions
   by shoot day, one month at a time, with the month before and after one click away. It lists each
@@ -317,8 +319,8 @@ for the order of the next steps.
   clients do not.
 - Not built yet: kit check-out and return, kit lists per production, and a calendar of kit use.
 
-Not built yet: run-of-show timing and printing, the crew's
-own view of the call sheet in the portal, and clients uploading or approving anything on their project.
+Not built yet: run-of-show timing and printing, and clients uploading or approving anything on their project.
+
 
 
 ## Vendors
