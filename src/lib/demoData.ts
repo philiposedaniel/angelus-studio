@@ -19,7 +19,8 @@ export type DemoResult = {
 const DAY = 86_400_000
 
 /** Demo sign-ins live on a reserved domain, so they can never be a real person's address. */
-export const demoEmail = (role: 'admin' | 'client', tenantSlug: string) => `${role}@${tenantSlug}.demo.test`
+export const demoEmail = (role: 'admin' | 'client', tenantSlug: string) =>
+  `${role}@${tenantSlug}.demo.test`
 const isDemoEmail = (email: string) => email.endsWith('.demo.test')
 
 /** A generated landscape photo, so no binary files ship in the repository. */
@@ -49,10 +50,18 @@ async function demoPhoto(title: string, hue: number) {
  */
 export async function seedDemoData(
   payload: Payload,
-  { tenantSlug = 'angelus', allowExistingUsers = false }: { tenantSlug?: string; allowExistingUsers?: boolean } = {},
+  {
+    tenantSlug = 'angelus',
+    allowExistingUsers = false,
+  }: { tenantSlug?: string; allowExistingUsers?: boolean } = {},
 ): Promise<DemoResult> {
   if (!allowExistingUsers) {
-    const users = await payload.find({ collection: 'users', pagination: false, depth: 0, overrideAccess: true })
+    const users = await payload.find({
+      collection: 'users',
+      pagination: false,
+      depth: 0,
+      overrideAccess: true,
+    })
     if (users.docs.some((u) => !isDemoEmail(u.email))) {
       throw new DemoDataRefused(
         'This database already has real accounts. Demo data is only for an empty preview database.',
@@ -60,33 +69,66 @@ export async function seedDemoData(
     }
   }
 
-  const found = await payload.find({ collection: 'tenants', where: { slug: { equals: tenantSlug } }, limit: 1 })
+  const found = await payload.find({
+    collection: 'tenants',
+    where: { slug: { equals: tenantSlug } },
+    limit: 1,
+  })
   const tenant =
     found.docs[0] ??
     (await payload.create({
       collection: 'tenants',
-      data: { name: 'Angelus Media Productions', slug: tenantSlug, languages: ['en', 'es'], defaultLocale: 'en' },
+      data: {
+        name: 'Angelus Media Productions',
+        slug: tenantSlug,
+        languages: ['en', 'es'],
+        defaultLocale: 'en',
+      },
     }))
-  const settings = await payload.find({ collection: 'site-settings', where: { tenant: { equals: tenant.id } }, limit: 1 })
+  const settings = await payload.find({
+    collection: 'site-settings',
+    where: { tenant: { equals: tenant.id } },
+    limit: 1,
+  })
   if (settings.totalDocs === 0) {
     await payload.create({
       collection: 'site-settings',
-      data: { tenant: tenant.id, companyName: tenant.name, tagline: 'Cinematic photography, film and live production.' },
+      data: {
+        tenant: tenant.id,
+        companyName: tenant.name,
+        tagline: 'Cinematic photography, film and live production.',
+      },
     })
   }
 
   const adminEmail = demoEmail('admin', tenantSlug)
   const clientEmail = demoEmail('client', tenantSlug)
-  const already = await payload.find({ collection: 'users', where: { email: { equals: adminEmail } }, limit: 1 })
+  const already = await payload.find({
+    collection: 'users',
+    where: { email: { equals: adminEmail } },
+    limit: 1,
+  })
   if (already.totalDocs > 0) {
-    return { created: false, tenant, admin: { email: adminEmail }, client: { email: clientEmail }, links: [] }
+    return {
+      created: false,
+      tenant,
+      admin: { email: adminEmail },
+      client: { email: clientEmail },
+      links: [],
+    }
   }
 
   const password = randomBytes(9).toString('base64url')
   const makeUser = (email: string, name: string, roles: string[]): Promise<User> =>
     payload.create({
       collection: 'users',
-      data: { email, name, password, roles: ['user'], tenants: [{ tenant: tenant.id, roles: roles as never }] },
+      data: {
+        email,
+        name,
+        password,
+        roles: ['user'],
+        tenants: [{ tenant: tenant.id, roles: roles as never }],
+      },
     })
   const admin = await makeUser(adminEmail, 'Demo administrator', ['admin'])
   const client = await makeUser(clientEmail, 'Ana Ferreira', ['client', 'event-organizer'])
@@ -101,14 +143,30 @@ export async function seedDemoData(
       status: 'published',
       clients: [client.id],
       allowDownloads: true,
+      // Clients choose up to five photos by marking favorites, then submit them.
+      selectionLimit: 5,
       shareEnabled: true,
     },
   })
-  const shots = ['First look', 'The vows', 'Ring exchange', 'Golden hour', 'First dance', 'Family portrait', 'Cake', 'Sparkler exit']
+  const shots = [
+    'First look',
+    'The vows',
+    'Ring exchange',
+    'Golden hour',
+    'First dance',
+    'Family portrait',
+    'Cake',
+    'Sparkler exit',
+  ]
   for (const [i, title] of shots.entries()) {
-    await payload.create({ collection: 'gallery-photos', data: { gallery: gallery.id }, file: await demoPhoto(title, (i * 41) % 360) })
+    await payload.create({
+      collection: 'gallery-photos',
+      data: { gallery: gallery.id },
+      file: await demoPhoto(title, (i * 41) % 360),
+    })
   }
-  const shareToken = (await payload.findByID({ collection: 'galleries', id: gallery.id, depth: 0 })).shareToken
+  const shareToken = (await payload.findByID({ collection: 'galleries', id: gallery.id, depth: 0 }))
+    .shareToken
 
   const quote = await payload.create({
     collection: 'quotes',
@@ -125,7 +183,10 @@ export async function seedDemoData(
       ],
       depositPercent: 30,
       status: 'sent',
-      contract: { terms: 'The photographer arrives at 10:00 and stays until the first dance. Delivery within six weeks.' },
+      contract: {
+        terms:
+          'The photographer arrives at 10:00 and stays until the first dance. Delivery within six weeks.',
+      },
     },
     overrideAccess: true,
   })
@@ -143,8 +204,15 @@ export async function seedDemoData(
       location: 'Quinta da Regaleira, Sintra',
       crew: [{ user: admin.id, role: 'Lead photographer' }],
       tasks: [
-        { title: 'Scout the venue', dueDate: new Date(Date.now() + 10 * DAY).toISOString(), done: true },
-        { title: 'Confirm the shot list with the couple', dueDate: new Date(Date.now() + 20 * DAY).toISOString() },
+        {
+          title: 'Scout the venue',
+          dueDate: new Date(Date.now() + 10 * DAY).toISOString(),
+          done: true,
+        },
+        {
+          title: 'Confirm the shot list with the couple',
+          dueDate: new Date(Date.now() + 20 * DAY).toISOString(),
+        },
       ],
       callSheet: {
         meetingPoint: 'Main gate, Quinta da Regaleira',
@@ -194,7 +262,12 @@ export async function seedDemoData(
   for (const g of guests) {
     const guest = await payload.create({
       collection: 'event-guests',
-      data: { event: wedding.id, language: 'en', ...g, attendingCount: g.rsvpStatus === 'attending' ? g.partySize : 0 },
+      data: {
+        event: wedding.id,
+        language: 'en',
+        ...g,
+        attendingCount: g.rsvpStatus === 'attending' ? g.partySize : 0,
+      },
     })
     if (g.rsvpStatus === 'pending' && !inviteToken) inviteToken = guest.inviteToken ?? ''
   }
@@ -213,7 +286,13 @@ export async function seedDemoData(
       listed: true,
     },
   })
-  const ticketType = (name: string, capacity: number, maxPerOrder: number, sortOrder: number, price: number) =>
+  const ticketType = (
+    name: string,
+    capacity: number,
+    maxPerOrder: number,
+    sortOrder: number,
+    price: number,
+  ) =>
     payload.create({
       collection: 'ticket-types',
       data: { event: openDay.id, name, capacity, maxPerOrder, sortOrder, price, currency: 'eur' },
@@ -224,7 +303,14 @@ export async function seedDemoData(
   await ticketType('Portrait session', 10, 1, 3, 4500)
   const ticket = await payload.create({
     collection: 'registrations',
-    data: { ticketType: workshop.id, name: 'Ana Ferreira', email: clientEmail, quantity: 1, status: 'confirmed', language: 'en' },
+    data: {
+      ticketType: workshop.id,
+      name: 'Ana Ferreira',
+      email: clientEmail,
+      quantity: 1,
+      status: 'confirmed',
+      language: 'en',
+    },
   })
 
   return {

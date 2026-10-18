@@ -11,8 +11,8 @@ In the studio named by `DEFAULT_TENANT_SLUG` (default `angelus`):
 - A **studio administrator**, `admin@<studio>.demo.test`, and a **client**,
   `client@<studio>.demo.test`, sharing one random password printed once at the end. Neither is a
   platform super administrator.
-- A **gallery** of eight generated photos, published to the client, with downloads on and a
-  share link.
+- A **gallery** of eight generated photos, published to the client, with downloads on, a
+  share link, and a selection of up to five photos for the client to submit.
 - A **quote** with three line items, a 30% deposit and a contract to sign.
 - A **production** with crew, tasks and a call sheet.
 - A **private wedding** with a garden invitation and five guests in different RSVP states; the

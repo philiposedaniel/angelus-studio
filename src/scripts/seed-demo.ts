@@ -11,9 +11,13 @@ const payload = await getPayload({ config })
 const base = (process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000').replace(/\/$/, '')
 
 try {
-  const result = await seedDemoData(payload, { tenantSlug: process.env.DEFAULT_TENANT_SLUG || 'angelus' })
+  const result = await seedDemoData(payload, {
+    tenantSlug: process.env.DEFAULT_TENANT_SLUG || 'angelus',
+  })
   if (!result.created) {
-    payload.logger.info(`Demo data is already in place. Sign in as ${result.admin.email} or ${result.client.email}.`)
+    payload.logger.info(
+      `Demo data is already in place. Sign in as ${result.admin.email} or ${result.client.email}.`,
+    )
   } else {
     const lines = [
       'Demo data created.',
