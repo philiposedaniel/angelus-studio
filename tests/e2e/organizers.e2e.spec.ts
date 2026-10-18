@@ -57,7 +57,7 @@ test.describe('Organizers manage their guest list', () => {
     await expect(page.getByText('No guests yet.')).toBeVisible()
     await waitForHydration(page)
 
-    await page.getByLabel('Name').fill('Maria Silva')
+    await page.getByLabel('Name', { exact: true }).fill('Maria Silva')
     await page.getByLabel('Email (optional)').fill('maria@example.com')
     await page.getByLabel('Seats on the invitation').fill('2')
     await page.getByRole('button', { name: 'Add guest' }).click()
@@ -68,7 +68,7 @@ test.describe('Organizers manage their guest list', () => {
     await page.getByRole('link', { name: 'Change' }).click()
     await expect(page.getByRole('heading', { name: 'Change guest' })).toBeVisible()
     await waitForHydration(page)
-    await page.getByLabel('Name').fill('Maria Costa')
+    await page.getByLabel('Name', { exact: true }).fill('Maria Costa')
     await page.getByRole('button', { name: 'Save changes' }).click()
     await expect(page.getByText('Maria Costa')).toBeVisible()
 

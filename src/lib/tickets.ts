@@ -1,3 +1,4 @@
+import { sql } from '@payloadcms/db-postgres'
 import type { Payload, PayloadRequest } from 'payload'
 
 import type { Locale } from '@/i18n/config'
@@ -6,6 +7,7 @@ import { checkFormToken, looksLikeSpam, senderKey } from '@/lib/inquiries'
 import { advisoryLock } from '@/lib/advisoryLock'
 import { idOf } from '@/lib/ids'
 import { isShareToken } from '@/lib/shareTokens'
+import { runSql } from '@/lib/sqlSession'
 import {
   findPromoCode,
   normalizePromoCode,
@@ -84,48 +86,25 @@ export async function placesTaken(
     now = Date.now(),
   }: { req?: PayloadRequest; excludeId?: number | string; excludeWaitlistId?: number | string; now?: number } = {},
 ) {
-  const { docs } = await payload.find({
-    collection: 'registrations',
-    where: {
-      and: [
-        { ticketType: { equals: ticketTypeId } },
-        {
-          or: [
-            { status: { equals: 'confirmed' } },
-            {
-              and: [
-                { status: { equals: 'pending' } },
-                { holdExpiresAt: { greater_than: new Date(now).toISOString() } },
-              ],
-            },
-          ],
-        },
-        ...(excludeId !== undefined ? [{ id: { not_equals: excludeId } }] : []),
-      ],
-    },
-    pagination: false,
-    depth: 0,
-    select: { quantity: true },
-    overrideAccess: true,
-    ...(req ? { req } : {}),
-  })
-  const offers = await payload.find({
-    collection: 'waitlist-entries',
-    where: {
-      and: [
-        { ticketType: { equals: ticketTypeId } },
-        { status: { equals: 'offered' } },
-        { offerExpiresAt: { greater_than: new Date(now).toISOString() } },
-        ...(excludeWaitlistId !== undefined ? [{ id: { not_equals: excludeWaitlistId } }] : []),
-      ],
-    },
-    pagination: false,
-    depth: 0,
-    select: { quantity: true },
-    overrideAccess: true,
-    ...(req ? { req } : {}),
-  })
-  return [...docs, ...offers.docs].reduce((sum, doc) => sum + (doc.quantity ?? 0), 0)
+  // Summed in the database: this runs on every booking and event page view, and loading every
+  // row of a large event took half a second. The query mirrors `holdsPlaces`.
+  const moment = new Date(now).toISOString()
+  const id = Number(ticketTypeId)
+  const skipRegistration = excludeId === undefined ? null : Number(excludeId)
+  const skipOffer = excludeWaitlistId === undefined ? null : Number(excludeWaitlistId)
+  const [row] = await runSql<{ taken: string | null }>(
+    payload,
+    sql`SELECT
+      COALESCE((SELECT SUM(quantity) FROM registrations
+        WHERE ticket_type_id = ${id}
+          AND (status = 'confirmed' OR (status = 'pending' AND hold_expires_at > ${moment}::timestamptz))
+          AND (${skipRegistration}::int IS NULL OR id <> ${skipRegistration}::int)), 0)
+      + COALESCE((SELECT SUM(quantity) FROM waitlist_entries
+        WHERE ticket_type_id = ${id} AND status = 'offered' AND offer_expires_at > ${moment}::timestamptz
+          AND (${skipOffer}::int IS NULL OR id <> ${skipOffer}::int)), 0) AS taken`,
+    req,
+  )
+  return Number(row?.taken ?? 0)
 }
 
 /** People waiting for a ticket type, not yet offered places. */

@@ -1,4 +1,5 @@
 import config from '@payload-config'
+import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
@@ -71,6 +72,9 @@ export default async function QuotePage({ params, searchParams }: PageProps<'/[l
             {t.validUntil}: {formatDate(quote.validUntil, locale)}
           </p>
         )}
+        <Link href={`/${locale}/quote/${token}/invoice`} className="text-gold underline underline-offset-4">
+          {t.viewInvoice}
+        </Link>
       </header>
 
       {query.payment === 'success' && <p role="status" className="text-gold">{t.paymentConfirming}</p>}
