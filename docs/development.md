@@ -61,6 +61,10 @@ starts. Every schema change therefore needs `pnpm migrate:create <name>` and a c
 | `PAYLOAD_JOBS_AUTORUN` | Set to `false` to stop this process running background jobs (tests set it). |
 | `STRIPE_SECRET_KEY` | Stripe API key for Checkout deposits. Leave empty to keep online payment off. |
 | `STRIPE_WEBHOOK_SECRET` | Signing secret of the Stripe webhook endpoint `/api/stripe/webhook`. |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` | The email service's SMTP server and login. Leave `SMTP_HOST` empty to send no email. `SMTP_PORT` defaults to 587. |
+| `SMTP_SECURE` | `true` for TLS from the start (port 465, the default there), `false` to upgrade with STARTTLS. |
+| `EMAIL_FROM_ADDRESS` | The address emails come from, on a domain verified with the email service. Required to send. |
+| `EMAIL_FROM_NAME` | Sender name for platform emails. Event emails use the studio's name instead. |
 
 ## Studios and languages
 
@@ -269,8 +273,7 @@ Live streams use the Vimeo or YouTube embed only.
 - The event shows how many people have checked in; each guest shows the count and arrival time, which
   staff can also change by hand.
 
-Known limits: invitations are not emailed yet (that needs the email account); staff copy each
-link or send the exported list through their own tools. No seating yet. Scanning uses the phone's own
+Invitations can be emailed once email is set up (see *Event emails*). No seating yet. Scanning uses the phone's own
 camera app, so the phone must be signed in to the studio's site in the same browser it opens links in. See `docs/planning/events-platform-plan.md`
 for the order of the next steps.
 
@@ -479,13 +482,44 @@ email account exists.
 
 Known limits: refunds from the admin are for the full amount (refund part of it in Stripe). No
 booking fee is added (decision 6 in the events plan is open). Paid tickets have been tested with
-signed webhook events, not yet with a live Stripe round trip. Tickets are not emailed until the email account exists, so the ticket page asks people
-to save its link, and staff can resend it from the registration. One entry code covers every place
-on a registration. Nobody is told by email when places are offered to them from the waitlist
-until the email account exists; they see it on their waitlist link, and staff can resend that
-link. A person who takes a paid offer but does not pay loses it like any unpaid hold. Wrong promo codes are
+signed webhook events, not yet with a live Stripe round trip. Tickets and waitlist offers are
+emailed once email is set up (see *Event emails*); until then the ticket page asks people to save
+its link, and staff can resend links from the registration or waitlist entry. One entry code
+covers every place on a registration. A person who takes a paid offer but does not pay loses it like any unpaid hold. Wrong promo codes are
 not counted against a limit of their own; the form token and minimum fill time slow guessing, so
 avoid short codes for large discounts.
+
+## Event emails
+
+Emails go through any email service that offers SMTP (Resend, Postmark, Amazon SES, Brevo, a
+mail server of your own), configured with the `SMTP_*` and `EMAIL_FROM_*` variables. Nothing is
+sent until both `SMTP_HOST` and `EMAIL_FROM_ADDRESS` are set; until then the admin says so and
+every link is copied by hand as before. At startup Payload checks the SMTP login and logs an
+error if it fails.
+
+- **Tickets:** when a registration is confirmed (a free ticket at once, a paid one when the Stripe
+  webhook confirms it, or a registration staff add by hand), the buyer gets their ticket link.
+- **Waitlist offers:** when places are offered to someone on the waitlist, they get their waitlist
+  link and the time the places are held until.
+- **Invitations:** staff (or the event's organizers through the API) send them with *Email
+  invitations to N guests* in the event's *Invitations and RSVP* section. It emails every guest
+  with an email address who has not been emailed yet, so pressing it again after adding guests
+  only reaches the new ones. The event must be published, since its links only open then.
+
+Each email is in the person's language (the guest's, buyer's or waitlist entry's, if the studio
+offers it), comes from the studio's name with the platform's sending address, and has a plain-text
+and an HTML version. They are written and sent by the `send-email` background job, queued in the
+same transaction as the change that calls for one, so a change that fails sends nothing. The job
+checks again before sending (a ticket cancelled meanwhile, an offer run out, an event unpublished:
+nothing goes) and claims the record in one statement first, so an email is sent at most once
+even if the job runs twice; a failed send is retried three times. The guest, registration and
+waitlist entry show when they were emailed (*Invitation emailed*, *Ticket emailed*, *Offer
+emailed*). `tests/int/eventEmails.int.spec.ts` sends through a real SMTP server.
+
+Known limits: no reminders before the event and no RSVP reply notices to the studio yet. Inquiry
+alerts, client gallery links and vendor notices are not emailed yet. Delivery problems (bounces,
+spam reports) are only visible in the email service's own dashboard. The sending domain must be
+verified with the service (SPF and DKIM records in DNS), or messages land in spam.
 
 ### Large events: speed targets
 

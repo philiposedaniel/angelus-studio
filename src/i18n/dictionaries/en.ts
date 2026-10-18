@@ -403,6 +403,29 @@ export const en = {
       failed: 'Something went wrong. Please try again.',
     },
   },
+  emails: {
+    greeting: 'Dear {name},',
+    invitation: {
+      subject: 'You are invited: {event}',
+      body: 'You are invited to {event}, {when}.',
+      seats: { one: 'The invitation is for 1 person.', other: 'The invitation is for {count} people, you included.' },
+      action: 'Open your invitation and reply',
+      note: 'This link is yours alone: it lets you reply for your whole party, so please do not forward it.',
+    },
+    ticket: {
+      subject: 'Your ticket: {event}',
+      body: 'Your registration for {event}, {when}, is confirmed.',
+      places: { one: 'Your ticket admits 1 person.', other: 'Your ticket admits {count} people.' },
+      action: 'Open your ticket',
+      note: 'Show the entry code on your ticket page at the entrance. Anyone with the link can use it, so keep it to yourself.',
+    },
+    waitlistOffer: {
+      subject: 'Places are held for you: {event}',
+      body: 'Good news: places for {event}, {when}, have freed up and are held for you until {until}.',
+      action: 'Take my places',
+      note: 'If you do not take them in time, they go to the next person on the waitlist.',
+    },
+  },
   footer: { rights: 'All rights reserved.' },
 }
 

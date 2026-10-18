@@ -38,8 +38,9 @@ depends on it.
 4. **Vendors** (PR #22; private documents come with R2 storage, step 8). Directory, per-event assignments, amounts due and paid, private documents,
    and a vendor link with their event details. *Needs nothing; documents stay on local disk
    until R2.*
-5. **Email.** Invitations, RSVP and ticket confirmations, reminders, vendor notices and
-   inquiry alerts, sent through one provider interface. *Needs the email account.*
+5. **Email** (invitations, ticket confirmations and waitlist offers built; they send once SMTP
+   details are set). Still to do: reminders, RSVP notices to the studio, vendor notices and
+   inquiry alerts. *Sending needs the email account.*
 6. **Contracts, invoices and balances** (HoneyBook). Contract from a quote, e-signature,
    invoices with a payment schedule, balance payments by Stripe. *Needs the e-signature
    choice and Stripe.*

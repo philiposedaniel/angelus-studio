@@ -155,6 +155,7 @@ export interface Config {
     tasks: {
       'build-gallery-zip': TaskBuildGalleryZip;
       'cleanup-gallery-zips': TaskCleanupGalleryZips;
+      'send-email': TaskSendEmail;
       inline: {
         input: unknown;
         output: unknown;
@@ -720,6 +721,10 @@ export interface Registration {
    */
   staffNotes?: string | null;
   ticketToken?: string | null;
+  /**
+   * When the ticket was emailed to the buyer.
+   */
+  confirmationSentAt?: string | null;
   senderKey?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -917,6 +922,10 @@ export interface EventGuest {
    */
   language: 'en' | 'es' | 'fr' | 'pt' | 'de' | 'it';
   /**
+   * When the invitation was emailed. Guests already emailed are skipped when invitations are sent.
+   */
+  invitationSentAt?: string | null;
+  /**
    * Guests answer from their link. Staff can also record an answer given by phone.
    */
   rsvpStatus: 'pending' | 'attending' | 'declined';
@@ -1061,6 +1070,10 @@ export interface WaitlistEntry {
    */
   status: 'waiting' | 'offered' | 'claimed' | 'expired' | 'left' | 'removed';
   offerExpiresAt?: string | null;
+  /**
+   * When the offer of places was emailed.
+   */
+  offerSentAt?: string | null;
   registration?: (number | null) | Registration;
   language: 'en' | 'es' | 'fr' | 'pt' | 'de' | 'it';
   claimToken?: string | null;
@@ -1246,7 +1259,7 @@ export interface PayloadJob {
     | {
         executedAt: string;
         completedAt: string;
-        taskSlug: 'inline' | 'build-gallery-zip' | 'cleanup-gallery-zips';
+        taskSlug: 'inline' | 'build-gallery-zip' | 'cleanup-gallery-zips' | 'send-email';
         taskID: string;
         input?:
           | {
@@ -1279,7 +1292,7 @@ export interface PayloadJob {
         id?: string | null;
       }[]
     | null;
-  taskSlug?: ('inline' | 'build-gallery-zip' | 'cleanup-gallery-zips') | null;
+  taskSlug?: ('inline' | 'build-gallery-zip' | 'cleanup-gallery-zips' | 'send-email') | null;
   queue?: string | null;
   waitUntil?: string | null;
   processing?: boolean | null;
@@ -1882,6 +1895,7 @@ export interface EventGuestsSelect<T extends boolean = true> {
   table?: T;
   partySize?: T;
   language?: T;
+  invitationSentAt?: T;
   rsvpStatus?: T;
   attendingCount?: T;
   dietaryNotes?: T;
@@ -1991,6 +2005,7 @@ export interface RegistrationsSelect<T extends boolean = true> {
   checkedInAt?: T;
   staffNotes?: T;
   ticketToken?: T;
+  confirmationSentAt?: T;
   senderKey?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -2009,6 +2024,7 @@ export interface WaitlistEntriesSelect<T extends boolean = true> {
   quantity?: T;
   status?: T;
   offerExpiresAt?: T;
+  offerSentAt?: T;
   registration?: T;
   language?: T;
   claimToken?: T;
@@ -2236,6 +2252,17 @@ export interface TaskBuildGalleryZip {
  */
 export interface TaskCleanupGalleryZips {
   input?: unknown;
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskSend-email".
+ */
+export interface TaskSendEmail {
+  input: {
+    kind: 'invitation' | 'ticket' | 'waitlistOffer';
+    id: number;
+  };
   output?: unknown;
 }
 /**

@@ -405,5 +405,28 @@ export const es: Dictionary = {
       failed: 'Algo ha fallado. Inténtalo de nuevo.',
     },
   },
+  emails: {
+    greeting: 'Hola, {name}:',
+    invitation: {
+      subject: 'Estás invitado: {event}',
+      body: 'Te invitamos a {event}, {when}.',
+      seats: { one: 'La invitación es para 1 persona.', other: 'La invitación es para {count} personas, tú incluido.' },
+      action: 'Abrir tu invitación y responder',
+      note: 'Este enlace es solo tuyo: te permite responder por todo tu grupo, así que no lo reenvíes.',
+    },
+    ticket: {
+      subject: 'Tu entrada: {event}',
+      body: 'Tu inscripción para {event}, {when}, está confirmada.',
+      places: { one: 'Tu entrada es para 1 persona.', other: 'Tu entrada es para {count} personas.' },
+      action: 'Abrir tu entrada',
+      note: 'Muestra el código de acceso de tu página de entrada en la puerta. Cualquiera con el enlace puede usarlo, así que no lo compartas.',
+    },
+    waitlistOffer: {
+      subject: 'Te reservamos plazas: {event}',
+      body: 'Buenas noticias: se han liberado plazas para {event}, {when}, y te las reservamos hasta el {until}.',
+      action: 'Quedarme las plazas',
+      note: 'Si no las tomas a tiempo, pasan a la siguiente persona de la lista de espera.',
+    },
+  },
   footer: { rights: 'Todos los derechos reservados.' },
 }

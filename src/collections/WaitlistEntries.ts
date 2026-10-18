@@ -3,6 +3,7 @@ import { APIError, Forbidden, type CollectionConfig, type FieldAccess } from 'pa
 import { hasTenantRole, isSuperAdmin, tenantRoles } from '@/access'
 import { EVENT_GUEST_STAFF_ROLES } from '@/collections/EventGuests'
 import { DEFAULT_LOCALE, LOCALE_LABELS, LOCALES } from '@/i18n/config'
+import { queueEmail } from '@/lib/email'
 import { idOf } from '@/lib/ids'
 import { newShareToken } from '@/lib/shareTokens'
 import { isWholeNumber, MAX_PER_ORDER_LIMIT } from '@/lib/tickets'
@@ -84,6 +85,13 @@ export const WaitlistEntries: CollectionConfig = {
       },
     ],
     afterChange: [
+      // Places offered are emailed to the person once, when email is set up.
+      async ({ doc, previousDoc, req }) => {
+        if (doc.status === 'offered' && previousDoc?.status !== 'offered' && !doc.offerSentAt) {
+          await queueEmail(req, 'waitlistOffer', doc.id)
+        }
+        return doc
+      },
       // Someone leaving the queue, or an offer ending, may free places for the next person.
       async ({ context, doc, previousDoc, operation, req }) => {
         if (operation === 'update' && previousDoc?.status !== doc.status && !isWaitlistRefresh(context)) {
@@ -137,6 +145,14 @@ export const WaitlistEntries: CollectionConfig = {
       label: 'Offer held until',
       type: 'date',
       admin: { readOnly: true, date: { pickerAppearance: 'dayAndTime' } },
+    },
+    {
+      name: 'offerSentAt',
+      label: 'Offer emailed',
+      type: 'date',
+      admin: { readOnly: true, position: 'sidebar', date: { pickerAppearance: 'dayAndTime' }, description: 'When the offer of places was emailed.' },
+      // Set only by the email job.
+      access: { create: () => false, update: () => false },
     },
     { name: 'registration', type: 'relationship', relationTo: 'registrations', admin: { readOnly: true } },
     {

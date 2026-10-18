@@ -69,7 +69,7 @@ runs hourly. Run exactly one app instance, or set `PAYLOAD_JOBS_AUTORUN=false` o
 | Feature | State | Waiting on |
 | --- | --- | --- |
 | Online deposit and balance payment | Off until `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` are set | Stripe account and test keys. Live payment has never been run. |
-| Email (client links, invitations, notices) | Not sent. Staff copy links by hand | An email provider (Resend or Postmark). |
+| Email (event invitations, tickets, waitlist offers) | Off until `SMTP_HOST` and `EMAIL_FROM_ADDRESS` are set. Staff copy links by hand | An email service with SMTP (Resend, Postmark or similar) and a verified sending domain. Other notices (inquiries, gallery links, vendors) are not built yet. |
 | Off-site file storage (Cloudflare R2) | Not used. Files are on the server's volumes | A Cloudflare account and R2 bucket. |
 | Contract signature | Typed name with IP and fingerprint, no third-party service | A decision on an e-signature provider. |
 
