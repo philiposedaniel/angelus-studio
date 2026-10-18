@@ -1,6 +1,7 @@
 import type { PayloadHandler, PayloadRequest } from 'payload'
 
 import { DEFAULT_LOCALE, isLocale } from '@/i18n/config'
+import { emailConfigured, SEND_EMAIL_TASK } from '@/lib/email'
 import { guestsToCsv, MAX_IMPORT_CHARS, planGuestImport } from '@/lib/guestCsv'
 import { idOf } from '@/lib/ids'
 import { tenantLocales } from '@/lib/locale'
@@ -148,4 +149,38 @@ export const importGuestList: PayloadHandler = async (req) => {
     }
   }
   return Response.json({ ...summary, added })
+}
+
+/**
+ * POST /api/event-guests/send-invitations with JSON `{ event }`: emails each guest who has an
+ * email address and has not been emailed yet their personal invitation link. The guests are
+ * read as the signed-in user, so only people who manage this guest list can send it, and each
+ * email is sent once (see src/jobs/sendEmail.ts).
+ */
+export const sendInvitations: PayloadHandler = async (req) => {
+  if (!req.user) return fail(401, 'Sign in first.')
+  if (!emailConfigured()) return fail(409, 'Email sending is not set up yet.')
+  const body = (await req.json?.().catch(() => null)) as { event?: unknown } | null | undefined
+  const event = await eventFor(req, body?.event)
+  if (!event) return fail(404, 'Event not found.')
+  if (!event.published) return fail(409, 'Publish the event first: invitation links only open for published events.')
+  const guests = await req.payload
+    .find({
+      collection: 'event-guests',
+      where: {
+        and: [{ event: { equals: event.id } }, { email: { exists: true } }, { email: { not_equals: '' } }, { invitationSentAt: { exists: false } }],
+      },
+      pagination: false,
+      depth: 0,
+      select: { name: true },
+      req,
+      user: req.user,
+      overrideAccess: false,
+    })
+    .catch(() => null)
+  if (!guests) return fail(403, 'Only the people who manage this guest list can send its invitations.')
+  for (const guest of guests.docs) {
+    await req.payload.jobs.queue({ task: SEND_EMAIL_TASK, input: { kind: 'invitation', id: guest.id }, req })
+  }
+  return Response.json({ queued: guests.docs.length })
 }

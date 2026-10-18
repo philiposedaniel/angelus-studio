@@ -22,7 +22,8 @@ changes to those.
 
 ## If you are invited (guest)
 
-1. Open the personal link you were sent. It shows the invitation, the programme and the map.
+1. Open the personal link you were sent, by email from the studio or by message from the host.
+   It shows the invitation, the programme and the map.
 2. Say whether you are coming, how many of your party are coming, and any dietary needs or a
    note for the hosts. You can change your answer until replies close.
 3. Keep the link: it shows your **entry code**. Show it at the entrance, on your phone or printed.
@@ -36,7 +37,8 @@ changes to those.
 3. A free ticket opens straight away. A paid ticket takes you to a secure card payment page; your
    places are held for you while you pay.
 4. Your ticket page shows the event, the places it admits and your **entry code**. Save the link to
-   that page: it is your ticket. Anyone with the code can use it, so keep it to yourself.
+   that page: it is your ticket. Anyone with the code can use it, so keep it to yourself. If the
+   studio sends email, the link also arrives in your inbox once the ticket is confirmed.
 5. **Refunds** are made by the studio. Contact them; once refunded, the ticket stops working.
 
 ### When an event is sold out
@@ -49,8 +51,8 @@ changes to those.
    do not, the places go to the next person.
 4. You can **leave the waitlist** from the same link at any time.
 
-Until the studio's email is set up you will not get an email when places are offered, so check
-your waitlist link.
+If the studio sends email, you also get an email when places are offered. Check your waitlist link
+either way.
 
 ## If you are a supplier (vendor)
 

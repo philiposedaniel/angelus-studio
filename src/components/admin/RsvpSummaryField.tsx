@@ -1,5 +1,7 @@
 import type { UIFieldServerProps } from 'payload'
 
+import { SendInvitationsButton } from '@/components/admin/SendInvitationsButton'
+import { emailConfigured } from '@/lib/email'
 import { eventRsvpSummary } from '@/lib/rsvp'
 
 /** The event's headcount from its guest list, for the people allowed to see guests. */
@@ -30,6 +32,24 @@ export async function RsvpSummaryField(props: UIFieldServerProps) {
     )
   }
   const s = await eventRsvpSummary(props.payload, eventId)
+  const event = await props.payload.findByID({ collection: 'events', id: eventId, depth: 0, select: { published: true }, ...access })
+  // Guests with an email address who have not been emailed their invitation yet.
+  const notEmailed = emailConfigured()
+    ? (
+        await props.payload.count({
+          collection: 'event-guests',
+          where: {
+            and: [
+              { event: { equals: eventId } },
+              { email: { exists: true } },
+              { email: { not_equals: '' } },
+              { invitationSentAt: { exists: false } },
+            ],
+          },
+          ...access,
+        })
+      ).totalDocs
+    : 0
   const cell: React.CSSProperties = { padding: '4px 12px 4px 0' }
 
   return (
@@ -61,6 +81,15 @@ export async function RsvpSummaryField(props: UIFieldServerProps) {
           </tr>
         </tbody>
       </table>
+      {!emailConfigured() ? (
+        <p style={{ margin: 0 }}>
+          Invitations can be emailed once email sending is set up. Until then, copy each guest&apos;s invitation link.
+        </p>
+      ) : !event.published ? (
+        <p style={{ margin: 0 }}>Publish the event to email its invitations.</p>
+      ) : (
+        <SendInvitationsButton eventId={eventId} waiting={notEmailed} />
+      )}
       <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
         <a href={`/admin/collections/event-guests?where[event][equals]=${encodeURIComponent(String(eventId))}`}>
           Open this event&apos;s guest list

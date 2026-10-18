@@ -5,6 +5,7 @@ import { EVENT_GUEST_STAFF_ROLES } from '@/collections/EventGuests'
 import { DEFAULT_LOCALE, LOCALE_LABELS, LOCALES } from '@/i18n/config'
 import { exportAttendees } from '@/lib/attendees'
 import { refundTicketEndpoint } from '@/lib/ticketRefunds'
+import { queueEmail } from '@/lib/email'
 import { idOf } from '@/lib/ids'
 import {
   lockPromoCode,
@@ -210,6 +211,13 @@ export const Registrations: CollectionConfig = {
         }
         return doc
       },
+      // A confirmed ticket is emailed to the buyer once, when email is set up.
+      async ({ doc, previousDoc, req }) => {
+        if (doc.status === 'confirmed' && previousDoc?.status !== 'confirmed' && !doc.confirmationSentAt) {
+          await queueEmail(req, 'ticket', doc.id)
+        }
+        return doc
+      },
       // Places given back (a cancellation, fewer places) go to the next people on the waitlist.
       async ({ doc, previousDoc, operation, req }) => {
         const freed =
@@ -360,6 +368,14 @@ export const Registrations: CollectionConfig = {
       unique: true,
       admin: { hidden: true },
       access: { read: staffOfDoc },
+    },
+    {
+      name: 'confirmationSentAt',
+      label: 'Ticket emailed',
+      type: 'date',
+      admin: { readOnly: true, position: 'sidebar', date: { pickerAppearance: 'dayAndTime' }, description: 'When the ticket was emailed to the buyer.' },
+      // Set only by the email job.
+      access: { create: () => false, update: () => false },
     },
     {
       // A keyed hash of the address the registration came from, to limit repeats. Never shown.

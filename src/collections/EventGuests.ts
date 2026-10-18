@@ -2,7 +2,7 @@ import { APIError, Forbidden, type Access, type CollectionConfig, type FieldAcce
 
 import { isSuperAdmin, tenantIdsWithRole } from '@/access'
 import { DEFAULT_LOCALE, LOCALE_LABELS, LOCALES } from '@/i18n/config'
-import { exportGuestList, importGuestList } from '@/lib/guestListEndpoints'
+import { exportGuestList, importGuestList, sendInvitations } from '@/lib/guestListEndpoints'
 import { idOf } from '@/lib/ids'
 import { GUEST_LIST_STAFF_ROLES, isGuestListStaff, organizedEventIds } from '@/lib/organizers'
 import { MAX_PARTY_SIZE, RSVP_LIMITS, RSVP_STATUSES } from '@/lib/rsvp'
@@ -59,6 +59,7 @@ export const EventGuests: CollectionConfig = {
   endpoints: [
     { path: '/export', method: 'get', handler: exportGuestList },
     { path: '/import', method: 'post', handler: importGuestList },
+    { path: '/send-invitations', method: 'post', handler: sendInvitations },
   ],
   hooks: {
     beforeValidate: [
@@ -168,6 +169,14 @@ export const EventGuests: CollectionConfig = {
       defaultValue: DEFAULT_LOCALE,
       options: LOCALES.map((value) => ({ label: LOCALE_LABELS[value], value })),
       admin: { description: 'The language the invitation link opens in.' },
+    },
+    {
+      name: 'invitationSentAt',
+      label: 'Invitation emailed',
+      type: 'date',
+      admin: { readOnly: true, position: 'sidebar', date: { pickerAppearance: 'dayAndTime' }, description: 'When the invitation was emailed. Guests already emailed are skipped when invitations are sent.' },
+      // Set only by the email job.
+      access: { create: () => false, update: () => false },
     },
     {
       name: 'invitationLink',

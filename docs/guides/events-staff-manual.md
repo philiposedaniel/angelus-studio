@@ -46,8 +46,10 @@ editor when the studio offers more than one language.
    spreadsheet* on the event (a CSV with a Name column; Email, Phone, Group, Party size and
    Language are optional). The import shows a preview first and skips emails already on the list.
 3. **Send the invitations**: each guest has a personal *Invitation link*. Copy it from the guest
-   and send it by email, WhatsApp or text. (Sending email from the platform comes once the email
-   account is set up.)
+   and send it by WhatsApp or text, or use *Email invitations to N guests* in the event's
+   *Invitations and RSVP* section to email everyone with an email address who has not had one
+   yet. (Email works once the studio's email sending is set up; the button says so if not. The
+   event must be published first.)
 4. **Follow the answers** in the event's *Invitations and RSVP* section: attending, people
    coming, declined, not answered. Record an answer given by phone by setting *RSVP* on the
    guest. Close replies with *Guests can reply* or a *Reply by* date.
@@ -89,8 +91,10 @@ editor when the studio offers more than one language.
    payment records the amount.
 8. **Download the attendee list (CSV)** from the event's *Registration and tickets* section.
 
-People who lose their ticket or waitlist link: open their registration or waitlist entry and
-copy the link shown there to send it again.
+When the studio's email is set up, buyers get their ticket by email once it is confirmed, and
+people on a waitlist are emailed when places are offered to them. People who lose their ticket or
+waitlist link: open their registration or waitlist entry and copy the link shown there to send it
+again.
 
 ## 4. Vendors
 
