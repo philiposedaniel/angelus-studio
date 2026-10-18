@@ -90,12 +90,14 @@ export default async function InvitationPage({ params }: PageProps<'/[locale]/in
           <RsvpForm
             token={token}
             partySize={partySize}
+            meals={(event.mealOptions ?? []).flatMap((option) => (option.id ? [{ id: option.id, label: option.label }] : []))}
             answered={guest.rsvpStatus !== 'pending'}
             initial={{
               response: guest.rsvpStatus === 'pending' ? undefined : (guest.rsvpStatus ?? undefined),
               attendingCount: guest.attendingCount || 1,
               dietaryNotes: guest.dietaryNotes ?? '',
               guestMessage: guest.guestMessage ?? '',
+              party: (guest.party ?? []).map((person) => ({ name: person.name ?? '', meal: person.meal ?? '' })),
             }}
             t={t}
           />

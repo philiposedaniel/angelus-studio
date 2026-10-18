@@ -875,6 +875,18 @@ export interface Event {
    * Optional. Replies close automatically after this moment.
    */
   rsvpDeadline?: string | null;
+  /**
+   * Optional. When set, each person coming picks one of these when they reply, and the counts show above, in the guest list download and at check-in. People who chose a meal that is later removed count as not chosen.
+   */
+  mealOptions?:
+    | {
+        /**
+         * e.g. Fish, Meat, Vegetarian, Children's menu
+         */
+        label: string;
+        id?: string | null;
+      }[]
+    | null;
   published?: boolean | null;
   /**
    * Untick for private events such as weddings: only people with an invitation or guest link can open them.
@@ -960,6 +972,16 @@ export interface EventGuest {
    * How many of the party are coming.
    */
   attendingCount?: number | null;
+  /**
+   * Filled in by the guest when they reply: the guest first, then whoever they bring, each with their meal when the event offers meal choices.
+   */
+  party?:
+    | {
+        name?: string | null;
+        meal?: string | null;
+        id?: string | null;
+      }[]
+    | null;
   dietaryNotes?: string | null;
   guestMessage?: string | null;
   respondedAt?: string | null;
@@ -1931,6 +1953,12 @@ export interface EventsSelect<T extends boolean = true> {
       };
   rsvpOpen?: T;
   rsvpDeadline?: T;
+  mealOptions?:
+    | T
+    | {
+        label?: T;
+        id?: T;
+      };
   published?: T;
   listed?: T;
   updatedAt?: T;
@@ -1953,6 +1981,13 @@ export interface EventGuestsSelect<T extends boolean = true> {
   invitationSentAt?: T;
   rsvpStatus?: T;
   attendingCount?: T;
+  party?:
+    | T
+    | {
+        name?: T;
+        meal?: T;
+        id?: T;
+      };
   dietaryNotes?: T;
   guestMessage?: T;
   respondedAt?: T;

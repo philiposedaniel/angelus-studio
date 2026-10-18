@@ -12,10 +12,22 @@ export type RsvpStatus = (typeof RSVP_STATUSES)[number]
 /** Most seats one invitation can hold (the guest plus their party). */
 export const MAX_PARTY_SIZE = 20
 
-export const RSVP_LIMITS = { dietaryNotes: 500, guestMessage: 1000 } as const
+export const RSVP_LIMITS = { dietaryNotes: 500, guestMessage: 1000, personName: 120 } as const
 
-export type RsvpField = 'response' | 'attendingCount' | 'dietaryNotes' | 'guestMessage'
-export type RsvpFieldError = 'required' | 'invalid' | 'tooLong'
+/** Most meals an event can offer to choose from. */
+export const MAX_MEAL_OPTIONS = 12
+
+export type RsvpField =
+  | 'response'
+  | 'attendingCount'
+  | 'dietaryNotes'
+  | 'guestMessage'
+  | `party.${number}.name`
+  | `party.${number}.meal`
+export type RsvpFieldError = 'required' | 'invalid' | 'tooLong' | 'chooseMeal'
+
+/** One person coming on an invitation: the guest first, then whoever they bring. */
+export type RsvpPerson = { name: string | null; meal: string | null }
 
 export type RsvpState =
   | { status: 'idle' }
@@ -31,17 +43,31 @@ export type RsvpInput = {
   attendingCount: number
   dietaryNotes: string
   guestMessage: string
+  /** Each person coming, when the invitation is for more than one or the event offers meals. */
+  party: RsvpPerson[]
 }
+
+/** The ids of the meals an event offers, in order. */
+export const mealOptionIds = (event: Pick<Event, 'mealOptions'>): string[] =>
+  (event.mealOptions ?? []).flatMap((option) => (option.id ? [option.id] : []))
+
+/** Whether the reply asks who is coming: a party of more than one, or a meal to choose. */
+export const asksForParty = (partySize: number, mealIds: readonly string[]) => partySize > 1 || mealIds.length > 0
 
 const text = (form: FormData, key: string) => {
   const value = form.get(key)
   return typeof value === 'string' ? value.trim() : ''
 }
 
-/** Checks a guest's answer against the seats on their invitation. */
+/**
+ * Checks a guest's answer against the seats on their invitation and the meals the event offers.
+ * The first person is the guest; the others' names are optional, a meal is required for each
+ * person when the event offers meals.
+ */
 export function validateRsvp(
   form: FormData,
   partySize: number,
+  mealIds: readonly string[] = [],
 ): { ok: true; input: RsvpInput } | { ok: false; errors: Partial<Record<RsvpField, RsvpFieldError>> } {
   const errors: Partial<Record<RsvpField, RsvpFieldError>> = {}
   const response = text(form, 'response')
@@ -57,6 +83,17 @@ export function validateRsvp(
       errors.attendingCount = 'invalid'
     }
   }
+  const party: RsvpPerson[] = []
+  if (response === 'attending' && !errors.attendingCount && asksForParty(partySize, mealIds)) {
+    for (let i = 0; i < attendingCount; i++) {
+      // The guest's own name comes from the invitation, not the form.
+      const name = i === 0 ? '' : text(form, `party.${i}.name`)
+      const meal = text(form, `party.${i}.meal`)
+      if (name.length > RSVP_LIMITS.personName) errors[`party.${i}.name`] = 'tooLong'
+      if (mealIds.length > 0 && !mealIds.includes(meal)) errors[`party.${i}.meal`] = 'chooseMeal'
+      party.push({ name: name || null, meal: mealIds.length > 0 ? meal : null })
+    }
+  }
   if (dietaryNotes.length > RSVP_LIMITS.dietaryNotes) errors.dietaryNotes = 'tooLong'
   if (guestMessage.length > RSVP_LIMITS.guestMessage) errors.guestMessage = 'tooLong'
 
@@ -69,6 +106,7 @@ export function validateRsvp(
       // A guest who is not coming has no seats and no meal to plan.
       dietaryNotes: response === 'attending' ? dietaryNotes : '',
       guestMessage,
+      party,
     },
   }
 }
@@ -124,7 +162,7 @@ export async function submitRsvp({
   const { guest, event } = found
   if (!rsvpIsOpen(event, now)) return { status: 'error', reason: 'closed' }
 
-  const result = validateRsvp(form, guest.partySize ?? 1)
+  const result = validateRsvp(form, guest.partySize ?? 1, mealOptionIds(event))
   if (!result.ok) return { status: 'error', errors: result.errors }
 
   try {
@@ -137,6 +175,7 @@ export async function submitRsvp({
         attendingCount: result.input.attendingCount,
         dietaryNotes: result.input.dietaryNotes,
         guestMessage: result.input.guestMessage,
+        party: result.input.party.map((person, i) => ({ ...person, name: i === 0 ? guest.name : person.name })),
         respondedAt: new Date(now).toISOString(),
       },
       overrideAccess: true,
@@ -191,4 +230,50 @@ export async function eventRsvpSummary(payload: Payload, eventId: number | strin
       checkedInCount: Number(row.arrived),
     })),
   )
+}
+
+/**
+ * How many people coming chose each meal, added up in the database. Like `eventRsvpSummary`,
+ * the caller must already have checked the user may see this event's guests.
+ */
+export async function eventMealCounts(payload: Payload, eventId: number | string): Promise<Map<string, number>> {
+  const rows = await runSql<{ meal: string; people: string }>(
+    payload,
+    sql`SELECT p.meal AS meal, COUNT(*) AS people
+      FROM event_guests_party p JOIN event_guests g ON g.id = p._parent_id
+      WHERE g.event_id = ${Number(eventId)} AND g.rsvp_status = 'attending' AND p.meal IS NOT NULL
+      GROUP BY p.meal`,
+  )
+  return new Map(rows.map((row) => [row.meal, Number(row.people)]))
+}
+
+/**
+ * Each meal the event offers with how many chose it, in the event's order, and how many people
+ * coming have no choice yet (or chose a meal since removed). Empty when the event offers no meals.
+ */
+export function summarizeMeals(
+  event: Pick<Event, 'mealOptions'>,
+  counts: ReadonlyMap<string, number>,
+  headcount: number,
+): { meals: { id: string; label: string; count: number }[]; notChosen: number } {
+  const meals = (event.mealOptions ?? []).flatMap((option) =>
+    option.id ? [{ id: option.id, label: option.label, count: counts.get(option.id) ?? 0 }] : [],
+  )
+  const chosen = meals.reduce((sum, meal) => sum + meal.count, 0)
+  return { meals, notChosen: meals.length > 0 ? Math.max(0, headcount - chosen) : 0 }
+}
+
+/** A guest's party as one line, e.g. "Maria Silva (Fish), João Silva (Vegetarian), Guest 3". */
+export function describeParty(
+  guest: Pick<EventGuest, 'party'>,
+  mealLabel: (id: string) => string | undefined,
+  unnamed: (position: number) => string,
+): string {
+  return (guest.party ?? [])
+    .map((person, i) => {
+      const meal = person.meal ? mealLabel(person.meal) : undefined
+      const name = person.name || unnamed(i + 1)
+      return meal ? `${name} (${meal})` : name
+    })
+    .join(', ')
 }

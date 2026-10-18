@@ -10,7 +10,8 @@ The studio can name you as an organizer of your event. You then manage its guest
 1. Sign in to the client portal with the account the studio created for you. Your portal home
    shows **Your events**.
 2. Open your event to see the guest list: who is invited, how many seats each invitation has,
-   and who has answered.
+   and who has answered, with the names of the people coming and their meals. When the event
+   offers meal choices, the page also shows how many chose each meal, ready for the caterer.
 3. **Add a guest** with their name, and optionally email, phone, group, party size and the
    language their invitation opens in. **Change** or **remove** guests the same way.
 4. **Copy invitation link** next to each guest gives you their personal invitation to send by
@@ -24,8 +25,9 @@ changes to those.
 
 1. Open the personal link you were sent, by email from the studio or by message from the host.
    It shows the invitation, the programme and the map.
-2. Say whether you are coming, how many of your party are coming, and any dietary needs or a
-   note for the hosts. You can change your answer until replies close.
+2. Say whether you are coming and how many of your party are coming, give the names of the
+   people you bring, choose a meal for each person if the hosts offer a choice, and add any
+   dietary needs or a note for the hosts. You can change your answer until replies close.
 3. Keep the link: it shows your **entry code**. Show it at the entrance, on your phone or printed.
 4. If the event has a live stream or a photo album, the invitation links to them.
 

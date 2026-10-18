@@ -41,7 +41,9 @@ editor when the studio offers more than one language.
 
 1. **Design the invitation** in the event's *Invitation design* section: style, cover picture,
    headline, message, programme, dress code, map link. *Preview the invitation* shows it with a
-   sample guest.
+   sample guest. To let guests choose their meal, add the options under *Meal choices* in the
+   *Invitations and RSVP* section (Fish, Meat, Vegetarian, Children's menu...), in each language
+   the studio offers.
 2. **Add guests**: one by one under *Events → Guests*, or in bulk with *Import guests from a
    spreadsheet* on the event (a CSV with a Name column; Email, Phone, Group, Party size and
    Language are optional). The import shows a preview first and skips emails already on the list.
@@ -51,8 +53,11 @@ editor when the studio offers more than one language.
    yet. (Email works once the studio's email sending is set up; the button says so if not. The
    event must be published first.)
 4. **Follow the answers** in the event's *Invitations and RSVP* section: attending, people
-   coming, declined, not answered. Record an answer given by phone by setting *RSVP* on the
-   guest. Close replies with *Guests can reply* or a *Reply by* date.
+   coming, declined, not answered, and how many chose each meal. Each guest's *Who is coming*
+   lists the people in their party and their meals; the guest list download has them too.
+   Record an answer given by phone by setting *RSVP* on the guest (and the people and meals
+   under *Who is coming*). Close replies with *Guests can reply* or a *Reply by* date. If you
+   remove a meal option, people who chose it count as not chosen until they pick again.
 5. **Seat people** under *Events → Tables*, then choose each guest's *Table* (or select several
    in the guest list and use *Edit*). The *Seating* section flags tables over capacity and guests
    without a table.
@@ -110,7 +115,8 @@ again.
 1. On the phone that will scan, sign in to the studio's website (the same browser the camera
    app opens links in).
 2. Scan the code on the guest's invitation or the buyer's ticket with the camera app. The page
-   shows the name, party size or places, and for guests their table and dietary notes.
+   shows the name, party size or places, and for guests their table, who is coming with their
+   meals, and dietary notes.
 3. Choose how many have arrived and press *Check in*. Choosing 0 undoes it.
 4. A cancelled registration shows **"Do not admit"**. Anyone not signed in as staff who opens a
    code only sees "Show this code at the entrance".

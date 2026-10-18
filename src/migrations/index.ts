@@ -27,6 +27,7 @@ import * as migration_20261017_195026_ticket_refunds from './20261017_195026_tic
 import * as migration_20261017_204530_photo_selections from './20261017_204530_photo_selections';
 import * as migration_20261017_215543_equipment_checkout from './20261017_215543_equipment_checkout';
 import * as migration_20261017_234930_event_emails from './20261017_234930_event_emails';
+import * as migration_20261018_023933_meal_choices from './20261018_023933_meal_choices';
 
 export const migrations = [
   {
@@ -172,6 +173,11 @@ export const migrations = [
   {
     up: migration_20261017_234930_event_emails.up,
     down: migration_20261017_234930_event_emails.down,
-    name: '20261017_234930_event_emails'
+    name: '20261017_234930_event_emails',
+  },
+  {
+    up: migration_20261018_023933_meal_choices.up,
+    down: migration_20261018_023933_meal_choices.down,
+    name: '20261018_023933_meal_choices'
   },
 ];

@@ -5,7 +5,7 @@ import { DEFAULT_LOCALE, LOCALE_LABELS, LOCALES } from '@/i18n/config'
 import { exportGuestList, importGuestList, sendInvitations } from '@/lib/guestListEndpoints'
 import { idOf } from '@/lib/ids'
 import { GUEST_LIST_STAFF_ROLES, isGuestListStaff, organizedEventIds } from '@/lib/organizers'
-import { MAX_PARTY_SIZE, RSVP_LIMITS, RSVP_STATUSES } from '@/lib/rsvp'
+import { MAX_PARTY_SIZE, mealOptionIds, RSVP_LIMITS, RSVP_STATUSES } from '@/lib/rsvp'
 import { newShareToken } from '@/lib/shareTokens'
 
 /** Staff who manage guest lists. Guest names, contacts and dietary needs are personal data. */
@@ -105,6 +105,21 @@ export const EventGuests: CollectionConfig = {
           throw new APIError('More people are attending than this invitation has seats for.', 400)
         }
 
+        // The people coming: never more than are attending, and none when not attending. A meal
+        // the event no longer offers is cleared rather than refusing the whole change.
+        type Person = { id?: string | null; name?: string | null; meal?: string | null }
+        let party: Person[] = status === 'attending' ? (data.party ?? originalDoc?.party ?? []) : []
+        if (party.length > attendingCount) {
+          throw new APIError('More people are named than are attending. Remove a name or raise the number attending.', 400)
+        }
+        if (party.some((person) => person.meal)) {
+          const event = await req.payload
+            .findByID({ collection: 'events', id: idOf(data.event ?? originalDoc?.event)!, depth: 0, req, overrideAccess: true })
+            .catch(() => null)
+          const offered = event ? mealOptionIds(event) : []
+          party = party.map((person) => (person.meal && !offered.includes(person.meal) ? { ...person, meal: null } : person))
+        }
+
         const checkedInCount: number = data.checkedInCount ?? originalDoc?.checkedInCount ?? 0
         if (checkedInCount > partySize) {
           throw new APIError('More people are checked in than this invitation has seats for.', 400)
@@ -118,6 +133,7 @@ export const EventGuests: CollectionConfig = {
         return {
           ...data,
           attendingCount,
+          party,
           checkedInCount,
           checkedInAt,
           // Set on create, kept on change, never taken from the request.
@@ -208,6 +224,34 @@ export const EventGuests: CollectionConfig = {
           admin: { description: 'How many of the party are coming.' },
           validate: (value: unknown) =>
             value === null || value === undefined || isWholeNumber(value, 0, MAX_PARTY_SIZE) || 'Enter a whole number.',
+        },
+        {
+          name: 'party',
+          label: 'Who is coming',
+          type: 'array',
+          maxRows: MAX_PARTY_SIZE,
+          labels: { singular: 'Person', plural: 'People' },
+          admin: {
+            description:
+              'Filled in by the guest when they reply: the guest first, then whoever they bring, each with their meal when the event offers meal choices.',
+          },
+          fields: [
+            {
+              type: 'row',
+              fields: [
+                { name: 'name', type: 'text', maxLength: RSVP_LIMITS.personName, admin: { width: '50%' } },
+                {
+                  name: 'meal',
+                  type: 'text',
+                  maxLength: 64,
+                  admin: {
+                    width: '50%',
+                    components: { Field: '@/components/admin/MealChoiceField#MealChoiceField' },
+                  },
+                },
+              ],
+            },
+          ],
         },
         { name: 'dietaryNotes', type: 'textarea', maxLength: RSVP_LIMITS.dietaryNotes },
         {

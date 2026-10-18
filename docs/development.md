@@ -254,6 +254,23 @@ Live streams use the Vimeo or YouTube embed only.
   people coming, not attending, not answered), links to the event's guest list, and closes replies
   with *Guests can reply* or a *Reply by* moment in the event's time zone.
 - Staff can record an answer given by phone by setting *RSVP* on the guest.
+
+### Names and meal choices
+
+- *Meal choices* on the event (up to 12, each label translated per language) turn on a meal for
+  each person. With them set, or when an invitation has more than one seat, the reply asks *Who is
+  coming*: the guest first (their name comes from the invitation), then a name for each other person
+  coming (optional) and, when meals are offered, a meal for every person (required).
+- The answer is stored on the guest as *Who is coming* (`party`: name and the meal option's id), one
+  row per person coming. Declining clears it; fewer people coming keeps only those people. A save
+  that names more people than are attending is refused, and a meal the event no longer offers is
+  cleared on the guest's next change. Until then it counts as *not chosen*.
+- Staff see each meal's count in *Invitations and RSVP*, and each person's meal on the guest with a
+  picker of the event's meals. Organizers see the counts and each guest's party in the portal, the
+  check-in page shows the party with meals, and the guest list download has a *Who is coming* column
+  such as `Maria Silva (Fish), Guest 2 (Vegetarian)`. Counts are added up in the database
+  (`eventMealCounts` in `src/lib/rsvp.ts`), like the headcount.
+- Known limit: the guest list import does not read names or meals; guests give them when they reply.
 - Answers are saved by the page's server action (`src/lib/rsvp.ts`); guests have no API access.
   The studio comes from the host name, so a link only works on its own studio's site.
 - Deleting an event deletes its guests.
@@ -276,7 +293,8 @@ Live streams use the Vimeo or YouTube embed only.
 - The invitation page shows the guest an entry code (QR) unless they declined. It opens
   `/<language>/invite/<token>/check-in`.
 - Staff sign in on the studio's site first (the check-in page links to the sign-in), then scan codes
-  with the phone's camera. The page shows the guest, their party size, answer and dietary needs, and
+  with the phone's camera. The page shows the guest, their party size, answer, who is coming with their
+  meals and dietary needs, and
   records how many arrived (0 undoes it). Anyone else who opens it only sees "Show this code at the
   entrance". Only studio admins and production managers can check guests in.
 - The event shows how many people have checked in; each guest shows the count and arrival time, which

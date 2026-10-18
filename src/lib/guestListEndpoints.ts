@@ -65,6 +65,7 @@ export const exportGuestList: PayloadHandler = async (req) => {
       return `${origin}/${language}/invite/${guest.inviteToken}`
     },
     (guest) => tableNames.get(String(idOf(guest.table))) ?? '',
+    (mealId) => event.mealOptions?.find((option) => option.id === mealId)?.label,
   )
   const name = `guests-${event.slug || event.id}.csv`.replace(/[^\w.-]/g, '_')
   return new Response(csv, {
