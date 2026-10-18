@@ -312,6 +312,9 @@ for the order of the next steps.
   the migration creates. Two requests at the same moment cannot both book the same kit.
 - Only production staff can read or change equipment and reservations. Other studios and clients
   see nothing.
+- Each production shows the kit reserved for it in its admin page, under *Kit reserved*. The list is read from the
+  reservations, so nothing is stored twice, and it adds no migration. Only production staff see it; crew and
+  clients do not.
 - Not built yet: kit check-out and return, kit lists per production, and a calendar of kit use.
 
 Not built yet: run-of-show timing and printing, the crew's
