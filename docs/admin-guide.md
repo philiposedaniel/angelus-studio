@@ -122,6 +122,10 @@ private to each client.
 - **Website > Pages** holds the public pages. Page titles and intros are translatable; untranslated text shows
   the English version.
 - Services and site settings are also edited in the admin, for the content of the public site.
+- Published pages are listed in the studio's `/sitemap.xml` in every language the studio offers, and `/robots.txt`
+  points search engines to it. Client, guest and token pages (portal, quotes, invitations, tickets, vendor and
+  waitlist links, shared albums) are kept out of search results. A studio needs its domain set on its tenant for
+  these addresses to be absolute.
 
 ## Events and tickets
 
