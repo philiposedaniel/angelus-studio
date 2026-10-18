@@ -60,7 +60,7 @@ export const en = {
     loginFailed: 'That email and password did not match. Please try again.',
     signOut: 'Sign out',
     myGalleries: 'Your galleries',
-    noGalleries: 'You have no galleries yet. We will email you when your photos are ready.',
+    noGalleries: 'You have no galleries yet. Your photos will appear here as soon as the studio publishes them.',
     myProjects: 'Your productions',
     noProjects: 'You have no productions to see yet.',
     shootDay: 'Shoot day',

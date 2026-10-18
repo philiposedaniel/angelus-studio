@@ -62,7 +62,7 @@ export const es: Dictionary = {
     loginFailed: 'El correo y la contraseña no coinciden. Inténtelo de nuevo.',
     signOut: 'Cerrar sesión',
     myGalleries: 'Sus galerías',
-    noGalleries: 'Aún no tiene galerías. Le escribiremos cuando sus fotos estén listas.',
+    noGalleries: 'Aún no tiene galerías. Sus fotos aparecerán aquí en cuanto el estudio las publique.',
     myProjects: 'Sus producciones',
     noProjects: 'Aún no tiene producciones que ver.',
     shootDay: 'Día de rodaje',
