@@ -77,6 +77,7 @@ export interface Config {
     'gallery-photos': GalleryPhoto;
     'gallery-favorites': GalleryFavorite;
     'gallery-downloads': GalleryDownload;
+    'gallery-selections': GallerySelection;
     inquiries: Inquiry;
     quotes: Quote;
     payments: Payment;
@@ -114,6 +115,7 @@ export interface Config {
     'gallery-photos': GalleryPhotosSelect<false> | GalleryPhotosSelect<true>;
     'gallery-favorites': GalleryFavoritesSelect<false> | GalleryFavoritesSelect<true>;
     'gallery-downloads': GalleryDownloadsSelect<false> | GalleryDownloadsSelect<true>;
+    'gallery-selections': GallerySelectionsSelect<false> | GallerySelectionsSelect<true>;
     inquiries: InquiriesSelect<false> | InquiriesSelect<true>;
     quotes: QuotesSelect<false> | QuotesSelect<true>;
     payments: PaymentsSelect<false> | PaymentsSelect<true>;
@@ -426,6 +428,10 @@ export interface Gallery {
    */
   allowDownloads?: boolean | null;
   /**
+   * Most photos a client may select here. Leave empty for no limit. Clients select by marking favorites.
+   */
+  selectionLimit?: number | null;
+  /**
    * Anyone with the link can view web-size copies (never originals), and the album can be embedded on a website. Turn off to revoke the link; turning it on again creates a new one.
    */
   shareEnabled?: boolean | null;
@@ -551,6 +557,27 @@ export interface GalleryDownload {
   sizeBytes?: number | null;
   expiresAt?: string | null;
   error?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Ask for changes by writing feedback and setting the status to "Changes requested". Approve it to lock it as final.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "gallery-selections".
+ */
+export interface GallerySelection {
+  id: number;
+  tenant?: (number | null) | Tenant;
+  gallery: number | Gallery;
+  user: number | User;
+  status: 'open' | 'submitted' | 'revision-requested' | 'approved';
+  submittedAt?: string | null;
+  approvedAt?: string | null;
+  /**
+   * Shown to the client. Required when asking for changes.
+   */
+  feedback?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1355,6 +1382,10 @@ export interface PayloadLockedDocument {
         value: number | GalleryDownload;
       } | null)
     | ({
+        relationTo: 'gallery-selections';
+        value: number | GallerySelection;
+      } | null)
+    | ({
         relationTo: 'inquiries';
         value: number | Inquiry;
       } | null)
@@ -1675,6 +1706,7 @@ export interface GalleriesSelect<T extends boolean = true> {
   expiresAt?: T;
   watermarkText?: T;
   allowDownloads?: T;
+  selectionLimit?: T;
   shareEnabled?: T;
   shareToken?: T;
   updatedAt?: T;
@@ -1752,6 +1784,21 @@ export interface GalleryDownloadsSelect<T extends boolean = true> {
   sizeBytes?: T;
   expiresAt?: T;
   error?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "gallery-selections_select".
+ */
+export interface GallerySelectionsSelect<T extends boolean = true> {
+  tenant?: T;
+  gallery?: T;
+  user?: T;
+  status?: T;
+  submittedAt?: T;
+  approvedAt?: T;
+  feedback?: T;
   updatedAt?: T;
   createdAt?: T;
 }
