@@ -88,6 +88,15 @@ starts. Every schema change therefore needs `pnpm migrate:create <name>` and a c
   until it is ready. Only its owner and the studio's staff can fetch it, at
   `/api/gallery-downloads/<id>/file`. A ZIP holds up to 2,000 photos, each person has one in
   preparation at a time, and files are deleted after 7 days by an hourly cleanup job.
+- **Selections:** a client's favorites in a gallery are their selection. Staff can set a *Selection
+  limit* on the gallery (empty means no limit); a favorite past the limit is refused. The gallery
+  page shows the count, the limit and the status. *Submit selection* sends it to the studio, and
+  favorites then cannot change. Staff review it under *Client delivery → Selections*: write
+  feedback and set *Changes requested* to reopen it for the client, who submits again, or set
+  *Approved and locked* to make it final. Clients cannot change a selection's status themselves, and
+  a client from another studio cannot see it. Limits: a refused favorite shows the generic
+  favorite error on the photo rather than the reason, and staff are not emailed when a selection
+  is submitted (email is not built yet).
 
 ## Shared albums and embeds
 

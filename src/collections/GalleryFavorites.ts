@@ -2,9 +2,10 @@ import { APIError, type Access, type CollectionConfig, type Where } from 'payloa
 
 import { GALLERY_STAFF_ROLES } from '@/access/galleries'
 import { isSuperAdmin, tenantIdsWithRole } from '@/access/roles'
+import { quotaReached, selectionLockedFor } from '@/lib/selections'
 
 /** Clients see and remove their own favorites; gallery staff see their studio's. */
-const ownOrStaff: Access = ({ req: { user } }) => {
+export const ownOrStaff: Access = ({ req: { user } }) => {
   if (!user) return false
   if (isSuperAdmin(user)) return true
   const own: Where = { user: { equals: user.id } }
@@ -57,10 +58,42 @@ export const GalleryFavorites: CollectionConfig = {
         })
         if (existing.totalDocs > 0) throw new APIError('Already a favorite.', 409)
 
+        const galleryId = typeof photo.gallery === 'object' ? photo.gallery.id : photo.gallery
+        if (await selectionLockedFor(req.payload, req.user.id, galleryId)) {
+          throw new APIError('This selection is locked while the studio reviews it.', 409)
+        }
+        const gallery = await req.payload
+          .findByID({ collection: 'galleries', id: galleryId, depth: 0, overrideAccess: true, req })
+          .catch(() => null)
+        const selected = await req.payload.count({
+          collection: 'gallery-favorites',
+          where: { and: [{ user: { equals: req.user.id } }, { gallery: { equals: galleryId } }] },
+          req,
+        })
+        if (quotaReached(selected.totalDocs, gallery?.selectionLimit)) {
+          throw new APIError(`This gallery allows ${gallery?.selectionLimit} selected photos.`, 409)
+        }
+
         data.user = req.user.id
         data.gallery = typeof photo.gallery === 'object' ? photo.gallery.id : photo.gallery
         data.tenant = typeof photo.tenant === 'object' ? photo.tenant?.id : photo.tenant
         return data
+      },
+    ],
+    // Only the client's own removal is refused by a lock; cleanup by the server (a deleted
+    // gallery or user) is not the client's request and is never blocked.
+    beforeDelete: [
+      async ({ id, req }) => {
+        if (!req.user) return
+        const favorite = await req.payload
+          .findByID({ collection: 'gallery-favorites', id, depth: 0, overrideAccess: true })
+          .catch(() => null)
+        if (!favorite) return
+        const ownerId = typeof favorite.user === 'object' ? favorite.user.id : favorite.user
+        const galleryId = typeof favorite.gallery === 'object' ? favorite.gallery.id : favorite.gallery
+        if (ownerId === req.user.id && (await selectionLockedFor(req.payload, ownerId, galleryId))) {
+          throw new APIError('This selection is locked while the studio reviews it.', 409)
+        }
       },
     ],
   },
