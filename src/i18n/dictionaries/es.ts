@@ -462,6 +462,19 @@ export const es: Dictionary = {
       action: 'Quedarme las plazas',
       note: 'Si no las tomas a tiempo, pasan a la siguiente persona de la lista de espera.',
     },
+    replyReminder: {
+      subject: '¿Vendrás? {event}',
+      body: 'Todavía no tenemos tu respuesta para {event}, {when}. Por favor, di a los anfitriones si puedes venir.',
+      deadline: 'Las respuestas se cierran el {deadline}.',
+      action: 'Abrir tu invitación y responder',
+    },
+    dayBefore: {
+      subject: 'Hasta pronto: {event}',
+      body: 'Te recordamos que {event} se acerca: {when}.',
+      where: 'Dónde: {location}',
+      guestCode: 'Tu invitación muestra tu código de acceso. Tenlo a mano en el móvil en la entrada.',
+      guestAction: 'Abrir tu invitación',
+    },
   },
   footer: { rights: 'Todos los derechos reservados.' },
 }

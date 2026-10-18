@@ -3,32 +3,61 @@
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
-/** Emails the invitations not sent yet, after a second click, then reloads to show the count. */
-export function SendInvitationsButton({ eventId, waiting }: { eventId: number | string; waiting: number }) {
+const ACTIONS = {
+  invitations: {
+    path: '/api/event-guests/send-invitations',
+    button: (guests: string) => `Email invitations to ${guests}`,
+    confirm: (guests: string) => `Each of ${guests} gets their personal invitation link by email.`,
+    done: (count: number) => `Sending ${count} invitations. They go out within a minute.`,
+    failed: 'The invitations could not be sent.',
+  },
+  reminders: {
+    path: '/api/event-guests/send-reminders',
+    button: (guests: string) => `Remind ${guests} who have not replied`,
+    confirm: (guests: string) => `Each of ${guests} gets an email asking them to reply, with their invitation link.`,
+    done: (count: number) => `Sending ${count} reminders. They go out within a minute.`,
+    failed: 'The reminders could not be sent.',
+  },
+} as const
+
+/**
+ * Emails the event's guests (invitations not sent yet, or reminders to reply) after a second
+ * click, then reloads to show the new count.
+ */
+export function SendInvitationsButton({
+  eventId,
+  waiting,
+  action = 'invitations',
+}: {
+  eventId: number | string
+  waiting: number
+  action?: keyof typeof ACTIONS
+}) {
   const router = useRouter()
   const [confirming, setConfirming] = useState(false)
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<{ text: string; error: boolean } | null>(null)
   const guests = waiting === 1 ? '1 guest' : `${waiting} guests`
+  const copy = ACTIONS[action]
 
   const send = async () => {
     setBusy(true)
     setMessage(null)
     try {
-      const response = await fetch('/api/event-guests/send-invitations', {
+      const response = await fetch(copy.path, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ event: eventId }),
       })
       const body = await response.json().catch(() => null)
-      if (!response.ok) setMessage({ text: body?.errors?.[0]?.message ?? 'The invitations could not be sent.', error: true })
+      if (!response.ok) setMessage({ text: body?.errors?.[0]?.message ?? copy.failed, error: true })
       else {
-        setMessage({ text: `Sending ${body?.queued ?? 0} invitations. They go out within a minute.`, error: false })
+        setMessage({ text: copy.done(body?.queued ?? 0), error: false })
         router.refresh()
       }
     } catch {
-      setMessage({ text: 'The invitations could not be sent. Please try again.', error: true })
+      setMessage({ text: `${copy.failed} Please try again.`, error: true })
     } finally {
       setBusy(false)
       setConfirming(false)
@@ -39,7 +68,7 @@ export function SendInvitationsButton({ eventId, waiting }: { eventId: number | 
     <div style={{ display: 'grid', gap: 8, justifyItems: 'start' }}>
       {confirming ? (
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-          <span>Each of {guests} gets their personal invitation link by email.</span>
+          <span>{copy.confirm(guests)}</span>
           <button type="button" className="btn btn--style-primary btn--size-small" disabled={busy} onClick={send}>
             {busy ? 'Sending…' : 'Yes, send'}
           </button>
@@ -54,7 +83,7 @@ export function SendInvitationsButton({ eventId, waiting }: { eventId: number | 
           disabled={waiting === 0}
           onClick={() => setConfirming(true)}
         >
-          Email invitations to {guests}
+          {copy.button(guests)}
         </button>
       )}
       {message && (

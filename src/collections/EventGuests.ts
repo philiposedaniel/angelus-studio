@@ -2,7 +2,7 @@ import { APIError, Forbidden, type Access, type CollectionConfig, type FieldAcce
 
 import { isSuperAdmin, tenantIdsWithRole } from '@/access'
 import { DEFAULT_LOCALE, LOCALE_LABELS, LOCALES } from '@/i18n/config'
-import { exportGuestList, importGuestList, sendInvitations } from '@/lib/guestListEndpoints'
+import { exportGuestList, importGuestList, sendInvitations, sendReplyReminders } from '@/lib/guestListEndpoints'
 import { idOf } from '@/lib/ids'
 import { GUEST_LIST_STAFF_ROLES, isGuestListStaff, organizedEventIds } from '@/lib/organizers'
 import { MAX_PARTY_SIZE, mealOptionIds, RSVP_LIMITS, RSVP_STATUSES } from '@/lib/rsvp'
@@ -60,6 +60,7 @@ export const EventGuests: CollectionConfig = {
     { path: '/export', method: 'get', handler: exportGuestList },
     { path: '/import', method: 'post', handler: importGuestList },
     { path: '/send-invitations', method: 'post', handler: sendInvitations },
+    { path: '/send-reminders', method: 'post', handler: sendReplyReminders },
   ],
   hooks: {
     beforeValidate: [
@@ -191,6 +192,22 @@ export const EventGuests: CollectionConfig = {
       label: 'Invitation emailed',
       type: 'date',
       admin: { readOnly: true, position: 'sidebar', date: { pickerAppearance: 'dayAndTime' }, description: 'When the invitation was emailed. Guests already emailed are skipped when invitations are sent.' },
+      // Set only by the email job.
+      access: { create: () => false, update: () => false },
+    },
+    {
+      name: 'replyReminderSentAt',
+      label: 'Reply reminder emailed',
+      type: 'date',
+      admin: { readOnly: true, position: 'sidebar', date: { pickerAppearance: 'dayAndTime' }, description: 'When the guest was last reminded to reply.' },
+      // Set only by the email job.
+      access: { create: () => false, update: () => false },
+    },
+    {
+      name: 'dayBeforeSentAt',
+      label: 'Reminder emailed',
+      type: 'date',
+      admin: { readOnly: true, position: 'sidebar', date: { pickerAppearance: 'dayAndTime' }, description: 'When the day-before reminder was emailed.' },
       // Set only by the email job.
       access: { create: () => false, update: () => false },
     },

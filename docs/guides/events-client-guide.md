@@ -29,6 +29,8 @@ changes to those.
    people you bring, choose a meal for each person if the hosts offer a choice, and add any
    dietary needs or a note for the hosts. You can change your answer until replies close.
 3. Keep the link: it shows your **entry code**. Show it at the entrance, on your phone or printed.
+   If the studio sends email and you gave an email address, you may get a reminder to reply, and
+   a reminder with your link the day before the event.
 4. If the event has a live stream or a photo album, the invitation links to them.
 
 ## If you are buying a ticket
@@ -40,7 +42,8 @@ changes to those.
    places are held for you while you pay.
 4. Your ticket page shows the event, the places it admits and your **entry code**. Save the link to
    that page: it is your ticket. Anyone with the code can use it, so keep it to yourself. If the
-   studio sends email, the link also arrives in your inbox once the ticket is confirmed.
+   studio sends email, the link also arrives in your inbox once the ticket is confirmed, and again
+   in a reminder the day before the event.
 5. **Refunds** are made by the studio. Contact them; once refunded, the ticket stops working.
 
 ### When an event is sold out

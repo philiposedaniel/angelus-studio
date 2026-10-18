@@ -460,6 +460,19 @@ export const en = {
       action: 'Take my places',
       note: 'If you do not take them in time, they go to the next person on the waitlist.',
     },
+    replyReminder: {
+      subject: 'Will you be there? {event}',
+      body: 'We have not had your reply yet for {event}, {when}. Please let the hosts know whether you can come.',
+      deadline: 'Replies close on {deadline}.',
+      action: 'Open your invitation and reply',
+    },
+    dayBefore: {
+      subject: 'See you soon: {event}',
+      body: 'A reminder that {event} is coming up: {when}.',
+      where: 'Where: {location}',
+      guestCode: 'Your invitation shows your entry code. Have it ready on your phone at the entrance.',
+      guestAction: 'Open your invitation',
+    },
   },
   footer: { rights: 'All rights reserved.' },
 }

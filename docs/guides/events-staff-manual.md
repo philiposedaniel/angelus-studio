@@ -58,6 +58,8 @@ editor when the studio offers more than one language.
    Record an answer given by phone by setting *RSVP* on the guest (and the people and meals
    under *Who is coming*). Close replies with *Guests can reply* or a *Reply by* date. If you
    remove a meal option, people who chose it count as not chosen until they pick again.
+   *Remind N guests who have not replied* emails a reminder to everyone with an email address
+   who has not answered (each guest at most once every 3 days).
 5. **Seat people** under *Events → Tables*, then choose each guest's *Table* (or select several
    in the guest list and use *Edit*). The *Seating* section flags tables over capacity and guests
    without a table.
@@ -97,7 +99,9 @@ editor when the studio offers more than one language.
 8. **Download the attendee list (CSV)** from the event's *Registration and tickets* section.
 
 When the studio's email is set up, buyers get their ticket by email once it is confirmed, and
-people on a waitlist are emailed when places are offered to them. People who lose their ticket or
+people on a waitlist are emailed when places are offered to them. About a day before the event,
+ticket holders and guests who are coming get a reminder with the time, the place and their entry
+code; untick *Email a reminder the day before* on the event if you do not want that. People who lose their ticket or
 waitlist link: open their registration or waitlist entry and copy the link shown there to send it
 again.
 

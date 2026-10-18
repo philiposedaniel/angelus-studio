@@ -158,6 +158,7 @@ export interface Config {
       'build-gallery-zip': TaskBuildGalleryZip;
       'cleanup-gallery-zips': TaskCleanupGalleryZips;
       'send-email': TaskSendEmail;
+      'send-event-reminders': TaskSendEventReminders;
       inline: {
         input: unknown;
         output: unknown;
@@ -752,6 +753,10 @@ export interface Registration {
    * When the ticket was emailed to the buyer.
    */
   confirmationSentAt?: string | null;
+  /**
+   * When the day-before reminder was emailed.
+   */
+  dayBeforeSentAt?: string | null;
   senderKey?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -892,6 +897,10 @@ export interface Event {
    * Untick for private events such as weddings: only people with an invitation or guest link can open them.
    */
   listed?: boolean | null;
+  /**
+   * About a day before the event, guests who are coming and ticket holders get a reminder with their invitation or ticket. Needs email sending set up.
+   */
+  reminderEmails?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -964,6 +973,14 @@ export interface EventGuest {
    * When the invitation was emailed. Guests already emailed are skipped when invitations are sent.
    */
   invitationSentAt?: string | null;
+  /**
+   * When the guest was last reminded to reply.
+   */
+  replyReminderSentAt?: string | null;
+  /**
+   * When the day-before reminder was emailed.
+   */
+  dayBeforeSentAt?: string | null;
   /**
    * Guests answer from their link. Staff can also record an answer given by phone.
    */
@@ -1316,7 +1333,7 @@ export interface PayloadJob {
     | {
         executedAt: string;
         completedAt: string;
-        taskSlug: 'inline' | 'build-gallery-zip' | 'cleanup-gallery-zips' | 'send-email';
+        taskSlug: 'inline' | 'build-gallery-zip' | 'cleanup-gallery-zips' | 'send-email' | 'send-event-reminders';
         taskID: string;
         input?:
           | {
@@ -1349,7 +1366,7 @@ export interface PayloadJob {
         id?: string | null;
       }[]
     | null;
-  taskSlug?: ('inline' | 'build-gallery-zip' | 'cleanup-gallery-zips' | 'send-email') | null;
+  taskSlug?: ('inline' | 'build-gallery-zip' | 'cleanup-gallery-zips' | 'send-email' | 'send-event-reminders') | null;
   queue?: string | null;
   waitUntil?: string | null;
   processing?: boolean | null;
@@ -1961,6 +1978,7 @@ export interface EventsSelect<T extends boolean = true> {
       };
   published?: T;
   listed?: T;
+  reminderEmails?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1979,6 +1997,8 @@ export interface EventGuestsSelect<T extends boolean = true> {
   partySize?: T;
   language?: T;
   invitationSentAt?: T;
+  replyReminderSentAt?: T;
+  dayBeforeSentAt?: T;
   rsvpStatus?: T;
   attendingCount?: T;
   party?:
@@ -2096,6 +2116,7 @@ export interface RegistrationsSelect<T extends boolean = true> {
   staffNotes?: T;
   ticketToken?: T;
   confirmationSentAt?: T;
+  dayBeforeSentAt?: T;
   senderKey?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -2352,9 +2373,17 @@ export interface TaskCleanupGalleryZips {
  */
 export interface TaskSendEmail {
   input: {
-    kind: 'invitation' | 'ticket' | 'waitlistOffer';
+    kind: 'invitation' | 'ticket' | 'waitlistOffer' | 'replyReminder' | 'guestDayBefore' | 'ticketDayBefore';
     id: number;
   };
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskSend-event-reminders".
+ */
+export interface TaskSendEventReminders {
+  input?: unknown;
   output?: unknown;
 }
 /**

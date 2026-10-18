@@ -1,10 +1,12 @@
-import type { PayloadHandler, PayloadRequest } from 'payload'
+import type { PayloadHandler, PayloadRequest, Where } from 'payload'
 
 import { DEFAULT_LOCALE, isLocale } from '@/i18n/config'
 import { emailConfigured, SEND_EMAIL_TASK } from '@/lib/email'
+import { REMIND_AGAIN_AFTER_DAYS } from '@/lib/eventEmails'
 import { guestsToCsv, MAX_IMPORT_CHARS, planGuestImport } from '@/lib/guestCsv'
 import { idOf } from '@/lib/ids'
 import { tenantLocales } from '@/lib/locale'
+import { rsvpIsOpen } from '@/lib/rsvp'
 import { siteOrigin } from '@/lib/siteOrigin'
 
 const fail = (status: number, message: string) => Response.json({ errors: [{ message }] }, { status })
@@ -182,6 +184,53 @@ export const sendInvitations: PayloadHandler = async (req) => {
   if (!guests) return fail(403, 'Only the people who manage this guest list can send its invitations.')
   for (const guest of guests.docs) {
     await req.payload.jobs.queue({ task: SEND_EMAIL_TASK, input: { kind: 'invitation', id: guest.id }, req })
+  }
+  return Response.json({ queued: guests.docs.length })
+}
+
+/** The guests a reply reminder would go to now: not answered, with an email, not reminded lately. */
+export const reminderWhere = (eventId: number | string, now = Date.now()): Where => ({
+  and: [
+    { event: { equals: eventId } },
+    { rsvpStatus: { equals: 'pending' } },
+    { email: { exists: true } },
+    { email: { not_equals: '' } },
+    {
+      or: [
+        { replyReminderSentAt: { exists: false } },
+        { replyReminderSentAt: { less_than: new Date(now - REMIND_AGAIN_AFTER_DAYS * 86_400_000).toISOString() } },
+      ],
+    },
+  ],
+})
+
+/**
+ * POST /api/event-guests/send-reminders with JSON `{ event }`: emails a reminder to reply to
+ * every guest who has not answered yet and has an email address, at most once every few days.
+ */
+export const sendReplyReminders: PayloadHandler = async (req) => {
+  if (!req.user) return fail(401, 'Sign in first.')
+  if (!emailConfigured()) return fail(409, 'Email sending is not set up yet.')
+  const body = (await req.json?.().catch(() => null)) as { event?: unknown } | null | undefined
+  const event = await eventFor(req, body?.event)
+  if (!event) return fail(404, 'Event not found.')
+  if (!event.published) return fail(409, 'Publish the event first: invitation links only open for published events.')
+  if (!rsvpIsOpen(event)) return fail(409, 'Replies are closed for this event.')
+  const guests = await req.payload
+    .find({
+      collection: 'event-guests',
+      where: reminderWhere(event.id),
+      pagination: false,
+      depth: 0,
+      select: { name: true },
+      req,
+      user: req.user,
+      overrideAccess: false,
+    })
+    .catch(() => null)
+  if (!guests) return fail(403, 'Only the people who manage this guest list can send its reminders.')
+  for (const guest of guests.docs) {
+    await req.payload.jobs.queue({ task: SEND_EMAIL_TASK, input: { kind: 'replyReminder', id: guest.id }, req })
   }
   return Response.json({ queued: guests.docs.length })
 }

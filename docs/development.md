@@ -537,6 +537,15 @@ error if it fails.
   invitations to N guests* in the event's *Invitations and RSVP* section. It emails every guest
   with an email address who has not been emailed yet, so pressing it again after adding guests
   only reaches the new ones. The event must be published, since its links only open then.
+- **Reply reminders:** *Remind N guests who have not replied*, next to it, emails every guest who
+  has not answered and has an email address, with their link and the *Reply by* date if set. A
+  guest is reminded at most once every 3 days (`REMIND_AGAIN_AFTER_DAYS`), and not at all once
+  replies are closed. It runs at `POST /api/event-guests/send-reminders`, as the signed-in user.
+- **Day-before reminders:** the `send-event-reminders` job runs every 5 minutes and, for each
+  published event starting within 24 hours, emails guests who are coming and confirmed ticket
+  holders once, with the time, the place and their invitation or ticket (and its entry code).
+  Untick *Email a reminder the day before* on an event to skip it. Each run sends up to 200, so a
+  very large event's reminders go out over a few runs; a failed send is left for the next run.
 
 Each email is in the person's language (the guest's, buyer's or waitlist entry's, if the studio
 offers it), comes from the studio's name with the platform's sending address, and has a plain-text
@@ -546,9 +555,12 @@ checks again before sending (a ticket cancelled meanwhile, an offer run out, an 
 nothing goes) and claims the record in one statement first, so an email is sent at most once
 even if the job runs twice; a failed send is retried three times. The guest, registration and
 waitlist entry show when they were emailed (*Invitation emailed*, *Ticket emailed*, *Offer
-emailed*). `tests/int/eventEmails.int.spec.ts` sends through a real SMTP server.
+emailed*, *Reply reminder emailed*, *Reminder emailed*). `tests/int/eventEmails.int.spec.ts` and `eventReminders.int.spec.ts` send through a
+real SMTP server.
 
-Known limits: no reminders before the event and no RSVP reply notices to the studio yet. Inquiry
+Known limits: no RSVP reply notices to the studio yet, and reminders are not sent to guests
+who were never given an email address. An event moved to a later date after its day-before
+reminders went out does not send them again. Inquiry
 alerts, client gallery links and vendor notices are not emailed yet. Delivery problems (bounces,
 spam reports) are only visible in the email service's own dashboard. The sending domain must be
 verified with the service (SPF and DKIM records in DNS), or messages land in spam.

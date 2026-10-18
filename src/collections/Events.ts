@@ -395,5 +395,16 @@ export const Events: CollectionConfig = {
           'Untick for private events such as weddings: only people with an invitation or guest link can open them.',
       },
     },
+    {
+      name: 'reminderEmails',
+      label: 'Email a reminder the day before',
+      type: 'checkbox',
+      defaultValue: true,
+      admin: {
+        position: 'sidebar',
+        description:
+          'About a day before the event, guests who are coming and ticket holders get a reminder with their invitation or ticket. Needs email sending set up.',
+      },
+    },
   ],
 }
