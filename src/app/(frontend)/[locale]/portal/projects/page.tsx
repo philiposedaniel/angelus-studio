@@ -42,7 +42,11 @@ export default async function PortalProjects({ params }: PageProps<'/[locale]/po
         <ul className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {projects.map((project) => (
             <li key={project.id} className="rounded-2xl border border-ivory/10 bg-charcoal p-6">
-              <h2 className="font-display text-2xl">{project.title}</h2>
+              <h2 className="font-display text-2xl">
+                <Link href={`/${locale}/portal/projects/${project.id}`} className="hover:text-gold">
+                  {project.title}
+                </Link>
+              </h2>
               <p className="mt-2 text-sm text-gold">{t.projectStatus[project.status]}</p>
               {project.shootDate && (
                 <p className="mt-4 text-sm text-mist">

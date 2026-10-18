@@ -20,7 +20,8 @@
     "migrate": "cross-env NODE_OPTIONS=--no-deprecation payload migrate",
     "migrate:create": "cross-env NODE_OPTIONS=--no-deprecation payload migrate:create",
     "test:unit": "cross-env NODE_OPTIONS=--no-deprecation vitest run --config ./vitest.config.mts tests/unit",
-    "seed": "cross-env NODE_OPTIONS=--no-deprecation payload run src/scripts/seed.ts"
+    "seed": "cross-env NODE_OPTIONS=--no-deprecation payload run src/scripts/seed.ts",
+    "seed:demo": "cross-env NODE_OPTIONS=--no-deprecation payload run src/scripts/seed-demo.ts"
   },
   "dependencies": {
     "@payloadcms/db-postgres": "3.90.2",

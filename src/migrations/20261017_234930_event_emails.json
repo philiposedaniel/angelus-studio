@@ -2984,6 +2984,12 @@
           "notNull": false,
           "default": true
         },
+        "selection_limit": {
+          "name": "selection_limit",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
         "share_enabled": {
           "name": "share_enabled",
           "type": "boolean",
@@ -4166,6 +4172,199 @@
           "tableTo": "galleries",
           "columnsFrom": [
             "gallery_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.gallery_selections": {
+      "name": "gallery_selections",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "gallery_id": {
+          "name": "gallery_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "enum_gallery_selections_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'open'"
+        },
+        "submitted_at": {
+          "name": "submitted_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "approved_at": {
+          "name": "approved_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "feedback": {
+          "name": "feedback",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "gallery_selections_tenant_idx": {
+          "name": "gallery_selections_tenant_idx",
+          "columns": [
+            {
+              "expression": "tenant_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "gallery_selections_gallery_idx": {
+          "name": "gallery_selections_gallery_idx",
+          "columns": [
+            {
+              "expression": "gallery_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "gallery_selections_user_idx": {
+          "name": "gallery_selections_user_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "gallery_selections_updated_at_idx": {
+          "name": "gallery_selections_updated_at_idx",
+          "columns": [
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "gallery_selections_created_at_idx": {
+          "name": "gallery_selections_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "gallery_selections_tenant_id_tenants_id_fk": {
+          "name": "gallery_selections_tenant_id_tenants_id_fk",
+          "tableFrom": "gallery_selections",
+          "tableTo": "tenants",
+          "columnsFrom": [
+            "tenant_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "gallery_selections_gallery_id_galleries_id_fk": {
+          "name": "gallery_selections_gallery_id_galleries_id_fk",
+          "tableFrom": "gallery_selections",
+          "tableTo": "galleries",
+          "columnsFrom": [
+            "gallery_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "gallery_selections_user_id_users_id_fk": {
+          "name": "gallery_selections_user_id_users_id_fk",
+          "tableFrom": "gallery_selections",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
           ],
           "columnsTo": [
             "id"
@@ -9496,6 +9695,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "gallery_selections_id": {
+          "name": "gallery_selections_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
         "inquiries_id": {
           "name": "inquiries_id",
           "type": "integer",
@@ -9773,6 +9978,21 @@
           "columns": [
             {
               "expression": "gallery_downloads_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "payload_locked_documents_rels_gallery_selections_id_idx": {
+          "name": "payload_locked_documents_rels_gallery_selections_id_idx",
+          "columns": [
+            {
+              "expression": "gallery_selections_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -10146,6 +10366,19 @@
           "tableTo": "gallery_downloads",
           "columnsFrom": [
             "gallery_downloads_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "payload_locked_documents_rels_gallery_selections_fk": {
+          "name": "payload_locked_documents_rels_gallery_selections_fk",
+          "tableFrom": "payload_locked_documents_rels",
+          "tableTo": "gallery_selections",
+          "columnsFrom": [
+            "gallery_selections_id"
           ],
           "columnsTo": [
             "id"
@@ -10813,6 +11046,16 @@
         "expired"
       ]
     },
+    "public.enum_gallery_selections_status": {
+      "name": "enum_gallery_selections_status",
+      "schema": "public",
+      "values": [
+        "open",
+        "submitted",
+        "revision-requested",
+        "approved"
+      ]
+    },
     "public.enum_inquiries_event_type": {
       "name": "enum_inquiries_event_type",
       "schema": "public",
@@ -11078,6 +11321,6 @@
     "tables": {},
     "columns": {}
   },
-  "id": "6d2a0660-a034-4506-b92a-cb5f11b46753",
+  "id": "a5b076bb-83f7-448c-b263-5984a6f7e423",
   "prevId": "00000000-0000-0000-0000-000000000000"
 }
