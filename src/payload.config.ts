@@ -34,7 +34,10 @@ import { SiteSettings } from './collections/SiteSettings'
 import { Tenants } from './collections/Tenants'
 import { Users } from './collections/Users'
 import { DEFAULT_LOCALE, LOCALE_LABELS, LOCALES } from './i18n/config'
+import { sendEventReminders } from './jobs/eventReminders'
 import { buildGalleryZip, cleanupGalleryZips } from './jobs/galleryZips'
+import { sendEmail } from './jobs/sendEmail'
+import { emailAdapter } from './lib/email'
 import { migrations } from './migrations'
 import type { Config } from './payload-types'
 
@@ -89,13 +92,15 @@ export default buildConfig({
     fallback: true,
   },
   jobs: {
-    tasks: [buildGalleryZip, cleanupGalleryZips],
+    tasks: [buildGalleryZip, cleanupGalleryZips, sendEmail, sendEventReminders],
     // Background jobs (ZIP building, cleanup) run inside the app process every few seconds.
     // Set PAYLOAD_JOBS_AUTORUN=false where another process runs them, and in tests.
     autoRun: [{ cron: '*/5 * * * * *', queue: 'default', limit: 2 }],
     shouldAutoRun: () => process.env.PAYLOAD_JOBS_AUTORUN !== 'false',
     deleteJobOnComplete: true,
   },
+  // Sends through SMTP once SMTP_HOST and EMAIL_FROM_ADDRESS are set (see docs/development.md).
+  email: emailAdapter(),
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET,
   typescript: {

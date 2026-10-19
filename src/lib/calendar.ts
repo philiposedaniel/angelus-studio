@@ -41,18 +41,24 @@ export type CalendarProject = {
   status: string
 }
 
+/** The twelve months from the given month: its first day up to, not including, the first day of the twelfth month after. */
+export const twelveMonthBounds = (from: CalendarMonth) => ({
+  start: monthBounds(from).start,
+  end: monthBounds(shiftMonth(from, 12)).start,
+})
+
 /**
- * The productions of one studio with a shoot day in the month, as the given user may see them.
+ * The productions of one studio with a shoot day in the given window, as the given user may see them.
  * Only the calendar fields are selected, so internal notes, quotes and client details never reach
- * the page. The access rules decide which projects the user can see; this does not widen them.
+ * the page or the calendar file. The access rules decide which projects the user can see; this does not widen them.
  */
-export async function productionsInMonth(
+export async function productionsBetween(
   payload: Payload,
   user: User,
   tenant: Tenant,
-  month: CalendarMonth,
+  window: { start: string; end: string },
 ): Promise<CalendarProject[]> {
-  const { start, end } = monthBounds(month)
+  const { start, end } = window
   const found = await payload
     .find({
       collection: 'projects',
@@ -85,3 +91,11 @@ export async function productionsInMonth(
     status: doc.status,
   }))
 }
+
+/** The productions with a shoot day in one calendar month. */
+export const productionsInMonth = (
+  payload: Payload,
+  user: User,
+  tenant: Tenant,
+  month: CalendarMonth,
+): Promise<CalendarProject[]> => productionsBetween(payload, user, tenant, monthBounds(month))

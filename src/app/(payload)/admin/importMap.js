@@ -34,6 +34,7 @@ import { RegistrationSummaryField as RegistrationSummaryField_670bf90470518ca2b7
 import { SeatingPlanField as SeatingPlanField_16c004ea9dfe490a5fb4138e58ad8a9d } from '@/components/admin/SeatingPlanField'
 import { EventVendorsField as EventVendorsField_3cbe409af76e3e58062f9383933568a1 } from '@/components/admin/EventVendorsField'
 import { InvitationLinkField as InvitationLinkField_a662a60c3fc05b58c41797d06a0edec6 } from '@/components/admin/InvitationLinkField'
+import { MealChoiceField as MealChoiceField_0d28941e8c7b5f627aef96ee1b465de4 } from '@/components/admin/MealChoiceField'
 import { VendorLinkField as VendorLinkField_b1bca457eed9774feb8920b690ed1c90 } from '@/components/admin/VendorLinkField'
 import { TicketLinkField as TicketLinkField_65e7ee0124b7bac44f8af4fb67a60a39 } from '@/components/admin/TicketLinkField'
 import { RefundField as RefundField_996a90d096813df218e6f3d0c7141476 } from '@/components/admin/RefundField'
@@ -81,6 +82,7 @@ export const importMap = {
   "@/components/admin/SeatingPlanField#SeatingPlanField": SeatingPlanField_16c004ea9dfe490a5fb4138e58ad8a9d,
   "@/components/admin/EventVendorsField#EventVendorsField": EventVendorsField_3cbe409af76e3e58062f9383933568a1,
   "@/components/admin/InvitationLinkField#InvitationLinkField": InvitationLinkField_a662a60c3fc05b58c41797d06a0edec6,
+  "@/components/admin/MealChoiceField#MealChoiceField": MealChoiceField_0d28941e8c7b5f627aef96ee1b465de4,
   "@/components/admin/VendorLinkField#VendorLinkField": VendorLinkField_b1bca457eed9774feb8920b690ed1c90,
   "@/components/admin/TicketLinkField#TicketLinkField": TicketLinkField_65e7ee0124b7bac44f8af4fb67a60a39,
   "@/components/admin/RefundField#RefundField": RefundField_996a90d096813df218e6f3d0c7141476,
