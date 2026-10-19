@@ -2,7 +2,8 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 
 import { RenderBlocks } from '@/components/blocks/RenderBlocks'
-import { resolveLocale } from '@/lib/locale'
+import { resolveLocale, tenantLocales } from '@/lib/locale'
+import { siteOrigin } from '@/lib/seo'
 import { getPublishedPage } from '@/lib/site'
 import { getCurrentTenant } from '@/lib/tenant'
 
@@ -14,7 +15,21 @@ export async function generateMetadata({
   const { locale: requested, slug } = await params
   const locale = await resolveLocale(tenant, requested)
   const page = await getPublishedPage(tenant.id, slug, locale)
-  return page ? { title: page.title, description: page.intro ?? undefined } : {}
+  if (!page) return {}
+  const origin = siteOrigin(tenant)
+  return {
+    title: page.title,
+    description: page.intro ?? undefined,
+    // Canonical and language alternates are absolute, so they only appear once the studio has a domain.
+    ...(origin && {
+      alternates: {
+        canonical: `${origin}/${locale}/${slug}`,
+        languages: Object.fromEntries(
+          tenantLocales(tenant).map((code) => [code, `${origin}/${code}/${slug}`]),
+        ),
+      },
+    }),
+  }
 }
 
 /** A website page built in the admin from blocks. */

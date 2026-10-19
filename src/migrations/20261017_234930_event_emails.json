@@ -8955,6 +8955,18 @@
           "primaryKey": false,
           "notNull": true
         },
+        "checked_out_at": {
+          "name": "checked_out_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "returned_at": {
+          "name": "returned_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
         "notes": {
           "name": "notes",
           "type": "varchar",
@@ -11321,6 +11333,6 @@
     "tables": {},
     "columns": {}
   },
-  "id": "a5b076bb-83f7-448c-b263-5984a6f7e423",
+  "id": "c283d31e-2718-4a70-b760-bf6eaa9af909",
   "prevId": "00000000-0000-0000-0000-000000000000"
 }

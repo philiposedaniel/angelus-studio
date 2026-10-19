@@ -1,0 +1,51 @@
+# Throwaway preview with demo data, for clicking through before the real site goes live.
+# Its own database, separate from production. See docs/demo-preview.md.
+#
+#   PREVIEW_URL=https://preview.example.com PAYLOAD_SECRET=$(openssl rand -hex 32) \
+#     docker compose -f docker-compose.preview.yml up -d --build
+#   docker compose -f docker-compose.preview.yml logs app   # demo sign-ins are printed here
+services:
+  app:
+    build:
+      context: .
+      target: preview
+      args:
+        NEXT_PUBLIC_SERVER_URL: ${PREVIEW_URL:-http://localhost:3000}
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://preview:preview@postgres:5432/preview
+      PAYLOAD_SECRET: ${PAYLOAD_SECRET:?PAYLOAD_SECRET is required}
+      NEXT_PUBLIC_SERVER_URL: ${PREVIEW_URL:-http://localhost:3000}
+      DEFAULT_TENANT_SLUG: angelus
+    volumes:
+      - preview-private-media:/app/private-media
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - '${PREVIEW_PORT:-3000}:3000'
+    networks: [internal]
+
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      # Only reachable on the internal network, and holds demo data only.
+      POSTGRES_USER: preview
+      POSTGRES_PASSWORD: preview
+      POSTGRES_DB: preview
+    volumes:
+      - preview-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U preview -d preview']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [internal]
+
+networks:
+  internal:
+
+volumes:
+  preview-pgdata:
+  preview-private-media:
