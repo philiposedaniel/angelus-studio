@@ -2,7 +2,7 @@ import type { CalendarProject } from '@/lib/calendar'
 
 /** Text values in an iCalendar file escape backslashes, commas, semicolons and line breaks (RFC 5545). */
 export const escapeIcsText = (value: string) =>
-  value.replace(/\\/g, '\\\\').replace(/;/g, '\;').replace(/,/g, '\\,').replace(/\r\n|\r|\n/g, '\\n')
+  value.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r\n|\r|\n/g, '\\n')
 
 /** Lines are folded at 75 octets, never inside a character, with a space starting each continuation line. */
 export const foldIcsLine = (line: string): string => {
@@ -72,5 +72,43 @@ export function buildProductionCalendar(input: {
     lines.push(`STATUS:${production.status === 'planning' ? 'TENTATIVE' : 'CONFIRMED'}`, 'TRANSP:TRANSPARENT', 'END:VEVENT')
   }
   lines.push('END:VCALENDAR')
+  return lines.map(foldIcsLine).join('\r\n') + '\r\n'
+}
+
+/** One dated occasion for a guest, a ticket holder or a vendor to save to their calendar. */
+export type CalendarOccasion = {
+  /** Unique across the studio's site, so a second download updates the first instead of duplicating it. */
+  uid: string
+  title: string
+  startsAt: string
+  endsAt?: string | null
+  location?: string | null
+  description?: string | null
+  url?: string | null
+}
+
+/** An iCalendar file with one timed event, in UTC so every calendar app shows it in its own zone. */
+export function buildOccasionCalendar(input: { occasion: CalendarOccasion; host: string; now?: Date }): string {
+  const { occasion } = input
+  const start = new Date(occasion.startsAt)
+  const end = occasion.endsAt ? new Date(occasion.endsAt) : null
+  const lines = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Angelus Studio//Events//EN',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    'BEGIN:VEVENT',
+    `UID:${occasion.uid}@${input.host}`,
+    `DTSTAMP:${utcStamp(input.now ?? new Date())}`,
+    `DTSTART:${utcStamp(start)}`,
+  ]
+  // An end before the start would be rejected by calendar apps; leave it out instead.
+  if (end && end > start) lines.push(`DTEND:${utcStamp(end)}`)
+  lines.push(`SUMMARY:${escapeIcsText(occasion.title)}`)
+  if (occasion.location) lines.push(`LOCATION:${escapeIcsText(occasion.location)}`)
+  if (occasion.description) lines.push(`DESCRIPTION:${escapeIcsText(occasion.description)}`)
+  if (occasion.url) lines.push(`URL:${occasion.url}`)
+  lines.push('STATUS:CONFIRMED', 'END:VEVENT', 'END:VCALENDAR')
   return lines.map(foldIcsLine).join('\r\n') + '\r\n'
 }
