@@ -17,8 +17,12 @@ In the studio named by `DEFAULT_TENANT_SLUG` (default `angelus`):
 - A **production** with crew, tasks and a call sheet.
 - A **private wedding** with a garden invitation and five guests in different RSVP states; the
   client is its organizer, so it shows in their portal.
-- A **public open day** with a free ticket, a sold-out workshop with a waitlist, a priced ticket
-  and one confirmed registration.
+- Two **tables** with the coming guests seated, and two **vendors** on the wedding: a florist
+  confirmed and part paid, with a private vendor link, and a caterer still proposed.
+- Three pieces of **kit**, two reserved for the production and one of those already checked out.
+- A **public open day** with a free ticket, a sold-out workshop with one person on its waitlist,
+  a priced ticket, a 20% promo code (`OPENDAY20`) and one confirmed registration.
+- Three published **services** for the home page and a new **inquiry** in the admin inbox.
 
 It prints both sign-ins and a link to each page, using `NEXT_PUBLIC_SERVER_URL`.
 
@@ -48,6 +52,9 @@ In Coolify, add the repository as a Docker Compose resource using `docker-compos
 set `PREVIEW_URL` and `PAYLOAD_SECRET`, and give the `app` service a domain such as
 `preview.<your domain>`. To start over with fresh demo data, remove the stack together with its
 volumes (`docker compose -f docker-compose.preview.yml down -v`).
+
+The `Docker` workflow in CI builds this image and the production one on every pull request and
+starts both stacks, so a broken image shows up there before it reaches the server.
 
 The preview image is larger than the production one and runs as root, because it carries the
 full source and build tools. It is for demo data only; never point it at real data.

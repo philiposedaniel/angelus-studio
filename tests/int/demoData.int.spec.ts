@@ -20,6 +20,20 @@ const cleanup = async () => {
   })
   const tenant = docs[0]
   if (!tenant) return
+  const byTenant = { tenant: { equals: tenant.id } }
+  for (const collection of [
+    'waitlist-entries',
+    'promo-codes',
+    'event-vendors',
+    'event-tables',
+    'equipment-reservations',
+    'equipment',
+    'vendors',
+    'services',
+    'inquiries',
+  ] as const) {
+    await payload.delete({ collection, where: byTenant, overrideAccess: true })
+  }
   // Deleting events removes their guests, ticket types and registrations.
   await payload.delete({ collection: 'events', where: { tenant: { equals: tenant.id } } })
   await payload.delete({ collection: 'projects', where: { tenant: { equals: tenant.id } } })
@@ -102,6 +116,45 @@ describe('demo data', () => {
       })
     ).docs[0]!
     expect(admin.roles).not.toContain('super-admin')
+
+    // The rest of the studio is filled in too, all inside the demo studio.
+    const counts = Object.fromEntries(
+      await Promise.all(
+        (
+          [
+            'services',
+            'inquiries',
+            'equipment',
+            'equipment-reservations',
+            'vendors',
+            'event-vendors',
+            'event-tables',
+            'promo-codes',
+            'waitlist-entries',
+          ] as const
+        ).map(async (collection) => [
+          collection,
+          (await payload.count({ collection, where: { tenant: { equals: first.tenant.id } } }))
+            .totalDocs,
+        ]),
+      ),
+    )
+    expect(counts).toEqual({
+      services: 3,
+      inquiries: 1,
+      equipment: 3,
+      'equipment-reservations': 2,
+      vendors: 2,
+      'event-vendors': 2,
+      'event-tables': 2,
+      'promo-codes': 1,
+      'waitlist-entries': 1,
+    })
+    const seated = await payload.count({
+      collection: 'event-guests',
+      where: { tenant: { equals: first.tenant.id }, table: { exists: true } },
+    })
+    expect(seated.totalDocs).toBeGreaterThanOrEqual(2)
 
     const again = await seedDemoData(payload, { tenantSlug: SLUG, allowExistingUsers: true })
     expect(again.created).toBe(false)
