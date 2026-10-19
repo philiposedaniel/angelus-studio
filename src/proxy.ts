@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 
-import { isLocale, negotiateLocale } from '@/i18n/config'
+import { isLocale, LOCALE_HEADER, negotiateLocale } from '@/i18n/config'
 
 /**
  * Sends public pages without a language prefix to the visitor's preferred language.
@@ -9,7 +9,12 @@ import { isLocale, negotiateLocale } from '@/i18n/config'
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   const first = pathname.split('/')[1]
-  if (isLocale(first)) return NextResponse.next()
+  if (isLocale(first)) {
+    // Not-found pages get no route params, so they read the language from this header.
+    const headers = new Headers(request.headers)
+    headers.set(LOCALE_HEADER, first)
+    return NextResponse.next({ request: { headers } })
+  }
 
   const locale = negotiateLocale(request.headers.get('accept-language'))
   const url = request.nextUrl.clone()
