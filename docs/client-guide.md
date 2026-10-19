@@ -45,7 +45,9 @@ assigned to. Call sheets, internal notes and the studio's own quotes are not sho
 The studio sends you a private link to each quote. The link works without signing in.
 
 1. **Read the quote.** It lists each item with its quantity and price, the total, the deposit due now and the
-   balance after the deposit. A quote is valid until its date shown; after that, ask the studio for an updated one.
+   balance after the deposit. A quote is valid until its date shown; after that, ask the studio for an updated one. Use
+   **Download as PDF** on the quote page to save a copy, with the contract terms and your signature if you have
+   signed.
 2. **Sign the contract, if there is one.** Some quotes include terms. You must read them and sign with your name
    before you can pay the deposit. Your signature is recorded with the time.
 3. **Pay the deposit.** Choose **Pay deposit securely**. Payment is handled by Stripe Checkout, not by the studio.
