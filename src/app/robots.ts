@@ -3,6 +3,9 @@ import type { MetadataRoute } from 'next'
 import { PRIVATE_PATHS, siteOrigin } from '@/lib/seo'
 import { getCurrentTenant } from '@/lib/tenant'
 
+// Answered per request: the studio depends on the host, and the build has no database.
+export const dynamic = 'force-dynamic'
+
 /**
  * robots.txt: the studio's public pages are open and the sitemap is named; private pages are not crawled.
  * Without a domain on the studio (previews, local development) the whole site is closed to crawlers.
