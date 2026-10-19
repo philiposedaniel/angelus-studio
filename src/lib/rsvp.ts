@@ -2,6 +2,7 @@ import { sql } from '@payloadcms/db-postgres'
 import type { Payload } from 'payload'
 
 import { idOf } from '@/lib/ids'
+import { MAX_PARTY_SIZE, RSVP_LIMITS } from '@/lib/rsvpLimits'
 import { isShareToken } from '@/lib/shareTokens'
 import { runSql } from '@/lib/sqlSession'
 import type { Event, EventGuest } from '@/payload-types'
@@ -9,10 +10,7 @@ import type { Event, EventGuest } from '@/payload-types'
 export const RSVP_STATUSES = ['pending', 'attending', 'declined'] as const
 export type RsvpStatus = (typeof RSVP_STATUSES)[number]
 
-/** Most seats one invitation can hold (the guest plus their party). */
-export const MAX_PARTY_SIZE = 20
-
-export const RSVP_LIMITS = { dietaryNotes: 500, guestMessage: 1000 } as const
+export { MAX_PARTY_SIZE, RSVP_LIMITS }
 
 export type RsvpField = 'response' | 'attendingCount' | 'dietaryNotes' | 'guestMessage'
 export type RsvpFieldError = 'required' | 'invalid' | 'tooLong'
