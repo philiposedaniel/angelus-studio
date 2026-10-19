@@ -19,6 +19,16 @@ ENV NEXT_PUBLIC_SERVER_URL=$NEXT_PUBLIC_SERVER_URL \
     PAYLOAD_SECRET=build-only-placeholder
 RUN pnpm run build
 
+# Throwaway preview with demo data (docker-compose.preview.yml). Keeps the full source so it can
+# run migrations and `pnpm seed:demo`; never use it for the real site. Stays above `runner` so a
+# build without a target still produces the production image.
+FROM builder AS preview
+ENV NODE_ENV=production PORT=3000 HOSTNAME=0.0.0.0
+RUN mkdir -p /app/media /app/private-media
+EXPOSE 3000
+# `next start` warns that it does not suit standalone output; it still serves this full build.
+CMD ["sh", "-c", "pnpm migrate && pnpm seed:demo && exec pnpm start"]
+
 FROM base AS runner
 WORKDIR /app
 ENV NODE_ENV=production PORT=3000 HOSTNAME=0.0.0.0

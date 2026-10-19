@@ -1188,6 +1188,14 @@ export interface EquipmentReservation {
   project: number | Project;
   startsAt: string;
   endsAt: string;
+  /**
+   * When the kit left the studio. Leave empty until it does.
+   */
+  checkedOutAt?: string | null;
+  /**
+   * When the kit came back. Needs a check-out time first.
+   */
+  returnedAt?: string | null;
   notes?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -2166,6 +2174,8 @@ export interface EquipmentReservationsSelect<T extends boolean = true> {
   project?: T;
   startsAt?: T;
   endsAt?: T;
+  checkedOutAt?: T;
+  returnedAt?: T;
   notes?: T;
   updatedAt?: T;
   createdAt?: T;
