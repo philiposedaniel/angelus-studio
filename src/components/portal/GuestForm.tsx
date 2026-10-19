@@ -7,7 +7,7 @@ import { startTransition, useActionState, useEffect, useRef } from 'react'
 import { saveGuest } from '@/app/(frontend)/[locale]/portal/events/[id]/actions'
 import type { Dictionary } from '@/i18n/dictionaries'
 import type { GuestField, GuestFormState } from '@/lib/organizerGuests'
-import { MAX_PARTY_SIZE } from '@/lib/rsvp'
+import { MAX_PARTY_SIZE } from '@/lib/rsvpLimits'
 
 type Guest = {
   id: number
