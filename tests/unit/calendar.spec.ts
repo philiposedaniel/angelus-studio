@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { monthBounds, parseMonth, shiftMonth } from '@/lib/calendar'
+import { monthBounds, parseMonth, shiftMonth, twelveMonthBounds } from '@/lib/calendar'
 
 describe('production calendar months', () => {
   const now = new Date('2026-10-16T07:00:00.000Z')
@@ -22,5 +22,13 @@ describe('production calendar months', () => {
     const bounds = monthBounds({ year: 2026, month: 2, value: '2026-02' })
     expect(bounds.start).toBe('2026-02-01T00:00:00.000Z')
     expect(bounds.end).toBe('2026-03-01T00:00:00.000Z')
+  })
+})
+
+describe('production calendar export window', () => {
+  it('covers twelve months from the given one, with the twelfth month after it left out', () => {
+    const bounds = twelveMonthBounds({ year: 2026, month: 11, value: '2026-11' })
+    expect(bounds.start).toBe('2026-11-01T00:00:00.000Z')
+    expect(bounds.end).toBe('2027-11-01T00:00:00.000Z')
   })
 })

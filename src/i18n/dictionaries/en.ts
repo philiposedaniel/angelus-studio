@@ -107,6 +107,7 @@ export const en = {
     calendarNext: 'Next month',
     calendarEmpty: 'No productions this month.',
     calendarLocation: 'Location',
+    calendarDownload: 'Download to your calendar app (12 months)',
     productionStatus: {
       planning: 'Planning',
       confirmed: 'Confirmed',
