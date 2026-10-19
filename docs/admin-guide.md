@@ -51,7 +51,7 @@ Important rules:
   these by hand.
 - A paid quote cannot change status. Create a new quote instead.
 - The client's invoice page shows the line items, totals, deposit and balance paid, amount due and confirmed
-  payments. It has no PDF download yet.
+  payments. The client can also download it as a PDF from the page.
 
 ## Payments
 
@@ -136,7 +136,8 @@ one is set up, invitation links are copied by hand.
 
 ## Known limitations
 
-- No PDF downloads for quotes or invoices yet.
+- Quotes have no PDF download yet. The client's invoice can be downloaded as a PDF from its page, and it covers
+  Western European characters only; other characters print as `?`.
 - No email sending yet, so invitations and waitlist offers are copied by hand.
 - The empty gallery list for clients says photos appear there once published, not that an email is sent. When the
   email account is set up, the wording can go back to promising an email (`portal.noGalleries` in
