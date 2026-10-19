@@ -26,6 +26,12 @@ import * as migration_20261017_192724_promo_codes from './20261017_192724_promo_
 import * as migration_20261017_195026_ticket_refunds from './20261017_195026_ticket_refunds';
 import * as migration_20261017_204530_photo_selections from './20261017_204530_photo_selections';
 import * as migration_20261017_215543_equipment_checkout from './20261017_215543_equipment_checkout';
+import * as migration_20261017_234930_event_emails from './20261017_234930_event_emails';
+import * as migration_20261018_023933_meal_choices from './20261018_023933_meal_choices';
+import * as migration_20261018_122540_event_reminders from './20261018_122540_event_reminders';
+import * as migration_20261019_135403_reply_notices from './20261019_135403_reply_notices';
+import * as migration_20261019_150547_vendor_emails from './20261019_150547_vendor_emails';
+import * as migration_20261019_154148_inquiry_alerts from './20261019_154148_inquiry_alerts';
 
 export const migrations = [
   {
@@ -167,5 +173,35 @@ export const migrations = [
     up: migration_20261017_215543_equipment_checkout.up,
     down: migration_20261017_215543_equipment_checkout.down,
     name: '20261017_215543_equipment_checkout',
+  },
+  {
+    up: migration_20261017_234930_event_emails.up,
+    down: migration_20261017_234930_event_emails.down,
+    name: '20261017_234930_event_emails',
+  },
+  {
+    up: migration_20261018_023933_meal_choices.up,
+    down: migration_20261018_023933_meal_choices.down,
+    name: '20261018_023933_meal_choices',
+  },
+  {
+    up: migration_20261018_122540_event_reminders.up,
+    down: migration_20261018_122540_event_reminders.down,
+    name: '20261018_122540_event_reminders',
+  },
+  {
+    up: migration_20261019_135403_reply_notices.up,
+    down: migration_20261019_135403_reply_notices.down,
+    name: '20261019_135403_reply_notices',
+  },
+  {
+    up: migration_20261019_150547_vendor_emails.up,
+    down: migration_20261019_150547_vendor_emails.down,
+    name: '20261019_150547_vendor_emails',
+  },
+  {
+    up: migration_20261019_154148_inquiry_alerts.up,
+    down: migration_20261019_154148_inquiry_alerts.down,
+    name: '20261019_154148_inquiry_alerts'
   },
 ];

@@ -41,16 +41,27 @@ editor when the studio offers more than one language.
 
 1. **Design the invitation** in the event's *Invitation design* section: style, cover picture,
    headline, message, programme, dress code, map link. *Preview the invitation* shows it with a
-   sample guest.
+   sample guest. To let guests choose their meal, add the options under *Meal choices* in the
+   *Invitations and RSVP* section (Fish, Meat, Vegetarian, Children's menu...), in each language
+   the studio offers.
 2. **Add guests**: one by one under *Events → Guests*, or in bulk with *Import guests from a
    spreadsheet* on the event (a CSV with a Name column; Email, Phone, Group, Party size and
    Language are optional). The import shows a preview first and skips emails already on the list.
 3. **Send the invitations**: each guest has a personal *Invitation link*. Copy it from the guest
-   and send it by email, WhatsApp or text. (Sending email from the platform comes once the email
-   account is set up.)
+   and send it by WhatsApp or text, or use *Email invitations to N guests* in the event's
+   *Invitations and RSVP* section to email everyone with an email address who has not had one
+   yet. (Email works once the studio's email sending is set up; the button says so if not. The
+   event must be published first.)
 4. **Follow the answers** in the event's *Invitations and RSVP* section: attending, people
-   coming, declined, not answered. Record an answer given by phone by setting *RSVP* on the
-   guest. Close replies with *Guests can reply* or a *Reply by* date.
+   coming, declined, not answered, and how many chose each meal. Each guest's *Who is coming*
+   lists the people in their party and their meals; the guest list download has them too.
+   Record an answer given by phone by setting *RSVP* on the guest (and the people and meals
+   under *Who is coming*). Close replies with *Guests can reply* or a *Reply by* date. If you
+   remove a meal option, people who chose it count as not chosen until they pick again.
+   With email set up, the event's organizers (and the event's *Studio address for notices*) get an
+   email for every reply; untick *Email the hosts when a guest replies* to stop them.
+   *Remind N guests who have not replied* emails a reminder to everyone with an email address
+   who has not answered (each guest at most once every 3 days).
 5. **Seat people** under *Events → Tables*, then choose each guest's *Table* (or select several
    in the guest list and use *Edit*). The *Seating* section flags tables over capacity and guests
    without a table.
@@ -89,8 +100,12 @@ editor when the studio offers more than one language.
    payment records the amount.
 8. **Download the attendee list (CSV)** from the event's *Registration and tickets* section.
 
-People who lose their ticket or waitlist link: open their registration or waitlist entry and
-copy the link shown there to send it again.
+When the studio's email is set up, buyers get their ticket by email once it is confirmed, and
+people on a waitlist are emailed when places are offered to them. About a day before the event,
+ticket holders and guests who are coming get a reminder with the time, the place and their entry
+code; untick *Email a reminder the day before* on the event if you do not want that. People who lose their ticket or
+waitlist link: open their registration or waitlist entry and copy the link shown there to send it
+again.
 
 ## 4. Vendors
 
@@ -98,7 +113,10 @@ copy the link shown there to send it again.
 2. Book one for an event under *Events → Event vendors*: role, arrival time, instructions, status,
    agreed fee, amount paid and due date (in cents).
 3. Send the booking's private *Vendor link*. The vendor sees the event, their arrival time and
-   instructions, and confirms with a note. They never see amounts or staff notes.
+   instructions, and confirms with a note. They never see amounts or staff notes. With email set
+   up, a vendor with an email address gets the link automatically once the booking is *booked*;
+   *Email the link to the vendor* sends it again after you change the details. Put the studio's
+   address in the event's *Studio address for notices* to hear when vendors confirm.
 4. The event's vendor section shows arrival times and what is still to pay.
 
 ## 5. On the day: check-in
@@ -106,7 +124,8 @@ copy the link shown there to send it again.
 1. On the phone that will scan, sign in to the studio's website (the same browser the camera
    app opens links in).
 2. Scan the code on the guest's invitation or the buyer's ticket with the camera app. The page
-   shows the name, party size or places, and for guests their table and dietary notes.
+   shows the name, party size or places, and for guests their table, who is coming with their
+   meals, and dietary notes.
 3. Choose how many have arrived and press *Check in*. Choosing 0 undoes it.
 4. A cancelled registration shows **"Do not admit"**. Anyone not signed in as staff who opens a
    code only sees "Show this code at the entrance".
