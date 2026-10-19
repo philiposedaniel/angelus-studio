@@ -11,6 +11,9 @@ export type Locale = (typeof LOCALES)[number]
 
 export const DEFAULT_LOCALE: Locale = 'en'
 
+/** Request header the proxy sets to the language in the URL, for pages that get no route params. */
+export const LOCALE_HEADER = 'x-site-locale'
+
 export const LOCALE_LABELS: Record<Locale, string> = {
   en: 'English',
   es: 'Español',

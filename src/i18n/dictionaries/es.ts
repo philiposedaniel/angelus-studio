@@ -10,6 +10,11 @@ export const es: Dictionary = {
     language: 'Idioma',
     skipToContent: 'Saltar al contenido',
   },
+  notFoundPage: {
+    title: 'Página no encontrada',
+    text: 'Esta página no existe o ya no está disponible.',
+    home: 'Volver a la página de inicio',
+  },
   hero: {
     eyebrow: 'Producción audiovisual',
     ourServices: 'Nuestros servicios',
