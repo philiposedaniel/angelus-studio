@@ -6,17 +6,20 @@ import { startTransition, useActionState, useState } from 'react'
 import { sendRsvp } from '@/app/(frontend)/[locale]/invite/[token]/actions'
 import type { Dictionary } from '@/i18n/dictionaries'
 import type { RsvpField, RsvpState } from '@/lib/rsvp'
-import { RSVP_LIMITS } from '@/lib/rsvp'
+import { RSVP_LIMITS } from '@/lib/rsvpLimits'
 
 type Props = {
   token: string
   partySize: number
   answered: boolean
+  /** The meals the event offers, in the guest's language. Empty when there is no choice. */
+  meals: { id: string; label: string }[]
   initial: {
     response?: 'attending' | 'declined'
     attendingCount: number
     dietaryNotes: string
     guestMessage: string
+    party: { name: string; meal: string }[]
   }
   t: Dictionary['invite']
 }
@@ -25,9 +28,11 @@ const input =
   'w-full rounded-lg border border-ivory/15 bg-ink px-4 py-3 text-ivory placeholder:text-mist/60 focus:border-gold focus:outline-none aria-[invalid=true]:border-copper'
 
 /** A guest's reply. The server checks everything again against their invitation. */
-export function RsvpForm({ token, partySize, answered, initial, t }: Props) {
+export function RsvpForm({ token, partySize, answered, meals, initial, t }: Props) {
   const [state, action, pending] = useActionState<RsvpState, FormData>(sendRsvp, { status: 'idle' })
   const [response, setResponse] = useState(initial.response)
+  const [count, setCount] = useState(Math.min(initial.attendingCount, partySize))
+  const asksForParty = partySize > 1 || meals.length > 0
   const errors = state.status === 'error' ? (state.errors ?? {}) : {}
   const error = (name: RsvpField) =>
     errors[name] && (
@@ -77,7 +82,8 @@ export function RsvpForm({ token, partySize, answered, initial, t }: Props) {
               <select
                 id="rsvp-attendingCount"
                 name="attendingCount"
-                defaultValue={String(Math.min(initial.attendingCount, partySize))}
+                value={String(count)}
+                onChange={(event) => setCount(Number(event.target.value))}
                 aria-invalid={errors.attendingCount ? true : undefined}
                 className={input}
               >
@@ -89,6 +95,73 @@ export function RsvpForm({ token, partySize, answered, initial, t }: Props) {
               </select>
               {error('attendingCount')}
             </div>
+          )}
+          {asksForParty && (
+            <fieldset className="grid gap-4">
+              <legend className="mb-2 text-sm text-mist">{t.whoIsComing}</legend>
+              {Array.from({ length: count }, (_, i) => {
+                const person = initial.party[i]
+                const nameError = errors[`party.${i}.name`]
+                const mealError = errors[`party.${i}.meal`]
+                return (
+                  <div key={i} className="grid gap-2 rounded-lg border border-ivory/10 p-4">
+                    {i === 0 ? (
+                      <p className="font-medium">{t.you}</p>
+                    ) : (
+                      <>
+                        <label htmlFor={`rsvp-party-${i}-name`} className="text-sm text-mist">
+                          {t.personName.replace('{n}', String(i + 1))}
+                        </label>
+                        <input
+                          id={`rsvp-party-${i}-name`}
+                          name={`party.${i}.name`}
+                          defaultValue={person?.name ?? ''}
+                          maxLength={RSVP_LIMITS.personName}
+                          autoComplete="off"
+                          aria-invalid={nameError ? true : undefined}
+                          aria-describedby={nameError ? `rsvp-party-${i}-name-error` : undefined}
+                          className={input}
+                        />
+                        {nameError && (
+                          <p id={`rsvp-party-${i}-name-error`} className="text-sm text-copper">
+                            {t.errors[nameError]}
+                          </p>
+                        )}
+                      </>
+                    )}
+                    {meals.length > 0 && (
+                      <>
+                        <label htmlFor={`rsvp-party-${i}-meal`} className="text-sm text-mist">
+                          {i === 0 ? t.yourMeal : t.theirMeal}
+                        </label>
+                        <select
+                          id={`rsvp-party-${i}-meal`}
+                          name={`party.${i}.meal`}
+                          defaultValue={meals.some((meal) => meal.id === person?.meal) ? person?.meal : ''}
+                          aria-invalid={mealError ? true : undefined}
+                          aria-describedby={mealError ? `rsvp-party-${i}-meal-error` : undefined}
+                          className={input}
+                        >
+                          <option value="" disabled>
+                            {t.chooseMeal}
+                          </option>
+                          {meals.map((meal) => (
+                            <option key={meal.id} value={meal.id}>
+                              {meal.label}
+                            </option>
+                          ))}
+                        </select>
+                        {mealError && (
+                          <p id={`rsvp-party-${i}-meal-error`} className="text-sm text-copper">
+                            {t.errors[mealError]}
+                          </p>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )
+              })}
+            </fieldset>
           )}
           <div className="grid gap-2">
             <label htmlFor="rsvp-dietaryNotes" className="text-sm text-mist">

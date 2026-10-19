@@ -81,7 +81,11 @@ Each project has:
   Staff and crew can read it; clients cannot.
 - **Internal notes:** visible to production staff only.
 
-The **calendar** in the portal (`/portal/calendar`) shows productions by shoot date for each month.
+The **calendar** in the portal (`/portal/calendar`) shows productions by shoot date for each month. The link
+**Download to your calendar app** gives a calendar file of the productions that person can see, from this month
+for the next twelve months. Each production is an all-day event with its title, location and a tentative or
+confirmed status. Notes, quotes and client details are never written into the file. The file is a snapshot:
+download it again after the schedule changes.
 
 Deleting a project is limited to studio administrators.
 
@@ -118,7 +122,9 @@ private to each client.
 
 ## Inquiries and website
 
-- **Sales > Inquiries** holds messages from the public inquiry form, in the admin inbox.
+- **Sales > Inquiries** holds messages from the public inquiry form, in the admin inbox. Once email sending is
+  set up, each new one is also emailed to the contact address in *Site settings*; reply to that email to answer
+  the visitor. Untick *Email this address when a website inquiry arrives* there to stop the emails.
 - **Website > Pages** holds the public pages. Page titles and intros are translatable; untranslated text shows
   the English version.
 - Services and site settings are also edited in the admin, for the content of the public site.

@@ -44,6 +44,7 @@ test.describe('Invitations and RSVP', () => {
           schedule: [{ time: '16:00', title: 'Ceremony', place: 'The chapel' }],
           dressCode: 'Garden formal',
         },
+        mealOptions: [{ label: 'Fish' }, { label: 'Vegetarian' }],
       },
     })
     weddingId = wedding.id
@@ -85,13 +86,20 @@ test.describe('Invitations and RSVP', () => {
 
     await page.getByLabel('Yes, I will be there').check()
     await page.getByLabel('How many of you are coming?').selectOption('2')
-    await page.getByLabel('Dietary needs or allergies (optional)').fill('One vegetarian')
+    // Each person coming picks a meal; a meal is needed for everyone.
+    await page.getByLabel('Your meal').selectOption({ label: 'Fish' })
+    await page.getByLabel('Name of guest 2 (optional)').fill('Pedro Silva')
+    await page.getByRole('button', { name: 'Send reply' }).click()
+    await expect(page.getByText('Please choose a meal.')).toBeVisible()
+    await page.getByLabel('Their meal').selectOption({ label: 'Vegetarian' })
+    await page.getByLabel('Dietary needs or allergies (optional)').fill('No nuts')
     await page.getByRole('button', { name: 'Send reply' }).click()
     await expect(page.getByText('Thank you. We have your reply and look forward to seeing you.')).toBeVisible()
 
     const payload = await getPayload({ config })
     const saved = await payload.findByID({ collection: 'event-guests', id: guestId })
-    expect(saved).toMatchObject({ rsvpStatus: 'attending', attendingCount: 2, dietaryNotes: 'One vegetarian' })
+    expect(saved).toMatchObject({ rsvpStatus: 'attending', attendingCount: 2, dietaryNotes: 'No nuts' })
+    expect(saved.party?.map((person) => person.name)).toEqual(['Maria Silva', 'Pedro Silva'])
 
     // Coming back shows the answer and lets them change it.
     await page.reload()
@@ -130,6 +138,13 @@ test.describe('Invitations and RSVP', () => {
       id: guestId,
       data: { rsvpStatus: 'attending', attendingCount: 2, table: table.id },
     })
+    const wedding = await payload.findByID({ collection: 'events', id: weddingId, depth: 0 })
+    const [fish, vegetarian] = wedding.mealOptions!.map((option) => option.id!)
+    await payload.update({
+      collection: 'event-guests',
+      id: guestId,
+      data: { party: [{ name: 'Maria Silva', meal: fish }, { name: 'Pedro Silva', meal: vegetarian }] },
+    })
     await page.goto(`${BASE}/en/invite/${openToken}`)
     await expect(page.getByRole('img', { name: 'Your entry code' })).toBeVisible()
 
@@ -144,6 +159,8 @@ test.describe('Invitations and RSVP', () => {
     await expect(page.getByRole('heading', { name: 'Maria Silva' })).toBeVisible()
     // The staff view says where the party sits.
     await expect(page.getByText('Table: Head table')).toBeVisible()
+    // And who is coming, with their meals, for the kitchen.
+    await expect(page.getByText('Maria Silva (Fish), Pedro Silva (Vegetarian)')).toBeVisible()
     await waitForHydration(page)
     await page.getByLabel('How many have arrived?').selectOption('2')
     await page.getByRole('button', { name: 'Check in' }).click()
@@ -151,6 +168,11 @@ test.describe('Invitations and RSVP', () => {
 
     const saved = await payload.findByID({ collection: 'event-guests', id: guestId })
     expect(saved.checkedInCount).toBe(2)
+
+    // In the admin, staff see each person's meal by name and can change it.
+    await page.goto(`${BASE}/admin/collections/event-guests/${guestId}`)
+    await expect(page.locator('input[name="party.1.name"]')).toHaveValue('Pedro Silva')
+    await expect(page.getByText('Vegetarian', { exact: true })).toBeVisible()
   })
 
   test('staff preview the invitation design; nobody else can', async ({ page }) => {

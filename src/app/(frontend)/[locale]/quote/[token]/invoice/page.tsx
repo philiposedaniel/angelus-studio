@@ -108,9 +108,17 @@ export default async function InvoicePage({ params }: PageProps<'/[locale]/quote
         )}
       </section>
 
-      <Link href={`/${locale}/quote/${token}`} className="text-gold underline underline-offset-4">
-        {t.backToQuote}
-      </Link>
+      <div className="flex flex-wrap gap-6">
+        <a
+          href={`/${locale}/quote/${token}/invoice/pdf`}
+          className="text-gold underline underline-offset-4"
+        >
+          {t.downloadPdf}
+        </a>
+        <Link href={`/${locale}/quote/${token}`} className="text-gold underline underline-offset-4">
+          {t.backToQuote}
+        </Link>
+      </div>
     </main>
   )
 }

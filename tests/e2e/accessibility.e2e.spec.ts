@@ -60,6 +60,7 @@ test.describe('Event pages on a phone', () => {
         published: true,
         listed: true,
         organizers: [hostUser.id],
+        mealOptions: [{ label: 'Fish' }, { label: 'Vegetarian' }],
       },
     })
     const open = await payload.create({
@@ -86,9 +87,22 @@ test.describe('Event pages on a phone', () => {
       collection: 'event-guests',
       data: { event: event.id, name: 'Maria Silva', partySize: 2, language: 'en', rsvpStatus: 'pending' },
     })
-    for (const name of ['Ana Costa', 'Bruno Dias', 'Carla Mendes']) {
+    for (const name of ['Bruno Dias', 'Carla Mendes']) {
       await payload.create({ collection: 'event-guests', data: { event: event.id, name, partySize: 1, language: 'en', rsvpStatus: 'pending' } })
     }
+    const [fish, vegetarian] = event.mealOptions!.map((option) => option.id!)
+    await payload.create({
+      collection: 'event-guests',
+      data: {
+        event: event.id,
+        name: 'Ana Costa',
+        partySize: 2,
+        language: 'en',
+        rsvpStatus: 'attending',
+        attendingCount: 2,
+        party: [{ name: 'Ana Costa', meal: fish }, { name: 'Rui Costa', meal: vegetarian }],
+      },
+    })
     const vendor = await payload.create({ collection: 'vendors', data: { tenant: tenant.id, name: `${PREFIX}Lisbon Sound`, category: 'music' } })
     const booking = await payload.create({
       collection: 'event-vendors',
@@ -182,6 +196,10 @@ test.describe('Event pages on a phone', () => {
 
     await page.goto(`${BASE}${organizerPath}`)
     await expect(page.getByText('Showing 1–4 of 4 guests')).toBeVisible()
+    // The meal counts and who is coming, for the host to pass on to the caterer.
+    await expect(page.getByText('Fish: 1')).toBeVisible()
+    await expect(page.getByText('Not chosen yet')).toHaveCount(0)
+    await expect(page.getByText('Ana Costa (Fish), Rui Costa (Vegetarian)')).toBeVisible()
     await expectAccessible(page)
     await expectFitsPhone(page)
 
