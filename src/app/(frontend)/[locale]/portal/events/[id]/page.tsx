@@ -13,7 +13,7 @@ import { formatEventWhen } from '@/lib/eventTime'
 import { idOf } from '@/lib/ids'
 import { resolveLocale, tenantLocales } from '@/lib/locale'
 import { isGuestListStaff, isOrganizerOf } from '@/lib/organizers'
-import { eventRsvpSummary } from '@/lib/rsvp'
+import { describeParty, eventMealCounts, eventRsvpSummary, summarizeMeals } from '@/lib/rsvp'
 import { siteOrigin } from '@/lib/siteOrigin'
 import { getCurrentTenant } from '@/lib/tenant'
 
@@ -66,6 +66,12 @@ export default async function OrganizerEventPage({
   const linkFor = (language: string | null | undefined, token: string) =>
     `${origin}/${language && offered.includes(language as never) ? language : offered[0]}/invite/${token}`
   const s = await eventRsvpSummary(payload, event.id)
+  const meals = summarizeMeals(event, await eventMealCounts(payload, event.id), s.headcount)
+  const mealLabels = new Map(meals.meals.map((meal) => [meal.id, meal.label]))
+  const partyOf = (guest: (typeof guests)[number]) =>
+    guest.rsvpStatus === 'attending'
+      ? describeParty(guest, (mealId) => mealLabels.get(mealId), (n) => t.guestNumber.replace('{n}', String(n)))
+      : ''
   const editId = typeof query.edit === 'string' && /^\d+$/.test(query.edit) ? query.edit : null
   const editing = editId
     ? await payload
@@ -108,6 +114,21 @@ export default async function OrganizerEventPage({
           </div>
         ))}
       </dl>
+
+      {meals.meals.length > 0 && (
+        <div className="grid gap-2">
+          <h2 className="text-sm uppercase tracking-widest text-gold">{t.meals}</h2>
+          <ul className="flex flex-wrap gap-3">
+            {[...meals.meals.map((meal) => [meal.label, meal.count] as const), ...(meals.notChosen > 0 ? [[t.mealNotChosen, meals.notChosen] as const] : [])].map(
+              ([label, count]) => (
+                <li key={label} className="rounded-full border border-ivory/10 bg-charcoal px-4 py-2 text-sm">
+                  {label}: <span className="font-medium">{count}</span>
+                </li>
+              ),
+            )}
+          </ul>
+        </div>
+      )}
 
       <div className="grid gap-3">
         <p className="text-sm text-mist">{t.linkHelp}</p>
@@ -165,6 +186,7 @@ export default async function OrganizerEventPage({
                       .filter(Boolean)
                       .join(' · ')}
                   </span>
+                  {partyOf(guest) && <span className="text-sm text-mist">{partyOf(guest)}</span>}
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
                   {guest.inviteToken && (

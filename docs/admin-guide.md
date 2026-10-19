@@ -144,7 +144,9 @@ private to each client.
 
 ## Inquiries and website
 
-- **Sales > Inquiries** holds messages from the public inquiry form, in the admin inbox.
+- **Sales > Inquiries** holds messages from the public inquiry form, in the admin inbox. Once email sending is
+  set up, each new one is also emailed to the contact address in *Site settings*; reply to that email to answer
+  the visitor. Untick *Email this address when a website inquiry arrives* there to stop the emails.
 - **Website > Pages** holds the public pages. Page titles and intros are translatable; untranslated text shows
   the English version.
 - Services and site settings are also edited in the admin, for the content of the public site.

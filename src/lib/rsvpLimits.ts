@@ -4,4 +4,4 @@
 /** Most seats one invitation can hold (the guest plus their party). */
 export const MAX_PARTY_SIZE = 20
 
-export const RSVP_LIMITS = { dietaryNotes: 500, guestMessage: 1000 } as const
+export const RSVP_LIMITS = { dietaryNotes: 500, guestMessage: 1000, personName: 120 } as const

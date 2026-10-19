@@ -61,6 +61,10 @@ starts. Every schema change therefore needs `pnpm migrate:create <name>` and a c
 | `PAYLOAD_JOBS_AUTORUN` | Set to `false` to stop this process running background jobs (tests set it). |
 | `STRIPE_SECRET_KEY` | Stripe API key for Checkout deposits. Leave empty to keep online payment off. |
 | `STRIPE_WEBHOOK_SECRET` | Signing secret of the Stripe webhook endpoint `/api/stripe/webhook`. |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` | The email service's SMTP server and login. Leave `SMTP_HOST` empty to send no email. `SMTP_PORT` defaults to 587. |
+| `SMTP_SECURE` | `true` for TLS from the start (port 465, the default there), `false` to upgrade with STARTTLS. |
+| `EMAIL_FROM_ADDRESS` | The address emails come from, on a domain verified with the email service. Required to send. |
+| `EMAIL_FROM_NAME` | Sender name for platform emails. Event emails use the studio's name instead. |
 
 ## Studios and languages
 
@@ -250,6 +254,23 @@ Live streams use the Vimeo or YouTube embed only.
   people coming, not attending, not answered), links to the event's guest list, and closes replies
   with *Guests can reply* or a *Reply by* moment in the event's time zone.
 - Staff can record an answer given by phone by setting *RSVP* on the guest.
+
+### Names and meal choices
+
+- *Meal choices* on the event (up to 12, each label translated per language) turn on a meal for
+  each person. With them set, or when an invitation has more than one seat, the reply asks *Who is
+  coming*: the guest first (their name comes from the invitation), then a name for each other person
+  coming (optional) and, when meals are offered, a meal for every person (required).
+- The answer is stored on the guest as *Who is coming* (`party`: name and the meal option's id), one
+  row per person coming. Declining clears it; fewer people coming keeps only those people. A save
+  that names more people than are attending is refused, and a meal the event no longer offers is
+  cleared on the guest's next change. Until then it counts as *not chosen*.
+- Staff see each meal's count in *Invitations and RSVP*, and each person's meal on the guest with a
+  picker of the event's meals. Organizers see the counts and each guest's party in the portal, the
+  check-in page shows the party with meals, and the guest list download has a *Who is coming* column
+  such as `Maria Silva (Fish), Guest 2 (Vegetarian)`. Counts are added up in the database
+  (`eventMealCounts` in `src/lib/rsvp.ts`), like the headcount.
+- Known limit: the guest list import does not read names or meals; guests give them when they reply.
 - Answers are saved by the page's server action (`src/lib/rsvp.ts`); guests have no API access.
   The studio comes from the host name, so a link only works on its own studio's site.
 - Deleting an event deletes its guests.
@@ -272,14 +293,14 @@ Live streams use the Vimeo or YouTube embed only.
 - The invitation page shows the guest an entry code (QR) unless they declined. It opens
   `/<language>/invite/<token>/check-in`.
 - Staff sign in on the studio's site first (the check-in page links to the sign-in), then scan codes
-  with the phone's camera. The page shows the guest, their party size, answer and dietary needs, and
+  with the phone's camera. The page shows the guest, their party size, answer, who is coming with their
+  meals and dietary needs, and
   records how many arrived (0 undoes it). Anyone else who opens it only sees "Show this code at the
   entrance". Only studio admins and production managers can check guests in.
 - The event shows how many people have checked in; each guest shows the count and arrival time, which
   staff can also change by hand.
 
-Known limits: invitations are not emailed yet (that needs the email account); staff copy each
-link or send the exported list through their own tools. No seating yet. Scanning uses the phone's own
+Invitations can be emailed once email is set up (see *Event emails*). No seating yet. Scanning uses the phone's own
 camera app, so the phone must be signed in to the studio's site in the same browser it opens links in. See `docs/planning/events-platform-plan.md`
 for the order of the next steps.
 
@@ -351,8 +372,15 @@ Not built yet: run-of-show timing and printing, and clients uploading or approvi
 - A vendor who is booked for any event cannot be deleted; remove those bookings first. Deleting an
   event deletes its bookings.
 
+- With email set up, a vendor with an email address gets their link by email when a booking
+  becomes *booked*, and *Email the link to the vendor* on the booking sends it again (at most once a
+  minute). When the vendor confirms from their link, the event's *Studio address for notices* gets
+  an email with their note and a link to the booking. The vendor email never holds amounts or
+  instructions; the instructions stay behind the link. Messages use the studio's first language.
+
 Known limits: vendor documents (contracts, insurance) and vendor payments are not handled yet;
-amounts paid are recorded by hand. Vendors are not emailed until the email account exists.
+amounts paid are recorded by hand. A change to a booking after the link was emailed is not
+announced; send the link again.
 
 ## Seating
 
@@ -496,13 +524,70 @@ email account exists.
 
 Known limits: refunds from the admin are for the full amount (refund part of it in Stripe). No
 booking fee is added (decision 6 in the events plan is open). Paid tickets have been tested with
-signed webhook events, not yet with a live Stripe round trip. Tickets are not emailed until the email account exists, so the ticket page asks people
-to save its link, and staff can resend it from the registration. One entry code covers every place
-on a registration. Nobody is told by email when places are offered to them from the waitlist
-until the email account exists; they see it on their waitlist link, and staff can resend that
-link. A person who takes a paid offer but does not pay loses it like any unpaid hold. Wrong promo codes are
+signed webhook events, not yet with a live Stripe round trip. Tickets and waitlist offers are
+emailed once email is set up (see *Event emails*); until then the ticket page asks people to save
+its link, and staff can resend links from the registration or waitlist entry. One entry code
+covers every place on a registration. A person who takes a paid offer but does not pay loses it like any unpaid hold. Wrong promo codes are
 not counted against a limit of their own; the form token and minimum fill time slow guessing, so
 avoid short codes for large discounts.
+
+## Event emails
+
+Emails go through any email service that offers SMTP (Resend, Postmark, Amazon SES, Brevo, a
+mail server of your own), configured with the `SMTP_*` and `EMAIL_FROM_*` variables. Nothing is
+sent until both `SMTP_HOST` and `EMAIL_FROM_ADDRESS` are set; until then the admin says so and
+every link is copied by hand as before. At startup Payload checks the SMTP login and logs an
+error if it fails.
+
+- **Tickets:** when a registration is confirmed (a free ticket at once, a paid one when the Stripe
+  webhook confirms it, or a registration staff add by hand), the buyer gets their ticket link.
+- **Waitlist offers:** when places are offered to someone on the waitlist, they get their waitlist
+  link and the time the places are held until.
+- **Invitations:** staff (or the event's organizers through the API) send them with *Email
+  invitations to N guests* in the event's *Invitations and RSVP* section. It emails every guest
+  with an email address who has not been emailed yet, so pressing it again after adding guests
+  only reaches the new ones. The event must be published, since its links only open then.
+- **Reply reminders:** *Remind N guests who have not replied*, next to it, emails every guest who
+  has not answered and has an email address, with their link and the *Reply by* date if set. A
+  guest is reminded at most once every 3 days (`REMIND_AGAIN_AFTER_DAYS`), and not at all once
+  replies are closed. It runs at `POST /api/event-guests/send-reminders`, as the signed-in user.
+- **Reply notices:** each time a guest answers or changes their answer from their link, the
+  event's organizers and the optional *Studio address for notices* get one email with the
+  answer, who is coming with their meals, dietary needs and the guest's note, and a link to the
+  guest list. It is in the studio's first language and never contains the guest's own link.
+  Answers staff record by hand send nothing. Turn it off with *Email the hosts when a guest
+  replies* on the event. The guest's hidden `replyNoticeSentFor` holds the reply time last
+  announced, so a reply is announced once however often the job runs.
+- **Vendor links and confirmations:** see *Vendors*.
+- **Inquiry alerts:** each inquiry saved from the website's form (after the spam and rate checks)
+  sends one email to the studio's contact address in *Site settings*, in the studio's first
+  language, with the request, the visitor's contact details and a link to it in the admin. Its
+  Reply-To is the visitor, so staff answer by replying. Untick *Email this address when a website
+  inquiry arrives* in the site settings to stop them. The inquiry's *Alert emailed* shows when it
+  went (migration `20261019_154148_inquiry_alerts`).
+- **Day-before reminders:** the `send-event-reminders` job runs every 5 minutes and, for each
+  published event starting within 24 hours, emails guests who are coming and confirmed ticket
+  holders once, with the time, the place and their invitation or ticket (and its entry code).
+  Untick *Email a reminder the day before* on an event to skip it. Each run sends up to 200, so a
+  very large event's reminders go out over a few runs; a failed send is left for the next run.
+
+Each email is in the person's language (the guest's, buyer's or waitlist entry's, if the studio
+offers it), comes from the studio's name with the platform's sending address, and has a plain-text
+and an HTML version. They are written and sent by the `send-email` background job, queued in the
+same transaction as the change that calls for one, so a change that fails sends nothing. The job
+checks again before sending (a ticket cancelled meanwhile, an offer run out, an event unpublished:
+nothing goes) and claims the record in one statement first, so an email is sent at most once
+even if the job runs twice; a failed send is retried three times. The guest, registration and
+waitlist entry show when they were emailed (*Invitation emailed*, *Ticket emailed*, *Offer
+emailed*, *Reply reminder emailed*, *Reminder emailed*). `tests/int/eventEmails.int.spec.ts` and `eventReminders.int.spec.ts` send through a
+real SMTP server.
+
+Known limits: reply notices go one by one (no daily digest yet), and reminders are not sent to guests
+who were never given an email address. An event moved to a later date after its day-before
+reminders went out does not send them again. Client gallery links are not emailed yet, and
+inquiry alerts go to one address only. Delivery problems (bounces,
+spam reports) are only visible in the email service's own dashboard. The sending domain must be
+verified with the service (SPF and DKIM records in DNS), or messages land in spam.
 
 ### Large events: speed targets
 
@@ -519,8 +604,8 @@ read is well under it.
 | Organizer guest list, one page of 100 or a search | 300 ms | about 20 ms |
 | Event headcount (admin and organizer page) | 100 ms | 3 ms |
 | Registration summary on the event (admin) | 1 s | about 350 ms |
-| Attendee list CSV | 2 s | about 0.9 s |
-| Guest list CSV | 2 s | about 0.5 s |
+| Attendee list CSV | 10 s | about 1 s |
+| Guest list CSV | 10 s | about 1 s |
 
 Places taken, promo code use and the headcount are summed in Postgres instead of loading every
 row (they had taken about half a second at this size). Raw SQL goes through `runSql` in

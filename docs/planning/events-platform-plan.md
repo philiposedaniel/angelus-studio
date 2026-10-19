@@ -25,7 +25,9 @@ depends on it.
 
 1. **Guest list and RSVP** (done, PR #11). Guests per event, each with a personal invitation link;
    guests answer attending or not, how many of their party, dietary needs and a note, and can
-   change the answer until the deadline. Staff see the headcount on the event. *Needs nothing.*
+   change the answer until the deadline. Staff see the headcount on the event. Guests also name
+   the people they bring and, when the event offers meal choices, pick a meal for each; staff,
+   organizers and the door see the names and meal counts. *Needs nothing.*
 2. **Guest list import, export and check-in** (PR #13). CSV import with a preview, CSV export, and a
    staff check-in page that scans the QR code on the invitation. *Needs nothing.*
 3. **Event registration and tickets** (built). Ticket types with price, capacity and sales
@@ -38,8 +40,9 @@ depends on it.
 4. **Vendors** (PR #22; private documents come with R2 storage, step 8). Directory, per-event assignments, amounts due and paid, private documents,
    and a vendor link with their event details. *Needs nothing; documents stay on local disk
    until R2.*
-5. **Email.** Invitations, RSVP and ticket confirmations, reminders, vendor notices and
-   inquiry alerts, sent through one provider interface. *Needs the email account.*
+5. **Email** (invitations, ticket confirmations, waitlist offers, reply reminders and
+   day-before reminders, and reply notices to the hosts built; they send once SMTP details are
+   set). Still to do: vendor notices and inquiry alerts. *Sending needs the email account.*
 6. **Contracts, invoices and balances** (HoneyBook). Contract from a quote, e-signature,
    invoices with a payment schedule, balance payments by Stripe. *Needs the e-signature
    choice and Stripe.*

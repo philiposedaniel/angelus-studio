@@ -585,44 +585,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "mfa_enabled": {
-          "name": "mfa_enabled",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": false,
-          "default": false
-        },
-        "mfa_reset": {
-          "name": "mfa_reset",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": false,
-          "default": false
-        },
-        "mfa_secret": {
-          "name": "mfa_secret",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "mfa_last_counter": {
-          "name": "mfa_last_counter",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "mfa_failed_attempts": {
-          "name": "mfa_failed_attempts",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "mfa_locked_until": {
-          "name": "mfa_locked_until",
-          "type": "timestamp(3) with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
         "updated_at": {
           "name": "updated_at",
           "type": "timestamp(3) with time zone",
@@ -6117,6 +6079,12 @@
           "notNull": true,
           "default": "'en'"
         },
+        "invitation_sent_at": {
+          "name": "invitation_sent_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
         "rsvp_status": {
           "name": "rsvp_status",
           "type": "enum_event_guests_rsvp_status",
@@ -7349,6 +7317,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "confirmation_sent_at": {
+          "name": "confirmation_sent_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
         "sender_key": {
           "name": "sender_key",
           "type": "varchar",
@@ -7645,6 +7619,12 @@
         },
         "offer_expires_at": {
           "name": "offer_expires_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "offer_sent_at": {
+          "name": "offer_sent_at",
           "type": "timestamp(3) with time zone",
           "primaryKey": false,
           "notNull": false
@@ -11320,7 +11300,8 @@
       "values": [
         "inline",
         "build-gallery-zip",
-        "cleanup-gallery-zips"
+        "cleanup-gallery-zips",
+        "send-email"
       ]
     },
     "public.enum_payload_jobs_log_state": {
@@ -11337,7 +11318,8 @@
       "values": [
         "inline",
         "build-gallery-zip",
-        "cleanup-gallery-zips"
+        "cleanup-gallery-zips",
+        "send-email"
       ]
     }
   },
@@ -11351,6 +11333,6 @@
     "tables": {},
     "columns": {}
   },
-  "id": "cc3bb242-ce3e-4d33-8df9-eb67c66acb95",
+  "id": "c283d31e-2718-4a70-b760-bf6eaa9af909",
   "prevId": "00000000-0000-0000-0000-000000000000"
 }

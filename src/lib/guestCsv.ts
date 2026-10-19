@@ -1,5 +1,5 @@
 import { isLocale, type Locale } from '@/i18n/config'
-import { MAX_PARTY_SIZE } from '@/lib/rsvp'
+import { describeParty, MAX_PARTY_SIZE } from '@/lib/rsvp'
 import type { EventGuest } from '@/payload-types'
 
 /** Most rows one import may hold, and the largest file accepted (in characters). */
@@ -172,6 +172,7 @@ export function guestsToCsv(
   guests: readonly EventGuest[],
   invitationUrl: (guest: EventGuest) => string,
   tableName: (guest: EventGuest) => string = () => '',
+  mealLabel: (id: string) => string | undefined = () => undefined,
 ) {
   const header = [
     'Name',
@@ -183,6 +184,7 @@ export function guestsToCsv(
     'Language',
     'RSVP',
     'Attending',
+    'Who is coming',
     'Dietary notes',
     'Message from the guest',
     'Responded at',
@@ -201,6 +203,7 @@ export function guestsToCsv(
       guest.language,
       RSVP_LABELS[guest.rsvpStatus ?? 'pending'],
       guest.attendingCount ?? 0,
+      guest.rsvpStatus === 'attending' ? describeParty(guest, mealLabel, (n) => `Guest ${n}`) : '',
       guest.dietaryNotes,
       guest.guestMessage,
       guest.respondedAt,
