@@ -233,6 +233,18 @@ export interface User {
         id?: string | null;
       }[]
     | null;
+  /**
+   * The person turns this on from their Security page in the portal.
+   */
+  mfaEnabled?: boolean | null;
+  /**
+   * Use this if the person lost their phone. Saving clears their authenticator secret.
+   */
+  mfaReset?: boolean | null;
+  mfaSecret?: string | null;
+  mfaLastCounter?: number | null;
+  mfaFailedAttempts?: number | null;
+  mfaLockedUntil?: string | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -1596,6 +1608,12 @@ export interface UsersSelect<T extends boolean = true> {
         roles?: T;
         id?: T;
       };
+  mfaEnabled?: T;
+  mfaReset?: T;
+  mfaSecret?: T;
+  mfaLastCounter?: T;
+  mfaFailedAttempts?: T;
+  mfaLockedUntil?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;
