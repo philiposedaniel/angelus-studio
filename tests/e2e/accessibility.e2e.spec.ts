@@ -95,6 +95,38 @@ test.describe('Event pages on a phone', () => {
       data: { event: event.id, vendor: vendor.id, role: 'Sound', status: 'booked', currency: 'eur' },
     })
 
+    // The two lighter invitation designs, with every part of the card filled in.
+    for (const style of ['garden', 'modern'] as const) {
+      const styled = await payload.create({
+        collection: 'events',
+        data: {
+          tenant: tenant.id,
+          title: `${PREFIX}${style} wedding`,
+          slug: `${PREFIX}${style}`,
+          startsAt: new Date(Date.now() + 40 * 86_400_000).toISOString(),
+          timeZone: 'Europe/Lisbon',
+          location: 'Quinta da Regaleira, Sintra',
+          published: true,
+          listed: false,
+          invitation: {
+            style,
+            headline: 'Together with their families',
+            message: 'We would love you to celebrate with us.',
+            schedule: [
+              { time: '16:00', title: 'Ceremony', place: 'The chapel' },
+              { time: '19:00', title: 'Dinner and dancing', place: 'The gardens' },
+            ],
+            dressCode: 'Garden formal',
+          },
+        },
+      })
+      const styledGuest = await payload.create({
+        collection: 'event-guests',
+        data: { event: styled.id, name: 'Rui Costa', partySize: 1, language: 'en', rsvpStatus: 'pending' },
+      })
+      paths[`${style} invitation`] = `/en/invite/${styledGuest.inviteToken}`
+    }
+
     paths.events = '/en/events'
     paths.event = `/en/events/${PREFIX}screening`
     paths.ticket = `/en/tickets/${registration.ticketToken}`
@@ -105,7 +137,17 @@ test.describe('Event pages on a phone', () => {
     organizerPath = `/en/portal/events/${event.id}`
   })
 
-  for (const name of ['events', 'event', 'ticket', 'waitlist', 'invitation', 'vendor', 'login']) {
+  for (const name of [
+    'events',
+    'event',
+    'ticket',
+    'waitlist',
+    'invitation',
+    'garden invitation',
+    'modern invitation',
+    'vendor',
+    'login',
+  ]) {
     test(`the ${name} page is accessible and fits a phone`, async ({ page }) => {
       await page.goto(`${BASE}${paths[name]}`)
       await expect(page.locator('h1')).toBeVisible()
@@ -113,6 +155,20 @@ test.describe('Event pages on a phone', () => {
       await expectFitsPhone(page)
     })
   }
+
+  test("a missing page is a 404 in the visitor's language, inside the site", async ({ page }) => {
+    for (const [locale, title] of [
+      ['en', 'Page not found'],
+      ['es', 'Página no encontrada'],
+    ]) {
+      const response = await page.goto(`${BASE}/${locale}/${PREFIX}no-such-page`)
+      expect(response?.status()).toBe(404)
+      await expect(page.locator('html')).toHaveAttribute('lang', locale)
+      await expect(page.getByRole('heading', { level: 1, name: title })).toBeVisible()
+      await expectAccessible(page)
+      await expectFitsPhone(page)
+    }
+  })
 
   test("the host's guest list is accessible and fits a phone", async ({ page }) => {
     await page.goto(`${BASE}/en/portal/login`)
