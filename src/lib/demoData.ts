@@ -19,6 +19,13 @@ export type DemoResult = {
 
 const DAY = 86_400_000
 
+/** A whole hour some days from now, in UTC (Lisbon time for most of the year), so demo times look planned. */
+const at = (days: number, hour: number) => {
+  const date = new Date(Date.now() + days * DAY)
+  date.setUTCHours(hour, 0, 0, 0)
+  return date.toISOString()
+}
+
 /** Demo sign-ins live on a reserved domain, so they can never be a real person's address. */
 export const demoEmail = (role: 'admin' | 'client', tenantSlug: string) =>
   `${role}@${tenantSlug}.demo.test`
@@ -227,7 +234,7 @@ export async function seedDemoData(
       clientEmail,
       clientUser: client.id,
       status: 'confirmed',
-      shootDate: new Date(Date.now() + 40 * DAY).toISOString(),
+      shootDate: at(40, 15),
       location: 'Quinta da Regaleira, Sintra',
       crew: [{ user: admin.id, role: 'Lead photographer' }],
       tasks: [
@@ -259,7 +266,7 @@ export async function seedDemoData(
       tenant: tenant.id,
       title: 'Ana and João',
       slug: 'demo-ana-joao',
-      startsAt: new Date(Date.now() + 40 * DAY).toISOString(),
+      startsAt: at(40, 15),
       timeZone: 'Europe/Lisbon',
       location: 'Quinta da Regaleira, Sintra',
       published: true,
@@ -344,7 +351,7 @@ export async function seedDemoData(
       vendor: florist.id,
       role: 'Ceremony and table flowers',
       status: 'confirmed',
-      arrivalAt: new Date(Date.now() + 40 * DAY - 6 * 3_600_000).toISOString(),
+      arrivalAt: at(40, 9),
       instructions: 'Unload at the side gate. Power is in the chapel vestry.',
       currency: 'eur',
       amountDue: 120000,
@@ -372,17 +379,16 @@ export async function seedDemoData(
   const camera = await kit('Sony FX3', 'Camera', 'FX3-0142')
   const gimbal = await kit('DJI RS 4 Pro', 'Gimbal', 'RS4-2210')
   await kit('Aputure 600d', 'Light', 'AP6-0087')
-  const shootStart = new Date(Date.now() + 40 * DAY)
-  shootStart.setUTCHours(8, 0, 0, 0)
-  const shootEnd = new Date(shootStart.getTime() + 16 * 3_600_000)
+  const shootStart = at(40, 8)
+  const shootEnd = at(41, 0)
   await payload.create({
     collection: 'equipment-reservations',
     data: {
       tenant: tenant.id,
       equipment: camera.id,
       project: project.id,
-      startsAt: shootStart.toISOString(),
-      endsAt: shootEnd.toISOString(),
+      startsAt: shootStart,
+      endsAt: shootEnd,
     },
   })
   await payload.create({
@@ -392,9 +398,9 @@ export async function seedDemoData(
       equipment: gimbal.id,
       project: project.id,
       // Taken out early for a test shoot at the venue.
-      startsAt: new Date(Date.now() - DAY).toISOString(),
-      endsAt: shootEnd.toISOString(),
-      checkedOutAt: new Date(Date.now() - DAY).toISOString(),
+      startsAt: at(-1, 9),
+      endsAt: shootEnd,
+      checkedOutAt: at(-1, 9),
       notes: 'Out for the venue test shoot.',
     },
   })
@@ -406,7 +412,7 @@ export async function seedDemoData(
       title: 'Studio open day',
       slug: 'demo-studio-open-day',
       summary: 'Meet the team, see our work and try the photo booth.',
-      startsAt: new Date(Date.now() + 21 * DAY).toISOString(),
+      startsAt: at(21, 10),
       timeZone: 'Europe/Lisbon',
       location: 'Angelus studio, Lisbon',
       published: true,
