@@ -58,7 +58,7 @@ editor when the studio offers more than one language.
    Record an answer given by phone by setting *RSVP* on the guest (and the people and meals
    under *Who is coming*). Close replies with *Guests can reply* or a *Reply by* date. If you
    remove a meal option, people who chose it count as not chosen until they pick again.
-   With email set up, the event's organizers (and the address in *Also send replies to*) get an
+   With email set up, the event's organizers (and the event's *Studio address for notices*) get an
    email for every reply; untick *Email the hosts when a guest replies* to stop them.
    *Remind N guests who have not replied* emails a reminder to everyone with an email address
    who has not answered (each guest at most once every 3 days).
@@ -113,7 +113,10 @@ again.
 2. Book one for an event under *Events → Event vendors*: role, arrival time, instructions, status,
    agreed fee, amount paid and due date (in cents).
 3. Send the booking's private *Vendor link*. The vendor sees the event, their arrival time and
-   instructions, and confirms with a note. They never see amounts or staff notes.
+   instructions, and confirms with a note. They never see amounts or staff notes. With email set
+   up, a vendor with an email address gets the link automatically once the booking is *booked*;
+   *Email the link to the vendor* sends it again after you change the details. Put the studio's
+   address in the event's *Studio address for notices* to hear when vendors confirm.
 4. The event's vendor section shows arrival times and what is still to pay.
 
 ## 5. On the day: check-in

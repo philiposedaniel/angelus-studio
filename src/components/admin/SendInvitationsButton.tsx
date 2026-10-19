@@ -6,6 +6,7 @@ import { useState } from 'react'
 const ACTIONS = {
   invitations: {
     path: '/api/event-guests/send-invitations',
+    bodyKey: 'event',
     button: (guests: string) => `Email invitations to ${guests}`,
     confirm: (guests: string) => `Each of ${guests} gets their personal invitation link by email.`,
     done: (count: number) => `Sending ${count} invitations. They go out within a minute.`,
@@ -13,16 +14,25 @@ const ACTIONS = {
   },
   reminders: {
     path: '/api/event-guests/send-reminders',
+    bodyKey: 'event',
     button: (guests: string) => `Remind ${guests} who have not replied`,
     confirm: (guests: string) => `Each of ${guests} gets an email asking them to reply, with their invitation link.`,
     done: (count: number) => `Sending ${count} reminders. They go out within a minute.`,
     failed: 'The reminders could not be sent.',
   },
+  vendorLink: {
+    path: '/api/event-vendors/send-link',
+    bodyKey: 'booking',
+    button: () => 'Email the link to the vendor',
+    confirm: () => 'The vendor gets this link by email, with the event, their role and arrival time.',
+    done: () => 'Sending the link. It goes out within a minute.',
+    failed: 'The link could not be sent.',
+  },
 } as const
 
 /**
- * Emails the event's guests (invitations not sent yet, or reminders to reply) after a second
- * click, then reloads to show the new count.
+ * Emails the event's guests (invitations not sent yet, or reminders to reply), or a vendor their
+ * booking link, after a second click, then reloads to show the new count.
  */
 export function SendInvitationsButton({
   eventId,
@@ -48,7 +58,7 @@ export function SendInvitationsButton({
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ event: eventId }),
+        body: JSON.stringify({ [copy.bodyKey]: eventId }),
       })
       const body = await response.json().catch(() => null)
       if (!response.ok) setMessage({ text: body?.errors?.[0]?.message ?? copy.failed, error: true })

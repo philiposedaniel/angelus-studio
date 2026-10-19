@@ -63,7 +63,8 @@ either way.
 
 ## If you are a supplier (vendor)
 
-1. Open the private link the studio sent you for the booking.
+1. Open the private link the studio sent you for the booking (by email, if the studio sends
+   email and has your address).
 2. It shows the event, your role, when to arrive (in the event's local time) and the studio's
    instructions.
 3. **Confirm** the booking, with a note for the studio if needed.

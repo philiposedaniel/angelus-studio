@@ -1,10 +1,11 @@
 import { APIError, Forbidden, type CollectionConfig } from 'payload'
 
 import { hasTenantRole, isStaffAnywhere, isSuperAdmin, tenantRoles } from '@/access'
+import { queueEmail } from '@/lib/email'
 import { idOf } from '@/lib/ids'
 import { CURRENCIES, CURRENCY_LABELS, MAX_AMOUNT } from '@/lib/money'
 import { newShareToken } from '@/lib/shareTokens'
-import { BOOKING_STATUSES, BOOKING_STATUS_LABELS, VENDOR_STAFF_ROLES } from '@/lib/vendors'
+import { BOOKING_STATUSES, BOOKING_STATUS_LABELS, sendVendorLink, VENDOR_STAFF_ROLES } from '@/lib/vendors'
 
 const isAmount = (value: unknown) =>
   value === null ||
@@ -32,7 +33,20 @@ export const EventVendors: CollectionConfig = {
     update: tenantRoles(VENDOR_STAFF_ROLES),
     delete: tenantRoles(VENDOR_STAFF_ROLES),
   },
+  endpoints: [{ path: '/send-link', method: 'post', handler: sendVendorLink }],
   hooks: {
+    afterChange: [
+      async ({ doc, previousDoc, operation, req }) => {
+        // A vendor newly booked gets their link by email.
+        const wasBooked = operation === 'update' && ['booked', 'confirmed'].includes(previousDoc?.status)
+        if (doc.status === 'booked' && !wasBooked) await queueEmail(req, 'vendorBooking', doc.id)
+        // The studio hears when the vendor confirms from their link (staff confirming by hand sign in).
+        if (!req.user && doc.status === 'confirmed' && doc.confirmedAt && doc.confirmedAt !== previousDoc?.confirmedAt) {
+          await queueEmail(req, 'vendorConfirmed', doc.id)
+        }
+        return doc
+      },
+    ],
     beforeValidate: [
       // A booking belongs to its event's studio, and its vendor must be from that studio too.
       async ({ data, originalDoc, req }) => {
@@ -149,6 +163,21 @@ export const EventVendors: CollectionConfig = {
       name: 'vendorLink',
       type: 'ui',
       admin: { components: { Field: '@/components/admin/VendorLinkField#VendorLinkField' } },
+    },
+    {
+      name: 'bookingEmailedAt',
+      label: 'Link emailed',
+      type: 'date',
+      admin: { readOnly: true, position: 'sidebar', date: { pickerAppearance: 'dayAndTime' }, description: 'When the vendor was last emailed their link.' },
+      // Set only by the email job.
+      access: { create: () => false, update: () => false },
+    },
+    {
+      name: 'confirmationNoticeSentFor',
+      type: 'date',
+      admin: { hidden: true },
+      // The confirmation the studio was last emailed about, set only by the email job.
+      access: { create: () => false, update: () => false },
     },
     {
       name: 'confirmedAt',

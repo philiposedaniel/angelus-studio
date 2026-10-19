@@ -473,6 +473,20 @@ export const en = {
       guestCode: 'Your invitation shows your entry code. Have it ready on your phone at the entrance.',
       guestAction: 'Open your invitation',
     },
+    vendorBooking: {
+      subject: 'Your booking: {event}',
+      body: '{studio} has booked you for {event}, {when}, as {role}.',
+      arrival: 'Please arrive at {arrival}.',
+      action: 'Open your booking and confirm',
+      note: 'The link shows the event details and the studio\'s instructions, and lets you confirm. It is for you and your team only.',
+    },
+    vendorConfirmed: {
+      subject: '{vendor} confirmed: {event}',
+      body: '{vendor} confirmed their booking for {event}, {when}, as {role}.',
+      vendorNote: 'Their note: {note}',
+      action: 'Open the booking',
+      note: 'You receive this as the studio address for notices on this event.',
+    },
     replyNotice: {
       subject: '{name} replied: {event}',
       body: '{name} replied to the invitation to {event}.',

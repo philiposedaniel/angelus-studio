@@ -475,6 +475,20 @@ export const es: Dictionary = {
       guestCode: 'Tu invitación muestra tu código de acceso. Tenlo a mano en el móvil en la entrada.',
       guestAction: 'Abrir tu invitación',
     },
+    vendorBooking: {
+      subject: 'Tu reserva: {event}',
+      body: '{studio} te ha reservado para {event}, {when}, como {role}.',
+      arrival: 'Llega, por favor, el {arrival}.',
+      action: 'Abrir tu reserva y confirmar',
+      note: 'El enlace muestra los detalles del evento y las instrucciones del estudio, y te permite confirmar. Es solo para ti y tu equipo.',
+    },
+    vendorConfirmed: {
+      subject: '{vendor} ha confirmado: {event}',
+      body: '{vendor} ha confirmado su reserva para {event}, {when}, como {role}.',
+      vendorNote: 'Su nota: {note}',
+      action: 'Abrir la reserva',
+      note: 'Recibes esto como dirección del estudio para avisos de este evento.',
+    },
     replyNotice: {
       subject: '{name} ha respondido: {event}',
       body: '{name} ha respondido a la invitación a {event}.',

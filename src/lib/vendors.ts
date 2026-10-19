@@ -1,5 +1,6 @@
-import type { Payload } from 'payload'
+import type { Payload, PayloadHandler } from 'payload'
 
+import { emailConfigured, queueEmail } from '@/lib/email'
 import { idOf } from '@/lib/ids'
 import { isShareToken } from '@/lib/shareTokens'
 import type { Event, EventVendor, Vendor } from '@/payload-types'
@@ -151,4 +152,28 @@ export async function confirmVendorBooking({
     return { status: 'error', reason: 'failed' }
   }
   return { status: 'confirmed' }
+}
+
+/**
+ * POST /api/event-vendors/send-link with JSON `{ booking }`: emails the vendor their link again,
+ * for staff of the booking's studio. Not more than once a minute, so a double click sends one.
+ */
+export const sendVendorLink: PayloadHandler = async (req) => {
+  const fail = (status: number, message: string) => Response.json({ errors: [{ message }] }, { status })
+  if (!req.user) return fail(401, 'Sign in first.')
+  if (!emailConfigured()) return fail(409, 'Email sending is not set up yet.')
+  const body = (await req.json?.().catch(() => null)) as { booking?: unknown } | null | undefined
+  const id = body?.booking
+  if ((typeof id !== 'string' && typeof id !== 'number') || !/^\d+$/.test(String(id))) return fail(404, 'Booking not found.')
+  const booking = await req.payload
+    .findByID({ collection: 'event-vendors', id: String(id), depth: 0, req, user: req.user, overrideAccess: false })
+    .catch(() => null)
+  if (!booking) return fail(404, 'Booking not found.')
+  if (booking.status === 'cancelled') return fail(409, 'This booking is cancelled.')
+  const vendor = await req.payload
+    .findByID({ collection: 'vendors', id: idOf(booking.vendor)!, depth: 0, req, user: req.user, overrideAccess: false })
+    .catch(() => null)
+  if (!vendor?.email) return fail(409, 'Add an email address to the vendor first.')
+  await queueEmail(req, 'vendorBooking', booking.id)
+  return Response.json({ queued: 1 })
 }

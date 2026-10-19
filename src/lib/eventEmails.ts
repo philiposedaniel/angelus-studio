@@ -48,6 +48,19 @@ const SENT_COLUMNS = {
         AND responded_at IS NOT NULL AND reply_notice_sent_for IS DISTINCT FROM responded_at RETURNING id`,
     release: (id: number) => sql`UPDATE event_guests SET reply_notice_sent_for = NULL WHERE id = ${id}`,
   },
+  // Sent when a vendor is booked, and again on request, never twice within a minute.
+  vendorBooking: {
+    claim: (id: number) =>
+      sql`UPDATE event_vendors SET booking_emailed_at = now() WHERE id = ${id}
+        AND (booking_emailed_at IS NULL OR booking_emailed_at < now() - interval '1 minute') RETURNING id`,
+    release: (id: number) => sql`UPDATE event_vendors SET booking_emailed_at = NULL WHERE id = ${id}`,
+  },
+  vendorConfirmed: {
+    claim: (id: number) =>
+      sql`UPDATE event_vendors SET confirmation_notice_sent_for = confirmed_at WHERE id = ${id}
+        AND confirmed_at IS NOT NULL AND confirmation_notice_sent_for IS DISTINCT FROM confirmed_at RETURNING id`,
+    release: (id: number) => sql`UPDATE event_vendors SET confirmation_notice_sent_for = NULL WHERE id = ${id}`,
+  },
   guestDayBefore: {
     claim: (id: number) =>
       sql`UPDATE event_guests SET day_before_sent_at = now() WHERE id = ${id} AND day_before_sent_at IS NULL RETURNING id`,
@@ -182,6 +195,57 @@ export async function prepareEventEmail(payload: Payload, kind: EmailKind, id: n
         note: t.invitation.note,
       }
     )
+  }
+
+  if (kind === 'vendorBooking' || kind === 'vendorConfirmed') {
+    const booking = await payload.findByID({ collection: 'event-vendors', id, ...system }).catch(() => null)
+    if (!booking?.vendorToken) return null
+    const [vendor, event0] = await Promise.all([
+      payload.findByID({ collection: 'vendors', id: idOf(booking.vendor)!, ...system }).catch(() => null),
+      payload.findByID({ collection: 'events', id: idOf(booking.event)!, ...system }).catch(() => null),
+    ])
+    if (!vendor || !event0) return null
+    const tenant = await payload.findByID({ collection: 'tenants', id: idOf(event0.tenant)!, ...system }).catch(() => null)
+    if (!tenant) return null
+    // Vendors and studio staff read the studio's first language, as on the vendor link.
+    const locale = tenantLocales(tenant)[0]!
+    const event = await payload.findByID({ collection: 'events', id: event0.id, locale, ...system })
+    const origin = await siteOrigin(payload, tenant.id)
+    const t = getDictionary(locale).emails
+    const when = formatEventWhen(event, locale)
+    if (kind === 'vendorBooking') {
+      if (!['booked', 'confirmed'].includes(booking.status ?? '') || !vendor.email) return null
+      if (booking.bookingEmailedAt && Date.now() - new Date(booking.bookingEmailedAt).getTime() < 60_000) return null
+      const arrival = booking.arrivalAt
+        ? new Intl.DateTimeFormat(locale, { dateStyle: 'full', timeStyle: 'short', timeZone: event.timeZone || 'Europe/Lisbon' }).format(
+            new Date(booking.arrivalAt),
+          )
+        : null
+      return finish(payload, kind, id, tenant, {
+        to: vendor.email,
+        subject: t.vendorBooking.subject.replace('{event}', event.title),
+        paragraphs: [
+          t.greeting.replace('{name}', vendor.contactName || vendor.name),
+          t.vendorBooking.body.replace('{studio}', tenant.name).replace('{event}', event.title).replace('{when}', when).replace('{role}', booking.role),
+          ...(arrival ? [t.vendorBooking.arrival.replace('{arrival}', arrival)] : []),
+          ...(event.location ? [t.dayBefore.where.replace('{location}', event.location)] : []),
+        ],
+        action: { label: t.vendorBooking.action, url: `${origin}/${locale}/vendor/${booking.vendorToken}` },
+        note: t.vendorBooking.note,
+      })
+    }
+    if (booking.status !== 'confirmed' || !booking.confirmedAt || !event.replyNoticeEmail) return null
+    if (booking.confirmationNoticeSentFor && new Date(booking.confirmationNoticeSentFor).getTime() === new Date(booking.confirmedAt).getTime()) return null
+    return finish(payload, kind, id, tenant, {
+      to: event.replyNoticeEmail,
+      subject: t.vendorConfirmed.subject.replace('{vendor}', vendor.name).replace('{event}', event.title),
+      paragraphs: [
+        t.vendorConfirmed.body.replace('{vendor}', vendor.name).replace('{event}', event.title).replace('{when}', when).replace('{role}', booking.role),
+        ...(booking.vendorNote ? [t.vendorConfirmed.vendorNote.replace('{note}', booking.vendorNote)] : []),
+      ],
+      action: { label: t.vendorConfirmed.action, url: `${origin}/admin/collections/event-vendors/${booking.id}` },
+      note: t.vendorConfirmed.note,
+    })
   }
 
   if (kind === 'replyNotice') {

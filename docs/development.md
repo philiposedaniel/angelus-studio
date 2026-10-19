@@ -369,8 +369,15 @@ Not built yet: run-of-show timing and printing, and clients uploading or approvi
 - A vendor who is booked for any event cannot be deleted; remove those bookings first. Deleting an
   event deletes its bookings.
 
+- With email set up, a vendor with an email address gets their link by email when a booking
+  becomes *booked*, and *Email the link to the vendor* on the booking sends it again (at most once a
+  minute). When the vendor confirms from their link, the event's *Studio address for notices* gets
+  an email with their note and a link to the booking. The vendor email never holds amounts or
+  instructions; the instructions stay behind the link. Messages use the studio's first language.
+
 Known limits: vendor documents (contracts, insurance) and vendor payments are not handled yet;
-amounts paid are recorded by hand. Vendors are not emailed until the email account exists.
+amounts paid are recorded by hand. A change to a booking after the link was emailed is not
+announced; send the link again.
 
 ## Seating
 
@@ -542,12 +549,13 @@ error if it fails.
   guest is reminded at most once every 3 days (`REMIND_AGAIN_AFTER_DAYS`), and not at all once
   replies are closed. It runs at `POST /api/event-guests/send-reminders`, as the signed-in user.
 - **Reply notices:** each time a guest answers or changes their answer from their link, the
-  event's organizers and the optional *Also send replies to* address get one email with the
+  event's organizers and the optional *Studio address for notices* get one email with the
   answer, who is coming with their meals, dietary needs and the guest's note, and a link to the
   guest list. It is in the studio's first language and never contains the guest's own link.
   Answers staff record by hand send nothing. Turn it off with *Email the hosts when a guest
   replies* on the event. The guest's hidden `replyNoticeSentFor` holds the reply time last
   announced, so a reply is announced once however often the job runs.
+- **Vendor links and confirmations:** see *Vendors*.
 - **Day-before reminders:** the `send-event-reminders` job runs every 5 minutes and, for each
   published event starting within 24 hours, emails guests who are coming and confirmed ticket
   holders once, with the time, the place and their invitation or ticket (and its entry code).

@@ -29,7 +29,7 @@ export function emailAdapter() {
 export const fromStudio = (studioName: string) =>
   `"${studioName.replace(/["\\\r\n]/g, '')}" <${process.env.EMAIL_FROM_ADDRESS}>`
 
-export const EMAIL_KINDS = ['invitation', 'ticket', 'waitlistOffer', 'replyReminder', 'guestDayBefore', 'ticketDayBefore', 'replyNotice'] as const
+export const EMAIL_KINDS = ['invitation', 'ticket', 'waitlistOffer', 'replyReminder', 'guestDayBefore', 'ticketDayBefore', 'replyNotice', 'vendorBooking', 'vendorConfirmed'] as const
 export type EmailKind = (typeof EMAIL_KINDS)[number]
 
 export const SEND_EMAIL_TASK = 'send-email'

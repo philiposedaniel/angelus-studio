@@ -338,11 +338,11 @@ export const Events: CollectionConfig = {
         },
         {
           name: 'replyNoticeEmail',
-          label: 'Also send replies to',
+          label: 'Studio address for notices',
           type: 'email',
           admin: {
-            description: 'Optional, e.g. the studio\'s events address or a wedding planner.',
-            condition: (data) => data?.replyNotices !== false,
+            description:
+              "Optional, e.g. the studio's events address or a wedding planner. It gets every guest reply (while the box above is ticked) and every vendor confirmation.",
           },
         },
         {

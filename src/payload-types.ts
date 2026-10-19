@@ -885,7 +885,7 @@ export interface Event {
    */
   replyNotices?: boolean | null;
   /**
-   * Optional, e.g. the studio's events address or a wedding planner.
+   * Optional, e.g. the studio's events address or a wedding planner. It gets every guest reply (while the box above is ticked) and every vendor confirmation.
    */
   replyNoticeEmail?: string | null;
   /**
@@ -1117,6 +1117,11 @@ export interface EventVendor {
    */
   amountPaid?: number | null;
   paymentDueDate?: string | null;
+  /**
+   * When the vendor was last emailed their link.
+   */
+  bookingEmailedAt?: string | null;
+  confirmationNoticeSentFor?: string | null;
   confirmedAt?: string | null;
   vendorNote?: string | null;
   /**
@@ -2077,6 +2082,8 @@ export interface EventVendorsSelect<T extends boolean = true> {
   amountDue?: T;
   amountPaid?: T;
   paymentDueDate?: T;
+  bookingEmailedAt?: T;
+  confirmationNoticeSentFor?: T;
   confirmedAt?: T;
   vendorNote?: T;
   staffNotes?: T;
@@ -2392,7 +2399,9 @@ export interface TaskSendEmail {
       | 'replyReminder'
       | 'guestDayBefore'
       | 'ticketDayBefore'
-      | 'replyNotice';
+      | 'replyNotice'
+      | 'vendorBooking'
+      | 'vendorConfirmed';
     id: number;
   };
   output?: unknown;
