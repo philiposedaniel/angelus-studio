@@ -575,6 +575,21 @@ export function summarizeTickets(
   })
 }
 
+/**
+ * Per ticket type of one event: places sold (confirmed) and people checked in, summed in the
+ * database. Counts only, never who bought, so an event's organizers can follow sales. Callers
+ * check the reader may see the event first, since it skips access rules.
+ */
+export async function eventTicketSales(payload: Payload, eventId: number | string) {
+  const rows = await runSql<{ ticket_type_id: number; sold: string | null; arrived: string | null }>(
+    payload,
+    sql`SELECT ticket_type_id, SUM(quantity) AS sold, SUM(checked_in_count) AS arrived
+      FROM registrations WHERE event_id = ${Number(eventId)} AND status = 'confirmed'
+      GROUP BY ticket_type_id`,
+  )
+  return new Map(rows.map((row) => [String(row.ticket_type_id), { sold: Number(row.sold ?? 0), arrived: Number(row.arrived ?? 0) }]))
+}
+
 /* ---- Event page ---- */
 
 export type TicketOffer = {

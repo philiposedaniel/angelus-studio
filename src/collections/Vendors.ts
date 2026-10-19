@@ -1,7 +1,11 @@
 import { APIError, type CollectionConfig } from 'payload'
 
 import { tenantRoles } from '@/access'
+import { staffOnlyField, staffOrOrganizersVendors } from '@/lib/organizers'
 import { VENDOR_CATEGORIES, VENDOR_CATEGORY_LABELS, VENDOR_STAFF_ROLES } from '@/lib/vendors'
+
+/** Organizers see a booked vendor's name and category; contact details and notes stay with staff. */
+const staffField = staffOnlyField(VENDOR_STAFF_ROLES)
 
 /** The studio's vendor directory: the venues, caterers, musicians and others it works with. */
 export const Vendors: CollectionConfig = {
@@ -15,7 +19,7 @@ export const Vendors: CollectionConfig = {
   },
   defaultSort: 'name',
   access: {
-    read: tenantRoles(VENDOR_STAFF_ROLES),
+    read: staffOrOrganizersVendors(VENDOR_STAFF_ROLES),
     create: tenantRoles(VENDOR_STAFF_ROLES),
     update: tenantRoles(VENDOR_STAFF_ROLES),
     delete: tenantRoles(['admin']),
@@ -45,21 +49,23 @@ export const Vendors: CollectionConfig = {
       index: true,
       options: VENDOR_CATEGORIES.map((value) => ({ value, label: VENDOR_CATEGORY_LABELS[value] })),
     },
-    { name: 'contactName', type: 'text', maxLength: 120 },
-    { name: 'email', type: 'email' },
-    { name: 'phone', type: 'text', maxLength: 40 },
+    { name: 'contactName', type: 'text', maxLength: 120, access: { read: staffField } },
+    { name: 'email', type: 'email', access: { read: staffField } },
+    { name: 'phone', type: 'text', maxLength: 40, access: { read: staffField } },
     {
       name: 'website',
       type: 'text',
+      access: { read: staffField },
       maxLength: 300,
       validate: (value: string | null | undefined) =>
         !value || /^https?:\/\/[^\s]+$/.test(value) || 'Use a full address starting with https://',
     },
-    { name: 'address', type: 'textarea', maxLength: 500 },
+    { name: 'address', type: 'textarea', maxLength: 500, access: { read: staffField } },
     {
       name: 'notes',
       type: 'textarea',
       maxLength: 4000,
+      access: { read: staffField },
       admin: { description: 'Rates, terms, what worked well. Only staff see this.' },
     },
   ],

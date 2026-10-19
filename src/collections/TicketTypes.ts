@@ -3,6 +3,7 @@ import { APIError, Forbidden, type CollectionConfig } from 'payload'
 import { hasTenantRole, isSuperAdmin, tenantRoles } from '@/access'
 import { EVENT_GUEST_STAFF_ROLES } from '@/collections/EventGuests'
 import { idOf } from '@/lib/ids'
+import { staffOrEventOrganizers } from '@/lib/organizers'
 import { CURRENCIES, CURRENCY_LABELS, MAX_AMOUNT } from '@/lib/money'
 import {
   DEFAULT_MAX_PER_ORDER,
@@ -30,7 +31,8 @@ export const TicketTypes: CollectionConfig = {
   },
   defaultSort: 'sortOrder',
   access: {
-    read: tenantRoles(EVENT_GUEST_STAFF_ROLES),
+    // The event's organizers see its tickets, read only, to follow sales.
+    read: staffOrEventOrganizers(EVENT_GUEST_STAFF_ROLES),
     create: tenantRoles(EVENT_GUEST_STAFF_ROLES),
     update: tenantRoles(EVENT_GUEST_STAFF_ROLES),
     delete: tenantRoles(EVENT_GUEST_STAFF_ROLES),
