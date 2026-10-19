@@ -1,0 +1,62 @@
+name: Docker
+
+# Builds the production and preview images and starts each stack, so a broken Dockerfile shows up
+# here instead of on the server. The main CI workflow does not build images.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: docker-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  images:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      # CI-only values. Both stacks run on the runner and are removed at the end.
+      PAYLOAD_SECRET: ci-only-secret-not-used-anywhere-else
+      NEXT_PUBLIC_SERVER_URL: http://localhost:3000
+      PREVIEW_URL: http://localhost:3000
+      POSTGRES_USER: angelus
+      POSTGRES_PASSWORD: ci-only-password
+      POSTGRES_DB: angelus
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Preview stack starts with demo data
+        run: |
+          docker compose -f docker-compose.preview.yml up -d --build
+          for i in $(seq 60); do
+            if docker compose -f docker-compose.preview.yml logs app | grep -q 'Demo data created'; then break; fi
+            sleep 5
+          done
+          docker compose -f docker-compose.preview.yml logs app | grep -q 'Demo data created'
+          for path in /healthz /en/events/demo-studio-open-day; do
+            for i in $(seq 30); do curl -fsS -o /dev/null "http://localhost:3000$path" && break; sleep 2; done
+            curl -fsS -o /dev/null -w "$path %{http_code}\n" "http://localhost:3000$path"
+          done
+
+      - name: Preview logs
+        if: always()
+        run: docker compose -f docker-compose.preview.yml logs --no-color | tail -200
+
+      - name: Remove the preview stack
+        if: always()
+        run: docker compose -f docker-compose.preview.yml down -v
+
+      - name: Production stack starts and applies migrations
+        run: |
+          docker compose -f docker-compose.prod.yml up -d --build
+          for i in $(seq 60); do curl -fsS -o /dev/null http://localhost:3000/healthz && break; sleep 5; done
+          curl -fsS -o /dev/null -w "/healthz %{http_code}\n" http://localhost:3000/healthz
+
+      - name: Production logs
+        if: always()
+        run: docker compose -f docker-compose.prod.yml logs --no-color | tail -200
+
+      - name: Remove the production stack
+        if: always()
+        run: docker compose -f docker-compose.prod.yml down -v

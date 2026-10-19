@@ -49,6 +49,9 @@ set `PREVIEW_URL` and `PAYLOAD_SECRET`, and give the `app` service a domain such
 `preview.<your domain>`. To start over with fresh demo data, remove the stack together with its
 volumes (`docker compose -f docker-compose.preview.yml down -v`).
 
+The `Docker` workflow in CI builds this image and the production one on every pull request and
+starts both stacks, so a broken image shows up there before it reaches the server.
+
 The preview image is larger than the production one and runs as root, because it carries the
 full source and build tools. It is for demo data only; never point it at real data.
 
