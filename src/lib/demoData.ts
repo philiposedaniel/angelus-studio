@@ -456,6 +456,62 @@ export async function seedDemoData(
     },
   })
 
+  // A ticketed event the client hosts, held four days ago, so her portal shows real ticket sales
+  // and door check-ins. Both tickets are free: no payment is ever recorded without Stripe.
+  const party = await payload.create({
+    collection: 'events',
+    data: {
+      tenant: tenant.id,
+      title: 'Ferreira & Co. summer party',
+      slug: 'demo-ferreira-summer-party',
+      summary: 'Drinks, dinner and a photo booth for the team and their guests.',
+      startsAt: at(-4, 18),
+      timeZone: 'Europe/Lisbon',
+      location: 'LX Factory, Lisbon',
+      published: true,
+      listed: false,
+      organizers: [client.id],
+    },
+  })
+  const partyTicket = (name: string, capacity: number, sortOrder: number) =>
+    payload.create({
+      collection: 'ticket-types',
+      data: {
+        event: party.id,
+        name,
+        capacity,
+        maxPerOrder: 4,
+        sortOrder,
+        price: 0,
+        currency: 'eur',
+      },
+    })
+  const team = await partyTicket('Team', 40, 1)
+  const plusOne = await partyTicket('Guest of the team', 20, 2)
+  const partyGuests: [typeof team, string, number, number][] = [
+    [team, 'Beatriz Lopes', 4, 4],
+    [team, 'Carlos Nunes', 4, 3],
+    [team, 'Diana Rocha', 3, 3],
+    [team, 'Eduardo Pires', 4, 4],
+    [team, 'Filipa Sousa', 2, 0],
+    [plusOne, 'Gustavo Matos', 2, 2],
+    [plusOne, 'Helena Dias', 3, 2],
+  ]
+  for (const [ticketType, name, quantity, checkedInCount] of partyGuests) {
+    await payload.create({
+      collection: 'registrations',
+      data: {
+        ticketType: ticketType.id,
+        name,
+        email: `${name.split(' ')[0]!.toLowerCase()}@guests.demo.test`,
+        quantity,
+        status: 'confirmed',
+        checkedInCount,
+        language: 'en',
+      },
+    })
+  }
+
   // The workshop's one place is taken, so the next person waits for it.
   const waiting = await payload.create({
     collection: 'waitlist-entries',

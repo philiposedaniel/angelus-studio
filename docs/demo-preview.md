@@ -22,6 +22,8 @@ In the studio named by `DEFAULT_TENANT_SLUG` (default `angelus`):
 - Three pieces of **kit**, two reserved for the production and one of those already checked out.
 - A **public open day** with a free ticket, a sold-out workshop with one person on its waitlist,
   a priced ticket, a 20% promo code (`OPENDAY20`) and one confirmed registration.
+- A **ticketed party** the client hosted four days earlier, with two free ticket types, 22 places
+  taken and 18 people checked in at the door, so their portal shows ticket sales.
 - Three published **services** for the home page and a new **inquiry** in the admin inbox.
 
 It prints both sign-ins and a link to each page, using `NEXT_PUBLIC_SERVER_URL`.
