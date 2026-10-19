@@ -104,6 +104,7 @@ export const es: Dictionary = {
     calendarNext: 'Mes siguiente',
     calendarEmpty: 'No hay producciones este mes.',
     calendarLocation: 'Lugar',
+    calendarDownload: 'Descargar a su aplicación de calendario (12 meses)',
     productionStatus: {
       planning: 'En planificación',
       confirmed: 'Confirmada',

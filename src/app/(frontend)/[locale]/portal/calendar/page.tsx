@@ -47,6 +47,11 @@ export default async function CalendarPage({ params, searchParams }: PageProps<'
   return (
     <section className="mx-auto max-w-4xl px-4 py-20 sm:px-8">
       <h1 className="font-display text-4xl sm:text-5xl">{t.calendarHeading}</h1>
+      <p className="mt-4">
+        <a href={`/${locale}/portal/calendar/export`} className="text-gold hover:underline">
+          {t.calendarDownload}
+        </a>
+      </p>
       <nav className="mt-8 flex items-center justify-between gap-4" aria-label={monthLabel}>
         <Link href={`/${locale}/portal/calendar?month=${previous.value}`} className="text-gold hover:underline">
           ← {t.calendarPrevious}
