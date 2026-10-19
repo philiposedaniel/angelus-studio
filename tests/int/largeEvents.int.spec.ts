@@ -31,9 +31,11 @@ const TARGETS = {
   placesTaken: 150,
   eventPage: 400,
   waitlistPosition: 150,
-  // The downloads read every row, so they slow most when other test files share the database.
-  attendeeCsv: 4_000,
-  guestCsv: 4_000,
+  // The downloads read every row and take about a second alone, but several times that when the
+  // other test files load the same database. The limit is there to catch a query per row, which
+  // takes far longer at this size, not to time the download closely.
+  attendeeCsv: 10_000,
+  guestCsv: 10_000,
   guestPage: 300,
   rsvpSummary: 100,
   registrationSummary: 1_000,

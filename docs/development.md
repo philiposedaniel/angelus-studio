@@ -601,8 +601,8 @@ read is well under it.
 | Organizer guest list, one page of 100 or a search | 300 ms | about 20 ms |
 | Event headcount (admin and organizer page) | 100 ms | 3 ms |
 | Registration summary on the event (admin) | 1 s | about 350 ms |
-| Attendee list CSV | 4 s | about 0.9 s |
-| Guest list CSV | 4 s | about 0.5 s |
+| Attendee list CSV | 10 s | about 1 s |
+| Guest list CSV | 10 s | about 1 s |
 
 Places taken, promo code use and the headcount are summed in Postgres instead of loading every
 row (they had taken about half a second at this size). Raw SQL goes through `runSql` in
