@@ -1,11 +1,15 @@
 import { APIError, Forbidden, type CollectionConfig } from 'payload'
 
-import { hasTenantRole, isStaffAnywhere, isSuperAdmin, tenantRoles } from '@/access'
+import { hasTenantRole, isSuperAdmin, tenantRoles } from '@/access'
 import { queueEmail } from '@/lib/email'
 import { idOf } from '@/lib/ids'
 import { CURRENCIES, CURRENCY_LABELS, MAX_AMOUNT } from '@/lib/money'
 import { newShareToken } from '@/lib/shareTokens'
+import { ORGANIZER_VENDOR_STATUSES, staffOnlyField, staffOrEventOrganizers } from '@/lib/organizers'
 import { BOOKING_STATUSES, BOOKING_STATUS_LABELS, sendVendorLink, VENDOR_STAFF_ROLES } from '@/lib/vendors'
+
+/** Money, notes and links stay with the studio's staff; organizers see who is coming and when. */
+const staffField = staffOnlyField(VENDOR_STAFF_ROLES)
 
 const isAmount = (value: unknown) =>
   value === null ||
@@ -28,7 +32,8 @@ export const EventVendors: CollectionConfig = {
   },
   defaultSort: 'arrivalAt',
   access: {
-    read: tenantRoles(VENDOR_STAFF_ROLES),
+    // The event's organizers see its booked and confirmed vendors, read only.
+    read: staffOrEventOrganizers(VENDOR_STAFF_ROLES, { organizerWhere: { status: { in: [...ORGANIZER_VENDOR_STATUSES] } } }),
     create: tenantRoles(VENDOR_STAFF_ROLES),
     update: tenantRoles(VENDOR_STAFF_ROLES),
     delete: tenantRoles(VENDOR_STAFF_ROLES),
@@ -137,6 +142,7 @@ export const EventVendors: CollectionConfig = {
       fields: [
         {
           name: 'currency',
+          access: { read: staffField },
           type: 'select',
           required: true,
           defaultValue: 'eur',
@@ -144,6 +150,7 @@ export const EventVendors: CollectionConfig = {
         },
         {
           name: 'amountDue',
+          access: { read: staffField },
           type: 'number',
           defaultValue: 0,
           admin: { description: 'Agreed fee, in minor units (12550 means 125.50).' },
@@ -151,6 +158,7 @@ export const EventVendors: CollectionConfig = {
         },
         {
           name: 'amountPaid',
+          access: { read: staffField },
           type: 'number',
           defaultValue: 0,
           admin: { description: 'Paid so far, in minor units.' },
@@ -158,7 +166,7 @@ export const EventVendors: CollectionConfig = {
         },
       ],
     },
-    { name: 'paymentDueDate', type: 'date', admin: { date: { pickerAppearance: 'dayOnly' } } },
+    { name: 'paymentDueDate', type: 'date', access: { read: staffField }, admin: { date: { pickerAppearance: 'dayOnly' } } },
     {
       name: 'vendorLink',
       type: 'ui',
@@ -170,14 +178,14 @@ export const EventVendors: CollectionConfig = {
       type: 'date',
       admin: { readOnly: true, position: 'sidebar', date: { pickerAppearance: 'dayAndTime' }, description: 'When the vendor was last emailed their link.' },
       // Set only by the email job.
-      access: { create: () => false, update: () => false },
+      access: { read: staffField, create: () => false, update: () => false },
     },
     {
       name: 'confirmationNoticeSentFor',
       type: 'date',
       admin: { hidden: true },
       // The confirmation the studio was last emailed about, set only by the email job.
-      access: { create: () => false, update: () => false },
+      access: { read: staffField, create: () => false, update: () => false },
     },
     {
       name: 'confirmedAt',
@@ -189,15 +197,16 @@ export const EventVendors: CollectionConfig = {
       label: 'Note from the vendor',
       type: 'textarea',
       maxLength: 1000,
+      access: { read: staffField },
       admin: { readOnly: true },
     },
-    { name: 'staffNotes', type: 'textarea', maxLength: 2000, admin: { description: 'Only staff see this.' } },
+    { name: 'staffNotes', type: 'textarea', maxLength: 2000, access: { read: staffField }, admin: { description: 'Only staff see this.' } },
     {
       name: 'vendorToken',
       type: 'text',
       unique: true,
       admin: { hidden: true },
-      access: { read: ({ req: { user } }) => isStaffAnywhere(user) },
+      access: { read: staffField },
     },
   ],
 }

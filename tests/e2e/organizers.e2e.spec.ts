@@ -27,6 +27,7 @@ test.describe('Organizers manage their guest list', () => {
     const payload = await getPayload({ config })
     const tenant = (await payload.find({ collection: 'tenants', where: { slug: { equals: E2E_TENANT.slug } } })).docs[0]!
     await payload.delete({ collection: 'events', where: { slug: { like: PREFIX } } })
+    await payload.delete({ collection: 'vendors', where: { name: { like: PREFIX } } })
     await payload.delete({ collection: 'users', where: { email: { like: PREFIX } } })
     const makeUser = (data: typeof host) =>
       payload.create({
@@ -48,6 +49,27 @@ test.describe('Organizers manage their guest list', () => {
       },
     })
     eventId = event.id
+    const vendor = await payload.create({
+      collection: 'vendors',
+      data: { tenant: tenant.id, name: `${PREFIX}Lisbon Sound`, category: 'music', phone: '+351 900 000 000' },
+    })
+    await payload.create({
+      collection: 'event-vendors',
+      data: {
+        event: event.id,
+        vendor: vendor.id,
+        role: 'DJ for the reception',
+        status: 'confirmed',
+        arrivalAt: '2027-06-12T13:00:00.000Z',
+        currency: 'eur',
+        amountDue: 120000,
+        staffNotes: 'Negotiated down',
+      } as never,
+    })
+    await payload.create({
+      collection: 'ticket-types',
+      data: { event: event.id, name: 'Reception seats', capacity: 20, maxPerOrder: 5 } as never,
+    })
   })
 
   test('the host adds, changes and removes guests from their portal', async ({ page }) => {
@@ -75,6 +97,18 @@ test.describe('Organizers manage their guest list', () => {
     page.once('dialog', (dialog) => dialog.accept())
     await page.getByRole('button', { name: 'Remove' }).click()
     await expect(page.getByText('No guests yet.')).toBeVisible()
+  })
+
+  test('the host sees who is working the event and how tickets sell, without the money', async ({ page }) => {
+    await signIn(page, host)
+    await page.goto(`${BASE}/en/portal/events/${eventId}`)
+    await expect(page.getByRole('heading', { name: 'Vendors' })).toBeVisible()
+    await expect(page.getByText(`${PREFIX}Lisbon Sound · DJ for the reception`)).toBeVisible()
+    await expect(page.getByText(/Arrives .*Confirmed/)).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Tickets' })).toBeVisible()
+    await expect(page.getByText('0 of 20 sold')).toBeVisible()
+    const text = await page.locator('main').innerText()
+    for (const hidden of ['1,200', '1200', 'Negotiated', '+351']) expect(text).not.toContain(hidden)
   })
 
   test('someone who does not organize the event cannot open its guest list', async ({ page }) => {

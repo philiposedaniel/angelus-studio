@@ -17,7 +17,7 @@ with tickets, and everything around them. Technical details and limits are in
 
 Everything is per studio: staff only ever see their own studio's events, guests and money.
 Clients can be named as an event's **organizers**, who then manage that event's guest list from
-the client portal (see the [client guide](events-client-guide.md)).
+the client portal (see the [client guide](events-client-guide.md)). They also see the event's booked vendors and ticket sales there, without amounts or buyers.
 
 ## 1. Create the event
 
@@ -99,6 +99,8 @@ editor when the studio offers more than one language.
    Stripe confirms it, then *Refunded*. For a partial refund, refund in the Stripe dashboard; the
    payment records the amount.
 8. **Download the attendee list (CSV)** from the event's *Registration and tickets* section.
+9. The event's organizers see places sold and checked in per ticket type in their portal, but
+   never who bought them.
 
 When the studio's email is set up, buyers get their ticket by email once it is confirmed, and
 people on a waitlist are emailed when places are offered to them. About a day before the event,
@@ -118,6 +120,9 @@ again.
    *Email the link to the vendor* sends it again after you change the details. Put the studio's
    address in the event's *Studio address for notices* to hear when vendors confirm.
 4. The event's vendor section shows arrival times and what is still to pay.
+5. The event's organizers see the *booked* and *confirmed* vendors in their portal: name, role,
+   arrival time and status. They never see amounts, notes, the vendor link or the vendor's contact
+   details. Keep a vendor *proposed* until you want the host to see it.
 
 ## 5. On the day: check-in
 

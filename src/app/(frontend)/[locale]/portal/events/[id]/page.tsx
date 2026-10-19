@@ -12,8 +12,9 @@ import { requirePortalUser } from '@/lib/auth'
 import { formatEventWhen } from '@/lib/eventTime'
 import { idOf } from '@/lib/ids'
 import { resolveLocale, tenantLocales } from '@/lib/locale'
-import { isGuestListStaff, isOrganizerOf } from '@/lib/organizers'
+import { isGuestListStaff, isOrganizerOf, ORGANIZER_VENDOR_STATUSES } from '@/lib/organizers'
 import { describeParty, eventMealCounts, eventRsvpSummary, summarizeMeals } from '@/lib/rsvp'
+import { eventTicketSales } from '@/lib/tickets'
 import { siteOrigin } from '@/lib/siteOrigin'
 import { getCurrentTenant } from '@/lib/tenant'
 
@@ -90,6 +91,29 @@ export default async function OrganizerEventPage({
   const to = from === 0 ? 0 : from + guests.length - 1
   const languages = offered.map((value) => ({ value, label: LOCALE_LABELS[value] }))
 
+  // Who is working the event and how tickets are selling, read as the organizer: the studio's
+  // amounts, notes and the vendors' contact details are not readable by them.
+  const [vendors, ticketTypes, sales] = await Promise.all([
+    payload
+      .find({
+        collection: 'event-vendors',
+        where: { and: [{ event: { equals: event.id } }, { status: { in: [...ORGANIZER_VENDOR_STATUSES] } }] },
+        sort: 'arrivalAt',
+        pagination: false,
+        depth: 1,
+        user,
+        overrideAccess: false,
+      })
+      .then((result) => result.docs)
+      .catch(() => []),
+    payload
+      .find({ collection: 'ticket-types', where: { event: { equals: event.id } }, sort: 'sortOrder', pagination: false, locale, ...access })
+      .then((result) => result.docs)
+      .catch(() => []),
+    eventTicketSales(payload, event.id),
+  ])
+  const arrival = new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short', timeZone: event.timeZone || 'Europe/Lisbon' })
+
   return (
     <section className="mx-auto grid max-w-5xl gap-10 px-4 py-16 sm:px-8">
       <header className="grid gap-2">
@@ -126,6 +150,48 @@ export default async function OrganizerEventPage({
                 </li>
               ),
             )}
+          </ul>
+        </div>
+      )}
+
+      {ticketTypes.length > 0 && (
+        <div className="grid gap-3">
+          <h2 className="text-sm uppercase tracking-widest text-gold">{t.tickets}</h2>
+          <ul className="grid gap-3 sm:grid-cols-2">
+            {ticketTypes.map((ticketType) => {
+              const sold = sales.get(String(ticketType.id)) ?? { sold: 0, arrived: 0 }
+              return (
+                <li key={ticketType.id} className="grid gap-1 rounded-xl border border-ivory/10 bg-charcoal p-4">
+                  <span className="font-medium">{ticketType.name}</span>
+                  <span className="text-sm text-mist">
+                    {t.sold.replace('{sold}', String(sold.sold)).replace('{capacity}', String(ticketType.capacity ?? 0))}
+                    {sold.arrived > 0 && ` · ${t.checkedIn.replace('{count}', String(sold.arrived))}`}
+                    {ticketType.onSale === false && ` · ${t.notOnSale}`}
+                  </span>
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+      )}
+
+      {vendors.length > 0 && (
+        <div className="grid gap-3">
+          <h2 className="text-sm uppercase tracking-widest text-gold">{t.vendors}</h2>
+          <p className="text-sm text-mist">{t.vendorsHelp}</p>
+          <ul className="grid gap-3 sm:grid-cols-2">
+            {vendors.map((booking) => (
+              <li key={booking.id} className="grid gap-1 rounded-xl border border-ivory/10 bg-charcoal p-4">
+                <span className="font-medium">
+                  {typeof booking.vendor === 'object' && booking.vendor ? booking.vendor.name : ''} · {booking.role}
+                </span>
+                <span className="text-sm text-mist">
+                  {booking.arrivalAt ? t.arrives.replace('{time}', arrival.format(new Date(booking.arrivalAt))) : t.noArrival}
+                  {' · '}
+                  {t.vendorStatus[booking.status as (typeof ORGANIZER_VENDOR_STATUSES)[number]] ?? ''}
+                </span>
+              </li>
+            ))}
           </ul>
         </div>
       )}

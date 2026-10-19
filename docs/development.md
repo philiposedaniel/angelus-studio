@@ -432,10 +432,21 @@ set; there is no per-event colour or font picker yet.
 - Studio admins and production managers can open the same page for any event of their studio.
 - The guest list shows 100 guests a page, sorted by name, with a search by name or email; the
   headcount and the CSV download always cover the whole list.
+- The same page lists the event's **vendors** that are *booked* or *confirmed*: name, role,
+  arrival time in the event's time zone and status. Organizers read these bookings, and those
+  vendors' name and category, through the normal access rules. Field access keeps everything
+  else from them: amounts, currency, payment date, staff notes, the vendor's note and private
+  link, and the vendor's contact details and notes. Proposed and cancelled bookings stay hidden.
+- It also shows the event's **tickets**: per ticket type, places sold (confirmed only) of the
+  capacity, and how many have checked in (`eventTicketSales` in `src/lib/tickets.ts`, summed in
+  the database). Organizers can read the event's ticket types but never registrations, so buyers'
+  names and addresses stay with the studio.
+- Organizers can change none of this, and only studio staff can send a vendor their link.
+  `tests/int/organizerVendorsTickets.int.spec.ts` tries each of these as the host, as another
+  event's host and as another studio's host.
 
-Known limits: organizers cannot import guests from CSV, manage seating or vendors, or edit the
-event itself from the portal; staff do those in the admin. Organizers are not emailed until the
-email account exists.
+Known limits: organizers cannot import guests from CSV, manage seating, book vendors, sell or
+refund tickets, or edit the event itself from the portal; staff do those in the admin.
 
 ## Registration and tickets
 

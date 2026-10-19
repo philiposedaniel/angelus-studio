@@ -19,9 +19,12 @@ The studio can name you as an organizer of your event. You then manage its guest
 5. **Download the guest list** as a spreadsheet at any time.
 6. If the studio sends email, you get an email each time a guest replies or changes their reply,
    with who is coming and their meals. Ask the studio if you would rather not get them.
+7. The same page lists the **vendors** the studio has booked for your event, with their role, when
+   they arrive and whether they have confirmed, and, if the event sells **tickets**, how many places
+   are sold of each ticket and how many people have checked in.
 
-The studio handles the invitation design, seating, vendors and the event details. Ask them for
-changes to those.
+The studio handles the invitation design, seating, vendors, tickets and the event details. Ask
+them for changes to those.
 
 ## If you are invited (guest)
 

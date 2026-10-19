@@ -1,5 +1,6 @@
 import type { Payload, PayloadHandler } from 'payload'
 
+import { hasTenantRole, isSuperAdmin } from '@/access/roles'
 import { emailConfigured, queueEmail } from '@/lib/email'
 import { idOf } from '@/lib/ids'
 import { isShareToken } from '@/lib/shareTokens'
@@ -168,7 +169,10 @@ export const sendVendorLink: PayloadHandler = async (req) => {
   const booking = await req.payload
     .findByID({ collection: 'event-vendors', id: String(id), depth: 0, req, user: req.user, overrideAccess: false })
     .catch(() => null)
-  if (!booking) return fail(404, 'Booking not found.')
+  // Organizers can read their event's bookings, but only the studio's staff send links.
+  if (!booking || !(isSuperAdmin(req.user) || hasTenantRole(req.user, idOf(booking.tenant) ?? '', VENDOR_STAFF_ROLES))) {
+    return fail(404, 'Booking not found.')
+  }
   if (booking.status === 'cancelled') return fail(409, 'This booking is cancelled.')
   const vendor = await req.payload
     .findByID({ collection: 'vendors', id: idOf(booking.vendor)!, depth: 0, req, user: req.user, overrideAccess: false })
