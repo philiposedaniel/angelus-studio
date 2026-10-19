@@ -1,7 +1,7 @@
 import { sql } from '@payloadcms/db-postgres'
 import type { Payload } from 'payload'
 
-import { isLocale, type Locale } from '@/i18n/config'
+import { isLocale, LOCALE_LABELS, type Locale } from '@/i18n/config'
 import { getDictionary } from '@/i18n/dictionaries'
 import { fromStudio, renderEmail, type EmailKind, type EmailMessage } from '@/lib/email'
 import { formatEventWhen } from '@/lib/eventTime'
@@ -66,6 +66,11 @@ const SENT_COLUMNS = {
       sql`UPDATE event_guests SET day_before_sent_at = now() WHERE id = ${id} AND day_before_sent_at IS NULL RETURNING id`,
     release: (id: number) => sql`UPDATE event_guests SET day_before_sent_at = NULL WHERE id = ${id}`,
   },
+  inquiryAlert: {
+    claim: (id: number) =>
+      sql`UPDATE inquiries SET alert_sent_at = now() WHERE id = ${id} AND alert_sent_at IS NULL RETURNING id`,
+    release: (id: number) => sql`UPDATE inquiries SET alert_sent_at = NULL WHERE id = ${id}`,
+  },
   ticketDayBefore: {
     claim: (id: number) =>
       sql`UPDATE registrations SET day_before_sent_at = now() WHERE id = ${id} AND day_before_sent_at IS NULL RETURNING id`,
@@ -95,6 +100,8 @@ const plural = (forms: { one: string; other: string }, count: number) =>
 type Prepared = {
   to: string | string[]
   from: string
+  /** Where answers go, when that is not the studio's sending address. */
+  replyTo?: string
   subject: string
   text: string
   html: string
@@ -149,11 +156,13 @@ const finish = (
   tenant: Tenant,
   message: EmailMessage,
   to: string | string[] = message.to,
+  replyTo?: string,
 ): Prepared => {
   const { text, html } = renderEmail(message, tenant.name)
   return {
     to,
     from: fromStudio(tenant.name),
+    replyTo,
     subject: message.subject,
     text,
     html,
@@ -246,6 +255,51 @@ export async function prepareEventEmail(payload: Payload, kind: EmailKind, id: n
       action: { label: t.vendorConfirmed.action, url: `${origin}/admin/collections/event-vendors/${booking.id}` },
       note: t.vendorConfirmed.note,
     })
+  }
+
+  if (kind === 'inquiryAlert') {
+    const inquiry = await payload.findByID({ collection: 'inquiries', id, ...system }).catch(() => null)
+    if (!inquiry || inquiry.alertSentAt) return null
+    const tenant = await payload.findByID({ collection: 'tenants', id: idOf(inquiry.tenant)!, ...system }).catch(() => null)
+    if (!tenant) return null
+    const settings = (
+      await payload.find({ collection: 'site-settings', where: { tenant: { equals: tenant.id } }, limit: 1, ...system })
+    ).docs[0]
+    const to = settings?.contact?.email
+    if (!to || settings.contact?.inquiryAlerts === false) return null
+    // Staff read the studio's first language; the inquiry says which one the visitor wrote in.
+    const locale = tenantLocales(tenant)[0]!
+    const dictionary = getDictionary(locale)
+    const t = dictionary.emails.inquiryAlert
+    const origin = await siteOrigin(payload, tenant.id)
+    const eventDate = inquiry.eventDate
+      ? new Intl.DateTimeFormat(locale, { dateStyle: 'long', timeZone: 'UTC' }).format(new Date(inquiry.eventDate))
+      : null
+    // Worth saying only when the visitor wrote in another language than this email's.
+    const language = isLocale(inquiry.locale) && inquiry.locale !== locale ? LOCALE_LABELS[inquiry.locale] : null
+    return finish(
+      payload,
+      kind,
+      id,
+      tenant,
+      {
+        to,
+        subject: t.subject.replace('{name}', inquiry.name),
+        paragraphs: [
+          t.body.replace('{name}', inquiry.name),
+          t.type.replace('{type}', dictionary.inquiry.eventTypes[inquiry.eventType]),
+          ...(eventDate ? [t.date.replace('{date}', eventDate)] : []),
+          ...(inquiry.location ? [t.location.replace('{location}', inquiry.location)] : []),
+          t.contact.replace('{email}', inquiry.email) + (inquiry.phone ? ` · ${inquiry.phone}` : ''),
+          ...(language ? [t.language.replace('{language}', language)] : []),
+          inquiry.message,
+        ],
+        action: { label: t.action, url: `${origin}/admin/collections/inquiries/${inquiry.id}` },
+        note: t.note.replace('{name}', inquiry.name),
+      },
+      to,
+      inquiry.email,
+    )
   }
 
   if (kind === 'replyNotice') {

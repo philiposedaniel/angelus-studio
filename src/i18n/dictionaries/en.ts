@@ -487,6 +487,17 @@ export const en = {
       action: 'Open the booking',
       note: 'You receive this as the studio address for notices on this event.',
     },
+    inquiryAlert: {
+      subject: 'New inquiry from {name}',
+      body: '{name} sent a request from the website.',
+      type: 'Production: {type}',
+      date: 'Date: {date}',
+      location: 'Location: {location}',
+      contact: 'Contact: {email}',
+      language: 'Wrote in: {language}',
+      action: 'Open the inquiry',
+      note: 'Reply to this email to answer {name} directly. You receive this as the contact address in the site settings.',
+    },
     replyNotice: {
       subject: '{name} replied: {event}',
       body: '{name} replied to the invitation to {event}.',

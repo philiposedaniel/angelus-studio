@@ -489,6 +489,17 @@ export const es: Dictionary = {
       action: 'Abrir la reserva',
       note: 'Recibes esto como dirección del estudio para avisos de este evento.',
     },
+    inquiryAlert: {
+      subject: 'Nueva solicitud de {name}',
+      body: '{name} ha enviado una solicitud desde la web.',
+      type: 'Producción: {type}',
+      date: 'Fecha: {date}',
+      location: 'Lugar: {location}',
+      contact: 'Contacto: {email}',
+      language: 'Escribió en: {language}',
+      action: 'Abrir la solicitud',
+      note: 'Responde a este correo para contestar a {name} directamente. Lo recibes como dirección de contacto de la configuración del sitio.',
+    },
     replyNotice: {
       subject: '{name} ha respondido: {event}',
       body: '{name} ha respondido a la invitación a {event}.',

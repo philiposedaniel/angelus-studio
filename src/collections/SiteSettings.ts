@@ -32,6 +32,13 @@ export const SiteSettings: CollectionConfig = {
             !value || /^\d{7,15}$/.test(value) || 'Digits only, 7 to 15 of them.',
         },
         { name: 'address', type: 'textarea', localized: true },
+        {
+          name: 'inquiryAlerts',
+          type: 'checkbox',
+          defaultValue: true,
+          label: 'Email this address when a website inquiry arrives',
+          admin: { description: 'Works once email sending is set up. Answer by replying to the email.' },
+        },
       ],
     },
     {

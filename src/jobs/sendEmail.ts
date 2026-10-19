@@ -13,7 +13,14 @@ export async function deliverEventEmail(payload: Payload, kind: EmailKind, id: n
   if (!email) return false
   if (!(await email.claim())) return false
   try {
-    await payload.sendEmail({ to: email.to, from: email.from, subject: email.subject, text: email.text, html: email.html })
+    await payload.sendEmail({
+      to: email.to,
+      from: email.from,
+      ...(email.replyTo ? { replyTo: email.replyTo } : {}),
+      subject: email.subject,
+      text: email.text,
+      html: email.html,
+    })
   } catch (error) {
     await email.release()
     throw error

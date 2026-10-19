@@ -556,6 +556,12 @@ error if it fails.
   replies* on the event. The guest's hidden `replyNoticeSentFor` holds the reply time last
   announced, so a reply is announced once however often the job runs.
 - **Vendor links and confirmations:** see *Vendors*.
+- **Inquiry alerts:** each inquiry saved from the website's form (after the spam and rate checks)
+  sends one email to the studio's contact address in *Site settings*, in the studio's first
+  language, with the request, the visitor's contact details and a link to it in the admin. Its
+  Reply-To is the visitor, so staff answer by replying. Untick *Email this address when a website
+  inquiry arrives* in the site settings to stop them. The inquiry's *Alert emailed* shows when it
+  went (migration `20261019_154148_inquiry_alerts`).
 - **Day-before reminders:** the `send-event-reminders` job runs every 5 minutes and, for each
   published event starting within 24 hours, emails guests who are coming and confirmed ticket
   holders once, with the time, the place and their invitation or ticket (and its entry code).
@@ -575,8 +581,8 @@ real SMTP server.
 
 Known limits: reply notices go one by one (no daily digest yet), and reminders are not sent to guests
 who were never given an email address. An event moved to a later date after its day-before
-reminders went out does not send them again. Inquiry
-alerts, client gallery links and vendor notices are not emailed yet. Delivery problems (bounces,
+reminders went out does not send them again. Client gallery links are not emailed yet, and
+inquiry alerts go to one address only. Delivery problems (bounces,
 spam reports) are only visible in the email service's own dashboard. The sending domain must be
 verified with the service (SPF and DKIM records in DNS), or messages land in spam.
 

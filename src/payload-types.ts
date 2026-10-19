@@ -475,6 +475,10 @@ export interface SiteSetting {
      */
     whatsapp?: string | null;
     address?: string | null;
+    /**
+     * Works once email sending is set up. Answer by replying to the email.
+     */
+    inquiryAlerts?: boolean | null;
   };
   socialLinks?:
     | {
@@ -602,6 +606,10 @@ export interface Inquiry {
    * Internal notes.
    */
   notes?: string | null;
+  /**
+   * When the studio was emailed about this inquiry.
+   */
+  alertSentAt?: string | null;
   senderKey?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -1743,6 +1751,7 @@ export interface SiteSettingsSelect<T extends boolean = true> {
         phone?: T;
         whatsapp?: T;
         address?: T;
+        inquiryAlerts?: T;
       };
   socialLinks?:
     | T
@@ -1880,6 +1889,7 @@ export interface InquiriesSelect<T extends boolean = true> {
   locale?: T;
   status?: T;
   notes?: T;
+  alertSentAt?: T;
   senderKey?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -2401,7 +2411,8 @@ export interface TaskSendEmail {
       | 'ticketDayBefore'
       | 'replyNotice'
       | 'vendorBooking'
-      | 'vendorConfirmed';
+      | 'vendorConfirmed'
+      | 'inquiryAlert';
     id: number;
   };
   output?: unknown;
