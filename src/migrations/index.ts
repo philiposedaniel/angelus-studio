@@ -26,6 +26,7 @@ import * as migration_20261017_192724_promo_codes from './20261017_192724_promo_
 import * as migration_20261017_195026_ticket_refunds from './20261017_195026_ticket_refunds';
 import * as migration_20261017_204530_photo_selections from './20261017_204530_photo_selections';
 import * as migration_20261017_215543_equipment_checkout from './20261017_215543_equipment_checkout';
+import * as migration_20261019_150514_add_staff_mfa from './20261019_150514_add_staff_mfa';
 
 export const migrations = [
   {
@@ -167,5 +168,10 @@ export const migrations = [
     up: migration_20261017_215543_equipment_checkout.up,
     down: migration_20261017_215543_equipment_checkout.down,
     name: '20261017_215543_equipment_checkout',
+  },
+  {
+    up: migration_20261019_150514_add_staff_mfa.up,
+    down: migration_20261019_150514_add_staff_mfa.down,
+    name: '20261019_150514_add_staff_mfa',
   },
 ];

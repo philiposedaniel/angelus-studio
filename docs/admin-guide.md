@@ -22,6 +22,28 @@ control.
 
 Platform super-admins can work across studios. Each studio's records are kept apart from other studios.
 
+## Signing in with an authenticator app
+
+Staff can add an authenticator app (any app that makes six-digit time-based codes, such as Google
+Authenticator, 1Password or Aegis) to their account. Once it is on, signing in needs a current code as well as
+the password.
+
+1. Sign in at `/portal/login` and open **Security** from the portal.
+2. Add the shown setup key to the app, choosing time-based codes, or open the setup link on a phone with the app.
+3. Type the six-digit code the app shows and press **Turn on**. A wrong code changes nothing.
+4. To turn it off, type a current code and press **Turn off**.
+
+Sign-in details:
+
+- Staff who have it on sign in to `/portal/login` with the code. To reach `/admin`, sign in there first, then
+  open `/admin`.
+- Five wrong codes in a row lock the code check for 15 minutes. A code can be used once.
+- A studio administrator of the same studio can turn it off for a staff member (their user record, tick
+  **Turn off authenticator sign-in** and save). Platform super-admins can too. Other studios cannot.
+
+Known limitations: there are no recovery codes yet, so a lost phone is cleared by a studio administrator. Only
+the authenticator app is offered; email codes are not.
+
 ## Quotes and contracts
 
 Quotes live under **Sales > Quotes**.
