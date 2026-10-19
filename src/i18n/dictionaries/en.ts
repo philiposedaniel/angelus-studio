@@ -219,6 +219,8 @@ export const en = {
     kindBalance: 'Balance',
     paidOn: 'paid',
     backToQuote: 'Back to the quote',
+    title: 'Invoice',
+    downloadPdf: 'Download as PDF',
   },
   events: {
     heading: 'Events',

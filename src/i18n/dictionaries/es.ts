@@ -221,6 +221,8 @@ export const es: Dictionary = {
     kindBalance: 'Saldo',
     paidOn: 'pagado el',
     backToQuote: 'Volver al presupuesto',
+    title: 'Factura',
+    downloadPdf: 'Descargar en PDF',
   },
   events: {
     heading: 'Eventos',

@@ -59,8 +59,8 @@ the page still shows a payment as due after a while, contact the studio with the
 ### Your invoice
 
 Each quote has an invoice view, linked from the quote page. It shows the line items, the total, the deposit and
-balance paid so far, the amount still due, and every confirmed payment. It cannot be downloaded as a PDF yet; you
-can print it from your browser.
+balance paid so far, the amount still due, and every confirmed payment. Use **Download as PDF** on that page to
+save a copy.
 
 ## If something looks wrong
 

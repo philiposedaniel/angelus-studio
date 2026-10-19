@@ -37,6 +37,7 @@
     "lucide-react": "^1.57.0",
     "next": "16.3.3",
     "payload": "3.90.2",
+    "pdf-lib": "1.17.1",
     "qrcode": "1.5.4",
     "react": "19.2.6",
     "react-dom": "19.2.6",
