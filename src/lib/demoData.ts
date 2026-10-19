@@ -4,6 +4,7 @@ import type { Payload } from 'payload'
 import sharp from 'sharp'
 
 import type { Tenant, User } from '@/payload-types'
+import type { VendorCategory } from '@/lib/vendors'
 
 /** Thrown when demo data would be mixed into a database that already has real people in it. */
 export class DemoDataRefused extends Error {}
@@ -101,6 +102,32 @@ export async function seedDemoData(
     })
   }
 
+  const services = await payload.count({
+    collection: 'services',
+    where: { tenant: { equals: tenant.id } },
+  })
+  if (services.totalDocs === 0) {
+    const demoServices = [
+      [
+        'Wedding photography',
+        'demo-weddings',
+        'The whole day, from getting ready to the last dance, delivered in a private gallery.',
+      ],
+      ['Films', 'demo-films', 'Highlight films and full-length edits, graded and scored.'],
+      [
+        'Live events',
+        'demo-live-events',
+        'Multi-camera coverage, livestreams and sound for conferences and concerts.',
+      ],
+    ] as const
+    for (const [order, [title, slug, summary]] of demoServices.entries()) {
+      await payload.create({
+        collection: 'services',
+        data: { tenant: tenant.id, title, slug, summary, order, published: true },
+      })
+    }
+  }
+
   const adminEmail = demoEmail('admin', tenantSlug)
   const clientEmail = demoEmail('client', tenantSlug)
   const already = await payload.find({
@@ -191,7 +218,7 @@ export async function seedDemoData(
     overrideAccess: true,
   })
 
-  await payload.create({
+  const project = await payload.create({
     collection: 'projects',
     data: {
       tenant: tenant.id,
@@ -259,6 +286,7 @@ export async function seedDemoData(
     { name: 'Sofia Martins', partySize: 1, rsvpStatus: 'pending' },
   ] as const
   let inviteToken = ''
+  const attending: { id: number; partySize: number }[] = []
   for (const g of guests) {
     const guest = await payload.create({
       collection: 'event-guests',
@@ -270,7 +298,106 @@ export async function seedDemoData(
       },
     })
     if (g.rsvpStatus === 'pending' && !inviteToken) inviteToken = guest.inviteToken ?? ''
+    if (g.rsvpStatus === 'attending') attending.push({ id: guest.id, partySize: g.partySize })
   }
+
+  // Seating: two tables, with the guests who are coming at the first one.
+  const [familyTable] = await Promise.all(
+    (
+      [
+        ['Family', 8, 1],
+        ['Friends', 10, 2],
+      ] as const
+    ).map(([name, capacity, sortOrder]) =>
+      payload.create({
+        collection: 'event-tables',
+        data: { event: wedding.id, name, capacity, sortOrder },
+      }),
+    ),
+  )
+  for (const guest of attending) {
+    await payload.update({
+      collection: 'event-guests',
+      id: guest.id,
+      data: { table: familyTable.id },
+    })
+  }
+
+  // Vendors booked for the wedding: one confirmed and part paid, one still a proposal.
+  const vendor = (name: string, category: VendorCategory, contactName: string) =>
+    payload.create({
+      collection: 'vendors',
+      data: {
+        tenant: tenant.id,
+        name,
+        category,
+        contactName,
+        email: `${category}@vendors.demo.test`,
+      },
+    })
+  const florist = await vendor('Flores do Jardim', 'florist', 'Marta Lopes')
+  const caterer = await vendor('Mesa Lisboa', 'catering', 'Tiago Reis')
+  const floristBooking = await payload.create({
+    collection: 'event-vendors',
+    data: {
+      event: wedding.id,
+      vendor: florist.id,
+      role: 'Ceremony and table flowers',
+      status: 'confirmed',
+      arrivalAt: new Date(Date.now() + 40 * DAY - 6 * 3_600_000).toISOString(),
+      instructions: 'Unload at the side gate. Power is in the chapel vestry.',
+      currency: 'eur',
+      amountDue: 120000,
+      amountPaid: 40000,
+    },
+  })
+  await payload.create({
+    collection: 'event-vendors',
+    data: {
+      event: wedding.id,
+      vendor: caterer.id,
+      role: 'Dinner for 120',
+      status: 'proposed',
+      currency: 'eur',
+      amountDue: 960000,
+    },
+  })
+
+  // Kit for the production: two pieces reserved, one already out of the studio.
+  const kit = async (name: string, category: string, serialNumber: string) =>
+    payload.create({
+      collection: 'equipment',
+      data: { tenant: tenant.id, name, category, serialNumber, active: true },
+    })
+  const camera = await kit('Sony FX3', 'Camera', 'FX3-0142')
+  const gimbal = await kit('DJI RS 4 Pro', 'Gimbal', 'RS4-2210')
+  await kit('Aputure 600d', 'Light', 'AP6-0087')
+  const shootStart = new Date(Date.now() + 40 * DAY)
+  shootStart.setUTCHours(8, 0, 0, 0)
+  const shootEnd = new Date(shootStart.getTime() + 16 * 3_600_000)
+  await payload.create({
+    collection: 'equipment-reservations',
+    data: {
+      tenant: tenant.id,
+      equipment: camera.id,
+      project: project.id,
+      startsAt: shootStart.toISOString(),
+      endsAt: shootEnd.toISOString(),
+    },
+  })
+  await payload.create({
+    collection: 'equipment-reservations',
+    data: {
+      tenant: tenant.id,
+      equipment: gimbal.id,
+      project: project.id,
+      // Taken out early for a test shoot at the venue.
+      startsAt: new Date(Date.now() - DAY).toISOString(),
+      endsAt: shootEnd.toISOString(),
+      checkedOutAt: new Date(Date.now() - DAY).toISOString(),
+      notes: 'Out for the venue test shoot.',
+    },
+  })
 
   const openDay = await payload.create({
     collection: 'events',
@@ -301,6 +428,16 @@ export async function seedDemoData(
   const workshop = await ticketType('Lighting workshop', 1, 1, 2, 0)
   // Priced, so it shows its price but is only sold once Stripe is configured.
   await ticketType('Portrait session', 10, 1, 3, 4500)
+  await payload.create({
+    collection: 'promo-codes',
+    data: {
+      event: openDay.id,
+      code: 'OPENDAY20',
+      discountType: 'percent',
+      percentOff: 20,
+      active: true,
+    },
+  })
   const ticket = await payload.create({
     collection: 'registrations',
     data: {
@@ -310,6 +447,36 @@ export async function seedDemoData(
       quantity: 1,
       status: 'confirmed',
       language: 'en',
+    },
+  })
+
+  // The workshop's one place is taken, so the next person waits for it.
+  const waiting = await payload.create({
+    collection: 'waitlist-entries',
+    data: {
+      ticketType: workshop.id,
+      event: openDay.id,
+      name: 'Rui Costa',
+      email: 'rui@guests.demo.test',
+      quantity: 1,
+      status: 'waiting',
+      language: 'en',
+    },
+  })
+
+  await payload.create({
+    collection: 'inquiries',
+    data: {
+      tenant: tenant.id,
+      name: 'Carla Mendes',
+      email: 'carla@guests.demo.test',
+      eventType: 'corporate',
+      eventDate: new Date(Date.now() + 75 * DAY).toISOString(),
+      location: 'Lisbon',
+      message:
+        'We are planning a product launch for 200 guests and would like photos, a short film and a livestream.',
+      locale: 'en',
+      status: 'new',
     },
   })
 
@@ -325,6 +492,8 @@ export async function seedDemoData(
       { label: 'Invitation', path: `/en/invite/${inviteToken}` },
       { label: 'Quote and contract', path: `/en/quote/${quote.publicToken}` },
       { label: 'Shared album', path: `/s/${shareToken}` },
+      { label: 'Vendor booking', path: `/en/vendor/${floristBooking.vendorToken}` },
+      { label: 'Waitlist place', path: `/en/waitlist/${waiting.claimToken}` },
       { label: 'Client portal', path: '/en/portal' },
       { label: 'Studio admin', path: '/admin' },
     ],
