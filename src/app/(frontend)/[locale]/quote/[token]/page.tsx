@@ -10,6 +10,7 @@ import { getDictionary } from '@/i18n/dictionaries'
 import { contractRequired, contractSigned } from '@/lib/contracts'
 import { resolveLocale } from '@/lib/locale'
 import { formatMoney } from '@/lib/money'
+import { unpaidInstallments } from '@/lib/paymentSchedule'
 import { balanceAmount, isQuoteExpired } from '@/lib/quotes'
 import { stripeConfigured } from '@/lib/stripe'
 import { isShareToken } from '@/lib/shareTokens'
@@ -58,7 +59,28 @@ export default async function QuotePage({ params, searchParams }: PageProps<'/[l
   const hasContract = contractRequired(quote.contract)
   const signed = contractSigned(quote.contract)
   const canPayDeposit = depositDue && !expired && stripeConfigured() && (!hasContract || signed)
-  const canPayBalance = balanceDue && stripeConfigured()
+  // With a payment schedule the balance is paid installment by installment, never all at once.
+  const schedule = quote.paymentSchedule ?? []
+  const { docs: installmentPayments } = await payload.find({
+    collection: 'payments',
+    where: {
+      and: [
+        { tenant: { equals: tenant.id } },
+        { quote: { equals: quote.id } },
+        { kind: { equals: 'installment' } },
+        { status: { equals: 'paid' } },
+      ],
+    },
+    limit: 100,
+    depth: 0,
+    overrideAccess: true,
+  })
+  const paidAt = new Map<number, string | null | undefined>()
+  for (const payment of installmentPayments) {
+    if (typeof payment.installmentNumber === 'number') paidAt.set(payment.installmentNumber, payment.paidAt)
+  }
+  const nextInstallment = quote.status === 'deposit-paid' ? unpaidInstallments(schedule, new Set(paidAt.keys()))[0] : undefined
+  const canPayBalance = balanceDue && stripeConfigured() && schedule.length === 0
 
   return (
     <main className="mx-auto grid max-w-3xl gap-8 px-6 py-16 text-ivory">
@@ -139,7 +161,42 @@ export default async function QuotePage({ params, searchParams }: PageProps<'/[l
 
       {canPayDeposit && <DepositButton token={token} locale={locale} t={t} />}
       {canPayBalance && <PaymentButton kind="balance" token={token} locale={locale} t={t} />}
-      {((depositDue && !expired) || balanceDue) && !stripeConfigured() && (
+      {schedule.length > 0 && (
+        <section className="grid gap-3">
+          <h2 className="font-serif text-2xl">{t.scheduleHeading}</h2>
+          <table className="w-full border-collapse text-left">
+            <thead>
+              <tr className="border-b border-ivory/15 text-mist">
+                <th className="py-2 font-normal">{t.installmentName}</th>
+                <th className="py-2 font-normal">{t.scheduleDate}</th>
+                <th className="py-2 text-right font-normal">{t.amount}</th>
+                <th className="py-2 text-right font-normal">{t.scheduleDue}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {schedule.map((row, index) => {
+                const number = index + 1
+                const paid = paidAt.has(number)
+                return (
+                  <tr key={row.id ?? number} className="border-b border-ivory/10">
+                    <td className="py-3">{number}</td>
+                    <td className="py-3">{row.dueDate ? formatDate(row.dueDate, locale) : ''}</td>
+                    <td className="py-3 text-right">{money(row.amount ?? 0)}</td>
+                    <td className="py-3 text-right">
+                      {paid ? `${t.schedulePaid}${paidAt.get(number) ? ` · ${formatDate(paidAt.get(number)!, locale)}` : ''}` : t.scheduleDue}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </section>
+      )}
+
+      {nextInstallment !== undefined && stripeConfigured() && (
+        <PaymentButton kind="installment" installmentNumber={nextInstallment} token={token} locale={locale} t={t} />
+      )}
+      {((depositDue && !expired) || balanceDue || nextInstallment !== undefined) && !stripeConfigured() && (
         <p className="text-mist">{t.paymentUnavailable}</p>
       )}
     </main>

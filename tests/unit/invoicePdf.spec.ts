@@ -21,6 +21,7 @@ const labels: InvoicePdfLabels = {
   noPayments: 'No payments have been received yet.',
   kindDeposit: 'Deposit',
   kindBalance: 'Balance',
+  kindInstallment: 'Installment',
   paidOn: 'paid',
 }
 

@@ -53,7 +53,9 @@ The studio sends you a private link to each quote. The link works without signin
 3. **Pay the deposit.** Choose **Pay deposit securely**. Payment is handled by Stripe Checkout, not by the studio.
    Your booking is confirmed when the deposit arrives.
 4. **Pay the balance** when the studio asks, using the same quote link. The quote is marked paid in full when the
-   balance arrives.
+   balance arrives. If the quote has a **payment schedule**, the page lists each installment with its due date and
+   amount, and **Pay this installment securely** pays the next one. The quote is marked paid in full when the last
+   installment arrives.
 
 Payments are confirmed by the payment provider, so the status updates a moment after you pay. Do not pay twice; if
 the page still shows a payment as due after a while, contact the studio with the quote's title.

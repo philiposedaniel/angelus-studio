@@ -66,8 +66,14 @@ export const Payments: CollectionConfig = {
       options: [
         { label: 'Deposit', value: 'deposit' },
         { label: 'Balance', value: 'balance' },
+        { label: 'Installment', value: 'installment' },
         { label: 'Ticket', value: 'ticket' },
       ],
+    },
+    {
+      name: 'installmentNumber',
+      type: 'number',
+      admin: { description: 'Which installment of the quote’s payment schedule this pays, from 1.', condition: (data) => data?.kind === 'installment' },
     },
     {
       name: 'status',

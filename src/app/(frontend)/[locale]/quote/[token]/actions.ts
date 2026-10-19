@@ -12,6 +12,7 @@ import { contractRequired, contractSigned, signatureName, termsFingerprint } fro
 import { isShareToken } from '@/lib/shareTokens'
 import { getStripe, stripeConfigured } from '@/lib/stripe'
 import { balanceAmount, isQuoteExpired } from '@/lib/quotes'
+import { installmentNumbers } from '@/lib/paymentSchedule'
 import { getCurrentTenant } from '@/lib/tenant'
 
 export type PaymentState = { status: 'idle' } | { status: 'error'; message: 'failed' | 'unavailable' | 'unsigned' }
@@ -53,7 +54,7 @@ async function openQuoteByToken(token: string, statuses: string[]) {
   return { tenant, payload, quote: docs[0] ?? null }
 }
 
-type PaymentKind = 'deposit' | 'balance'
+type PaymentKind = 'deposit' | 'balance' | 'installment'
 
 /**
  * Starts a Stripe Checkout session for the deposit, or for the balance once the deposit is paid.
@@ -77,12 +78,41 @@ async function startPayment(form: FormData, kind: PaymentKind): Promise<PaymentS
   if (kind === 'deposit' && contractRequired(quote.contract) && !contractSigned(quote.contract)) {
     return { status: 'error', message: 'unsigned' }
   }
-  const amount = kind === 'deposit' ? (quote.depositAmount ?? 0) : balanceAmount(quote)
+  const schedule = quote.paymentSchedule ?? []
+  // A quote with a schedule is paid by its installments, not by one balance payment.
+  if (kind === 'balance' && schedule.length > 0) return { status: 'error', message: 'failed' }
+
+  let installmentNumber: number | null = null
+  let amount = kind === 'deposit' ? (quote.depositAmount ?? 0) : balanceAmount(quote)
+  if (kind === 'installment') {
+    installmentNumber = Number(form.get('installment'))
+    if (!installmentNumbers(schedule).includes(installmentNumber)) return { status: 'error', message: 'failed' }
+    // An installment already paid is not charged again.
+    const { docs: paid } = await payload.find({
+      collection: 'payments',
+      where: {
+        and: [
+          { tenant: { equals: tenant.id } },
+          { quote: { equals: quote.id } },
+          { kind: { equals: 'installment' } },
+          { installmentNumber: { equals: installmentNumber } },
+          { status: { equals: 'paid' } },
+        ],
+      },
+      limit: 1,
+      depth: 0,
+      overrideAccess: true,
+    })
+    if (paid.length > 0) return { status: 'error', message: 'failed' }
+    amount = schedule[installmentNumber - 1]?.amount ?? 0
+  }
   if (amount <= 0) return { status: 'error', message: 'failed' }
 
   const origin = await siteOrigin()
   const back = `${origin}/${requested}/quote/${token}`
   const t = getDictionary(requested).quote
+  const label =
+    kind === 'deposit' ? t.depositName : kind === 'balance' ? t.balanceName : `${t.installmentName} ${installmentNumber}`
   const session = await getStripe().checkout.sessions.create({
     mode: 'payment',
     customer_email: quote.clientEmail,
@@ -93,12 +123,17 @@ async function startPayment(form: FormData, kind: PaymentKind): Promise<PaymentS
           currency: quote.currency,
           unit_amount: amount,
           product_data: {
-            name: `${kind === 'deposit' ? t.depositName : t.balanceName}: ${quote.title}`.slice(0, 250),
+            name: `${label}: ${quote.title}`.slice(0, 250),
           },
         },
       },
     ],
-    metadata: { quoteId: String(quote.id), tenantId: String(tenant.id), kind },
+    metadata: {
+      quoteId: String(quote.id),
+      tenantId: String(tenant.id),
+      kind,
+      ...(installmentNumber === null ? {} : { installmentNumber: String(installmentNumber) }),
+    },
     success_url: `${back}?payment=success`,
     cancel_url: `${back}?payment=cancelled`,
   })
@@ -110,6 +145,7 @@ async function startPayment(form: FormData, kind: PaymentKind): Promise<PaymentS
       tenant: tenant.id,
       quote: quote.id,
       kind,
+      ...(installmentNumber === null ? {} : { installmentNumber }),
       amount,
       currency: quote.currency,
       status: 'pending',
@@ -128,6 +164,10 @@ export async function payDeposit(_previous: DepositState, form: FormData): Promi
 
 export async function payBalance(_previous: PaymentState, form: FormData): Promise<PaymentState> {
   return startPayment(form, 'balance')
+}
+
+export async function payInstallment(_previous: PaymentState, form: FormData): Promise<PaymentState> {
+  return startPayment(form, 'installment')
 }
 
 /**

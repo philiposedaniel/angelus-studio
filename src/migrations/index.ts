@@ -33,6 +33,7 @@ import * as migration_20261019_135403_reply_notices from './20261019_135403_repl
 import * as migration_20261019_150547_vendor_emails from './20261019_150547_vendor_emails';
 import * as migration_20261019_154148_inquiry_alerts from './20261019_154148_inquiry_alerts';
 import * as migration_20261019_204713_add_staff_mfa from './20261019_204713_add_staff_mfa';
+import * as migration_20261019_232429_add_quote_payment_schedule from './20261019_232429_add_quote_payment_schedule';
 
 export const migrations = [
   {
@@ -209,5 +210,10 @@ export const migrations = [
     up: migration_20261019_204713_add_staff_mfa.up,
     down: migration_20261019_204713_add_staff_mfa.down,
     name: '20261019_204713_add_staff_mfa',
+  },
+  {
+    up: migration_20261019_232429_add_quote_payment_schedule.up,
+    down: migration_20261019_232429_add_quote_payment_schedule.down,
+    name: '20261019_232429_add_quote_payment_schedule'
   },
 ];

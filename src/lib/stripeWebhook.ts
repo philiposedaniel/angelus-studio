@@ -5,6 +5,7 @@ import { getPayload, type Payload } from 'payload'
 import { STRIPE_PAYMENT_CONTEXT } from '@/collections/Quotes'
 import { idOf } from '@/lib/ids'
 import { getStripe, stripeConfigured } from '@/lib/stripe'
+import { unpaidInstallments } from '@/lib/paymentSchedule'
 import { balanceAmount, PAID_QUOTE_STATUSES } from '@/lib/quotes'
 import { recordRefund } from '@/lib/ticketRefunds'
 import { PAID_TICKET_CONTEXT } from '@/lib/tickets'
@@ -93,6 +94,30 @@ async function confirmTicket(payload: Payload, payment: Payment) {
       registrationId,
     })
   }
+}
+
+/**
+ * The installment numbers of a quote already paid, not counting one payment: the one being recorded now,
+ * so that its own earlier delivery is not counted twice.
+ */
+async function paidInstallmentNumbers(payload: Payload, tenantId: number, quoteId: number, exceptPaymentId: number) {
+  const { docs } = await payload.find({
+    collection: 'payments',
+    where: {
+      and: [
+        { tenant: { equals: tenantId } },
+        { quote: { equals: quoteId } },
+        { kind: { equals: 'installment' } },
+        { status: { equals: 'paid' } },
+      ],
+    },
+    limit: 100,
+    depth: 0,
+    overrideAccess: true,
+  })
+  return new Set(
+    docs.filter((doc) => doc.id !== exceptPaymentId).map((doc) => doc.installmentNumber).filter((n): n is number => typeof n === 'number'),
+  )
 }
 
 /** Frees the places of a ticket whose Checkout session expired unpaid. */
@@ -223,7 +248,26 @@ export async function handleStripeWebhook(request: Request): Promise<Response> {
     }
     const quoteId = idOf(payment.quote)!
     const quote = await payload.findByID({ collection: 'quotes', id: quoteId, depth: 0, overrideAccess: true })
-    if (payment.kind === 'balance') {
+    if (payment.kind === 'installment') {
+      // The quote is paid in full once every installment of its schedule has been paid.
+      const schedule = quote.paymentSchedule ?? []
+      const paid = await paidInstallmentNumbers(payload, Number(idOf(quote.tenant)), quote.id, payment.id)
+      if (typeof payment.installmentNumber === 'number') paid.add(payment.installmentNumber)
+      if (schedule.length === 0 || typeof payment.installmentNumber !== 'number') {
+        payload.logger.error({ msg: 'Installment payment for a quote without a schedule', paymentId: payment.id, quoteId })
+      } else if (quote.status === 'deposit-paid' && unpaidInstallments(schedule, paid).length === 0) {
+        await payload.update({
+          collection: 'quotes',
+          id: quoteId,
+          data: { status: 'paid-in-full' },
+          context: STRIPE_PAYMENT_CONTEXT,
+          overrideAccess: true,
+        })
+      } else if (quote.status !== 'deposit-paid' && quote.status !== 'paid-in-full') {
+        // Installments are only offered after the deposit, so this should not happen. Keep the money record.
+        payload.logger.error({ msg: 'Installment paid before the deposit was recorded', paymentId: payment.id, quoteId })
+      }
+    } else if (payment.kind === 'balance') {
       if (quote.status === 'deposit-paid') {
         await payload.update({
           collection: 'quotes',

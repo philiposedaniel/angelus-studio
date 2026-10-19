@@ -32,12 +32,13 @@ export function invoiceTotals(
   const totalAmount = quote.totalAmount ?? 0
   const depositAmount = quote.depositAmount ?? 0
   const balanceAmount = totalAmount - depositAmount
-  const paidOf = (kind: 'deposit' | 'balance') =>
+  const paidOf = (kind: 'deposit' | 'balance' | 'installment') =>
     payments
       .filter((payment) => payment.kind === kind && payment.status === 'paid')
       .reduce((sum, payment) => sum + payment.amount, 0)
   const depositPaid = paidOf('deposit')
-  const balancePaid = paidOf('balance')
+  // Installments of a payment schedule are paid towards the balance, the same as one balance payment.
+  const balancePaid = paidOf('balance') + paidOf('installment')
   return {
     totalAmount,
     depositAmount,

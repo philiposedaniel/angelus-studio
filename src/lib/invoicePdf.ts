@@ -24,6 +24,7 @@ export type InvoicePdfLabels = {
   noPayments: string
   kindDeposit: string
   kindBalance: string
+  kindInstallment: string
   paidOn: string
 }
 
@@ -34,7 +35,7 @@ export type InvoicePdfInput = {
     clientName: string
     lineItems?: ReadonlyArray<{ description: string; quantity: number; unitAmount: number }> | null
   }
-  payments: ReadonlyArray<{ kind?: string | null; amount: number; paidAt?: string | null }>
+  payments: ReadonlyArray<{ kind?: string | null; installmentNumber?: number | null; amount: number; paidAt?: string | null }>
   totals: InvoiceTotals
 }
 
@@ -125,8 +126,14 @@ export async function renderInvoicePdf(
       color: MUTED,
     })
   }
-  const kindLabel = (kind: string | null | undefined) =>
-    kind === 'deposit' ? labels.kindDeposit : kind === 'balance' ? labels.kindBalance : ''
+  const kindLabel = (payment: { kind?: string | null; installmentNumber?: number | null }) =>
+    payment.kind === 'deposit'
+      ? labels.kindDeposit
+      : payment.kind === 'balance'
+        ? labels.kindBalance
+        : payment.kind === 'installment'
+          ? `${labels.kindInstallment} ${payment.installmentNumber ?? ''}`.trim()
+          : ''
 
   // Heading
   newPageIfBelow(LINE * 4)
@@ -197,7 +204,7 @@ export async function renderInvoicePdf(
   for (const payment of payments) {
     newPageIfBelow(LINE)
     const when = payment.paidAt ? ` · ${labels.paidOn} ${format.date(payment.paidAt)}` : ''
-    write(`${kindLabel(payment.kind)}${when}`, MARGIN, 10, regular)
+    write(`${kindLabel(payment)}${when}`, MARGIN, 10, regular)
     writeRight(format.money(payment.amount), TABLE.amountRight, 10, regular)
     y -= LINE
   }
