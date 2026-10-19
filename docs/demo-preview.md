@@ -17,8 +17,12 @@ In the studio named by `DEFAULT_TENANT_SLUG` (default `angelus`):
 - A **production** with crew, tasks and a call sheet.
 - A **private wedding** with a garden invitation and five guests in different RSVP states; the
   client is its organizer, so it shows in their portal.
-- A **public open day** with a free ticket, a sold-out workshop with a waitlist, a priced ticket
-  and one confirmed registration.
+- Two **tables** with the coming guests seated, and two **vendors** on the wedding: a florist
+  confirmed and part paid, with a private vendor link, and a caterer still proposed.
+- Three pieces of **kit**, two reserved for the production and one of those already checked out.
+- A **public open day** with a free ticket, a sold-out workshop with one person on its waitlist,
+  a priced ticket, a 20% promo code (`OPENDAY20`) and one confirmed registration.
+- Three published **services** for the home page and a new **inquiry** in the admin inbox.
 
 It prints both sign-ins and a link to each page, using `NEXT_PUBLIC_SERVER_URL`.
 
