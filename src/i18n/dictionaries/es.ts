@@ -125,6 +125,7 @@ export const es: Dictionary = {
     securityInvalid: "El código no coincide. Revise la hora de su teléfono e inténtelo de nuevo.",
     securityLocked: "Demasiados códigos incorrectos. Inténtelo de nuevo en 15 minutos.",
     authenticatorCode: "Código de la aplicación (solo personal)",
+    calendarDownload: 'Descargar a su aplicación de calendario (12 meses)',
     productionStatus: {
       planning: 'En planificación',
       confirmed: 'Confirmada',

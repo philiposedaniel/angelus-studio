@@ -123,6 +123,7 @@ export const en = {
     securityInvalid: "That code did not match. Check the time on your phone and try again.",
     securityLocked: "Too many wrong codes. Try again in 15 minutes.",
     authenticatorCode: "Authenticator code (staff only)",
+    calendarDownload: 'Download to your calendar app (12 months)',
     productionStatus: {
       planning: 'Planning',
       confirmed: 'Confirmed',

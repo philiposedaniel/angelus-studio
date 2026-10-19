@@ -103,7 +103,11 @@ Each project has:
   Staff and crew can read it; clients cannot.
 - **Internal notes:** visible to production staff only.
 
-The **calendar** in the portal (`/portal/calendar`) shows productions by shoot date for each month.
+The **calendar** in the portal (`/portal/calendar`) shows productions by shoot date for each month. The link
+**Download to your calendar app** gives a calendar file of the productions that person can see, from this month
+for the next twelve months. Each production is an all-day event with its title, location and a tentative or
+confirmed status. Notes, quotes and client details are never written into the file. The file is a snapshot:
+download it again after the schedule changes.
 
 Deleting a project is limited to studio administrators.
 

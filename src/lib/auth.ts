@@ -21,9 +21,15 @@ const isMemberOf = (user: User, tenant: Tenant) =>
     return String(id) === String(tenant.id)
   })
 
+/** The signed-in member of this studio, or null. For route handlers, which cannot redirect to the login page. */
+export async function getPortalUser(tenant: Tenant): Promise<User | null> {
+  const user = await getSessionUser()
+  return user && isMemberOf(user, tenant) ? user : null
+}
+
 /** Requires a signed-in member of this studio; otherwise sends them to the login page. */
 export async function requirePortalUser(tenant: Tenant, locale: string): Promise<User> {
-  const user = await getSessionUser()
-  if (!user || !isMemberOf(user, tenant)) redirect(`/${locale}/portal/login`)
+  const user = await getPortalUser(tenant)
+  if (!user) redirect(`/${locale}/portal/login`)
   return user
 }
