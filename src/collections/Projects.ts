@@ -35,11 +35,15 @@ const readOwnProject: Access = ({ req: { user } }) => {
   return { or: conditions }
 }
 
+// The admin's edit form asks for field permissions with the project in `data` and no `doc`;
+// without the fallback, studio staff saw these fields empty there.
+
 /** Internal fields, such as the quote and notes, are for production staff only. */
-const staffOnly: FieldAccess = ({ req: { user }, doc }) => isProductionStaff(user, doc)
+const staffOnly: FieldAccess = ({ req: { user }, doc, data }) => isProductionStaff(user, doc ?? data)
 
 /** Crew see who is on the job and the task list; clients do not. */
-const staffOrCrew: FieldAccess = ({ req: { user }, doc }) => isProductionStaff(user, doc) || isOnCrew(user, doc)
+const staffOrCrew: FieldAccess = ({ req: { user }, doc, data }) =>
+  isProductionStaff(user, doc ?? data) || isOnCrew(user, doc ?? data)
 
 /** A 24-hour clock time, such as 08:30 or 17:05. */
 const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/
