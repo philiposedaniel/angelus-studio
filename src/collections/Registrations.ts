@@ -378,6 +378,14 @@ export const Registrations: CollectionConfig = {
       access: { create: () => false, update: () => false },
     },
     {
+      name: 'dayBeforeSentAt',
+      label: 'Reminder emailed',
+      type: 'date',
+      admin: { readOnly: true, position: 'sidebar', date: { pickerAppearance: 'dayAndTime' }, description: 'When the day-before reminder was emailed.' },
+      // Set only by the email job.
+      access: { create: () => false, update: () => false },
+    },
+    {
       // A keyed hash of the address the registration came from, to limit repeats. Never shown.
       name: 'senderKey',
       type: 'text',

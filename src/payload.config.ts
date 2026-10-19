@@ -34,6 +34,7 @@ import { SiteSettings } from './collections/SiteSettings'
 import { Tenants } from './collections/Tenants'
 import { Users } from './collections/Users'
 import { DEFAULT_LOCALE, LOCALE_LABELS, LOCALES } from './i18n/config'
+import { sendEventReminders } from './jobs/eventReminders'
 import { buildGalleryZip, cleanupGalleryZips } from './jobs/galleryZips'
 import { sendEmail } from './jobs/sendEmail'
 import { emailAdapter } from './lib/email'
@@ -91,7 +92,7 @@ export default buildConfig({
     fallback: true,
   },
   jobs: {
-    tasks: [buildGalleryZip, cleanupGalleryZips, sendEmail],
+    tasks: [buildGalleryZip, cleanupGalleryZips, sendEmail, sendEventReminders],
     // Background jobs (ZIP building, cleanup) run inside the app process every few seconds.
     // Set PAYLOAD_JOBS_AUTORUN=false where another process runs them, and in tests.
     autoRun: [{ cron: '*/5 * * * * *', queue: 'default', limit: 2 }],

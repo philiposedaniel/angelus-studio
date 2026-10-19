@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
 import { tenantAdmins, tenantRoles } from '@/access'
+import { queueEmail } from '@/lib/email'
 import { EVENT_TYPES } from '@/lib/inquiryOptions'
 
 /** Staff who answer enquiries and turn them into quotes. */
@@ -22,6 +23,14 @@ export const Inquiries: CollectionConfig = {
     group: 'Sales',
   },
   defaultSort: '-createdAt',
+  hooks: {
+    afterChange: [
+      // The studio hears about each new inquiry by email, once email sending is set up.
+      async ({ doc, operation, req }) => {
+        if (operation === 'create') await queueEmail(req, 'inquiryAlert', doc.id)
+      },
+    ],
+  },
   access: {
     read: tenantRoles(INQUIRY_STAFF_ROLES),
     create: () => false,
@@ -65,6 +74,16 @@ export const Inquiries: CollectionConfig = {
       name: 'notes',
       type: 'textarea',
       admin: { position: 'sidebar', description: 'Internal notes.' },
+    },
+    {
+      name: 'alertSentAt',
+      type: 'date',
+      admin: {
+        position: 'sidebar',
+        readOnly: true,
+        description: 'When the studio was emailed about this inquiry.',
+        date: { pickerAppearance: 'dayAndTime' },
+      },
     },
     {
       // A keyed hash of the sender's address, kept only to limit repeated submissions.

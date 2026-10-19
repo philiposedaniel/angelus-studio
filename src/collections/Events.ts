@@ -12,6 +12,7 @@ import { uniqueSlugPerTenant } from '@/hooks/uniqueSlugPerTenant'
 import { parseVideoUrl } from '@/lib/embeds'
 import { idOf } from '@/lib/ids'
 import { INVITATION_STYLE_LABELS, INVITATION_STYLES, isWebAddress, MAX_SCHEDULE_ITEMS } from '@/lib/invitationDesign'
+import { MAX_MEAL_OPTIONS } from '@/lib/rsvp'
 import { newShareToken } from '@/lib/shareTokens'
 
 /**
@@ -325,6 +326,37 @@ export const Events: CollectionConfig = {
             description: 'Optional. Replies close automatically after this moment.',
           },
         },
+        {
+          name: 'replyNotices',
+          label: 'Email the hosts when a guest replies',
+          type: 'checkbox',
+          defaultValue: true,
+          admin: {
+            description:
+              "Each reply, and each change to one, is emailed to the event's organizers and to the address below. Needs email sending set up.",
+          },
+        },
+        {
+          name: 'replyNoticeEmail',
+          label: 'Studio address for notices',
+          type: 'email',
+          admin: {
+            description:
+              "Optional, e.g. the studio's events address or a wedding planner. It gets every guest reply (while the box above is ticked) and every vendor confirmation.",
+          },
+        },
+        {
+          name: 'mealOptions',
+          label: 'Meal choices',
+          type: 'array',
+          maxRows: MAX_MEAL_OPTIONS,
+          labels: { singular: 'Meal', plural: 'Meals' },
+          admin: {
+            description:
+              'Optional. When set, each person coming picks one of these when they reply, and the counts show above, in the guest list download and at check-in. People who chose a meal that is later removed count as not chosen.',
+          },
+          fields: [{ name: 'label', type: 'text', required: true, localized: true, maxLength: 80, admin: { description: 'e.g. Fish, Meat, Vegetarian, Children\'s menu' } }],
+        },
       ],
     },
     {
@@ -380,6 +412,17 @@ export const Events: CollectionConfig = {
         position: 'sidebar',
         description:
           'Untick for private events such as weddings: only people with an invitation or guest link can open them.',
+      },
+    },
+    {
+      name: 'reminderEmails',
+      label: 'Email a reminder the day before',
+      type: 'checkbox',
+      defaultValue: true,
+      admin: {
+        position: 'sidebar',
+        description:
+          'About a day before the event, guests who are coming and ticket holders get a reminder with their invitation or ticket. Needs email sending set up.',
       },
     },
   ],

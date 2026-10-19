@@ -9,7 +9,7 @@ import { canCheckIn } from '@/lib/checkIn'
 import { formatEventWhen } from '@/lib/eventTime'
 import { idOf } from '@/lib/ids'
 import { resolveLocale } from '@/lib/locale'
-import { findInvitation } from '@/lib/rsvp'
+import { describeParty, findInvitation } from '@/lib/rsvp'
 import { isShareToken } from '@/lib/shareTokens'
 import { getCurrentTenant } from '@/lib/tenant'
 
@@ -48,7 +48,14 @@ export default async function CheckInPage({ params }: PageProps<'/[locale]/invit
     )
   }
 
-  const { guest, event } = found
+  const { guest } = found
+  // Read again in the page's language for the meal names.
+  const event = await payload.findByID({ collection: 'events', id: found.event.id, depth: 0, locale, overrideAccess: true })
+  const mealLabels = new Map((event.mealOptions ?? []).map((option) => [option.id, option.label]))
+  const party =
+    guest.rsvpStatus === 'attending'
+      ? describeParty(guest, (id) => mealLabels.get(id), (n) => t.guestNumber.replace('{n}', String(n)))
+      : ''
   // Staff only: the guest's table, so whoever is at the door can send the party to it.
   const tableId = idOf(guest.table)
   const table =
@@ -83,6 +90,12 @@ export default async function CheckInPage({ params }: PageProps<'/[locale]/invit
         {table && (
           <p className="text-gold">
             {t.table}: {table.name}
+          </p>
+        )}
+        {party && (
+          <p>
+            <span className="text-mist">{t.party}: </span>
+            {party}
           </p>
         )}
         {guest.dietaryNotes && (

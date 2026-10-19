@@ -2,7 +2,8 @@ import type { UIFieldServerProps } from 'payload'
 
 import { SendInvitationsButton } from '@/components/admin/SendInvitationsButton'
 import { emailConfigured } from '@/lib/email'
-import { eventRsvpSummary } from '@/lib/rsvp'
+import { reminderWhere } from '@/lib/guestListEndpoints'
+import { eventMealCounts, eventRsvpSummary, rsvpIsOpen, summarizeMeals } from '@/lib/rsvp'
 
 /** The event's headcount from its guest list, for the people allowed to see guests. */
 export async function RsvpSummaryField(props: UIFieldServerProps) {
@@ -32,7 +33,15 @@ export async function RsvpSummaryField(props: UIFieldServerProps) {
     )
   }
   const s = await eventRsvpSummary(props.payload, eventId)
-  const event = await props.payload.findByID({ collection: 'events', id: eventId, depth: 0, select: { published: true }, ...access })
+  const event = await props.payload.findByID({
+    collection: 'events',
+    id: eventId,
+    depth: 0,
+    select: { published: true, mealOptions: true, rsvpOpen: true, rsvpDeadline: true },
+    locale: props.req.locale ?? undefined,
+    ...access,
+  })
+  const meals = summarizeMeals(event, await eventMealCounts(props.payload, eventId), s.headcount)
   // Guests with an email address who have not been emailed their invitation yet.
   const notEmailed = emailConfigured()
     ? (
@@ -50,6 +59,11 @@ export async function RsvpSummaryField(props: UIFieldServerProps) {
         })
       ).totalDocs
     : 0
+  // Guests who have not answered and can be reminded now.
+  const toRemind =
+    emailConfigured() && rsvpIsOpen(event)
+      ? (await props.payload.count({ collection: 'event-guests', where: reminderWhere(eventId), ...access })).totalDocs
+      : 0
   const cell: React.CSSProperties = { padding: '4px 12px 4px 0' }
 
   return (
@@ -79,6 +93,18 @@ export async function RsvpSummaryField(props: UIFieldServerProps) {
             <td style={cell}>Checked in</td>
             <td style={cell}>{s.arrived} people</td>
           </tr>
+          {meals.meals.map((meal) => (
+            <tr key={meal.id}>
+              <td style={cell}>Meal: {meal.label}</td>
+              <td style={cell}>{meal.count}</td>
+            </tr>
+          ))}
+          {meals.meals.length > 0 && (
+            <tr>
+              <td style={cell}>Meal not chosen yet</td>
+              <td style={cell}>{meals.notChosen}</td>
+            </tr>
+          )}
         </tbody>
       </table>
       {!emailConfigured() ? (
@@ -88,7 +114,10 @@ export async function RsvpSummaryField(props: UIFieldServerProps) {
       ) : !event.published ? (
         <p style={{ margin: 0 }}>Publish the event to email its invitations.</p>
       ) : (
-        <SendInvitationsButton eventId={eventId} waiting={notEmailed} />
+        <>
+          <SendInvitationsButton eventId={eventId} waiting={notEmailed} />
+          {rsvpIsOpen(event) && <SendInvitationsButton eventId={eventId} waiting={toRemind} action="reminders" />}
+        </>
       )}
       <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
         <a href={`/admin/collections/event-guests?where[event][equals]=${encodeURIComponent(String(eventId))}`}>

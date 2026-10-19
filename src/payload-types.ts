@@ -158,6 +158,7 @@ export interface Config {
       'build-gallery-zip': TaskBuildGalleryZip;
       'cleanup-gallery-zips': TaskCleanupGalleryZips;
       'send-email': TaskSendEmail;
+      'send-event-reminders': TaskSendEventReminders;
       inline: {
         input: unknown;
         output: unknown;
@@ -474,6 +475,10 @@ export interface SiteSetting {
      */
     whatsapp?: string | null;
     address?: string | null;
+    /**
+     * Works once email sending is set up. Answer by replying to the email.
+     */
+    inquiryAlerts?: boolean | null;
   };
   socialLinks?:
     | {
@@ -601,6 +606,10 @@ export interface Inquiry {
    * Internal notes.
    */
   notes?: string | null;
+  /**
+   * When the studio was emailed about this inquiry.
+   */
+  alertSentAt?: string | null;
   senderKey?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -752,6 +761,10 @@ export interface Registration {
    * When the ticket was emailed to the buyer.
    */
   confirmationSentAt?: string | null;
+  /**
+   * When the day-before reminder was emailed.
+   */
+  dayBeforeSentAt?: string | null;
   senderKey?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -875,11 +888,35 @@ export interface Event {
    * Optional. Replies close automatically after this moment.
    */
   rsvpDeadline?: string | null;
+  /**
+   * Each reply, and each change to one, is emailed to the event's organizers and to the address below. Needs email sending set up.
+   */
+  replyNotices?: boolean | null;
+  /**
+   * Optional, e.g. the studio's events address or a wedding planner. It gets every guest reply (while the box above is ticked) and every vendor confirmation.
+   */
+  replyNoticeEmail?: string | null;
+  /**
+   * Optional. When set, each person coming picks one of these when they reply, and the counts show above, in the guest list download and at check-in. People who chose a meal that is later removed count as not chosen.
+   */
+  mealOptions?:
+    | {
+        /**
+         * e.g. Fish, Meat, Vegetarian, Children's menu
+         */
+        label: string;
+        id?: string | null;
+      }[]
+    | null;
   published?: boolean | null;
   /**
    * Untick for private events such as weddings: only people with an invitation or guest link can open them.
    */
   listed?: boolean | null;
+  /**
+   * About a day before the event, guests who are coming and ticket holders get a reminder with their invitation or ticket. Needs email sending set up.
+   */
+  reminderEmails?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -952,6 +989,15 @@ export interface EventGuest {
    * When the invitation was emailed. Guests already emailed are skipped when invitations are sent.
    */
   invitationSentAt?: string | null;
+  replyNoticeSentFor?: string | null;
+  /**
+   * When the guest was last reminded to reply.
+   */
+  replyReminderSentAt?: string | null;
+  /**
+   * When the day-before reminder was emailed.
+   */
+  dayBeforeSentAt?: string | null;
   /**
    * Guests answer from their link. Staff can also record an answer given by phone.
    */
@@ -960,6 +1006,16 @@ export interface EventGuest {
    * How many of the party are coming.
    */
   attendingCount?: number | null;
+  /**
+   * Filled in by the guest when they reply: the guest first, then whoever they bring, each with their meal when the event offers meal choices.
+   */
+  party?:
+    | {
+        name?: string | null;
+        meal?: string | null;
+        id?: string | null;
+      }[]
+    | null;
   dietaryNotes?: string | null;
   guestMessage?: string | null;
   respondedAt?: string | null;
@@ -1069,6 +1125,11 @@ export interface EventVendor {
    */
   amountPaid?: number | null;
   paymentDueDate?: string | null;
+  /**
+   * When the vendor was last emailed their link.
+   */
+  bookingEmailedAt?: string | null;
+  confirmationNoticeSentFor?: string | null;
   confirmedAt?: string | null;
   vendorNote?: string | null;
   /**
@@ -1294,7 +1355,7 @@ export interface PayloadJob {
     | {
         executedAt: string;
         completedAt: string;
-        taskSlug: 'inline' | 'build-gallery-zip' | 'cleanup-gallery-zips' | 'send-email';
+        taskSlug: 'inline' | 'build-gallery-zip' | 'cleanup-gallery-zips' | 'send-email' | 'send-event-reminders';
         taskID: string;
         input?:
           | {
@@ -1327,7 +1388,7 @@ export interface PayloadJob {
         id?: string | null;
       }[]
     | null;
-  taskSlug?: ('inline' | 'build-gallery-zip' | 'cleanup-gallery-zips' | 'send-email') | null;
+  taskSlug?: ('inline' | 'build-gallery-zip' | 'cleanup-gallery-zips' | 'send-email' | 'send-event-reminders') | null;
   queue?: string | null;
   waitUntil?: string | null;
   processing?: boolean | null;
@@ -1690,6 +1751,7 @@ export interface SiteSettingsSelect<T extends boolean = true> {
         phone?: T;
         whatsapp?: T;
         address?: T;
+        inquiryAlerts?: T;
       };
   socialLinks?:
     | T
@@ -1827,6 +1889,7 @@ export interface InquiriesSelect<T extends boolean = true> {
   locale?: T;
   status?: T;
   notes?: T;
+  alertSentAt?: T;
   senderKey?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -1931,8 +1994,17 @@ export interface EventsSelect<T extends boolean = true> {
       };
   rsvpOpen?: T;
   rsvpDeadline?: T;
+  replyNotices?: T;
+  replyNoticeEmail?: T;
+  mealOptions?:
+    | T
+    | {
+        label?: T;
+        id?: T;
+      };
   published?: T;
   listed?: T;
+  reminderEmails?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1951,8 +2023,18 @@ export interface EventGuestsSelect<T extends boolean = true> {
   partySize?: T;
   language?: T;
   invitationSentAt?: T;
+  replyNoticeSentFor?: T;
+  replyReminderSentAt?: T;
+  dayBeforeSentAt?: T;
   rsvpStatus?: T;
   attendingCount?: T;
+  party?:
+    | T
+    | {
+        name?: T;
+        meal?: T;
+        id?: T;
+      };
   dietaryNotes?: T;
   guestMessage?: T;
   respondedAt?: T;
@@ -2010,6 +2092,8 @@ export interface EventVendorsSelect<T extends boolean = true> {
   amountDue?: T;
   amountPaid?: T;
   paymentDueDate?: T;
+  bookingEmailedAt?: T;
+  confirmationNoticeSentFor?: T;
   confirmedAt?: T;
   vendorNote?: T;
   staffNotes?: T;
@@ -2061,6 +2145,7 @@ export interface RegistrationsSelect<T extends boolean = true> {
   staffNotes?: T;
   ticketToken?: T;
   confirmationSentAt?: T;
+  dayBeforeSentAt?: T;
   senderKey?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -2317,9 +2402,27 @@ export interface TaskCleanupGalleryZips {
  */
 export interface TaskSendEmail {
   input: {
-    kind: 'invitation' | 'ticket' | 'waitlistOffer';
+    kind:
+      | 'invitation'
+      | 'ticket'
+      | 'waitlistOffer'
+      | 'replyReminder'
+      | 'guestDayBefore'
+      | 'ticketDayBefore'
+      | 'replyNotice'
+      | 'vendorBooking'
+      | 'vendorConfirmed'
+      | 'inquiryAlert';
     id: number;
   };
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskSend-event-reminders".
+ */
+export interface TaskSendEventReminders {
+  input?: unknown;
   output?: unknown;
 }
 /**

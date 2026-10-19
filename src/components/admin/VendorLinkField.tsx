@@ -1,11 +1,13 @@
 import type { UIFieldServerProps } from 'payload'
 
+import { emailConfigured } from '@/lib/email'
 import { idOf } from '@/lib/ids'
 import { tenantLocales } from '@/lib/locale'
 import { isShareToken } from '@/lib/shareTokens'
 import { siteOrigin } from '@/lib/siteOrigin'
 
 import { CopyButton } from './CopyButton'
+import { SendInvitationsButton } from './SendInvitationsButton'
 
 /** The vendor's private link for this booking, to copy and send them. */
 export async function VendorLinkField(props: UIFieldServerProps) {
@@ -38,9 +40,13 @@ export async function VendorLinkField(props: UIFieldServerProps) {
       <div>
         <CopyButton value={url} label="Copy vendor link" />
       </div>
+      {emailConfigured() && props.data?.status !== 'cancelled' && props.id !== undefined && (
+        <SendInvitationsButton eventId={props.id} waiting={1} action="vendorLink" />
+      )}
       <p style={{ margin: 0, fontSize: 12, opacity: 0.75 }}>
         Send this to the vendor. It shows the event, their role, arrival time and your instructions, and
         lets them confirm. It stops working if the booking is cancelled. Amounts are never shown on it.
+        When email is set up, a vendor with an email address gets it automatically once booked.
       </p>
     </div>
   )
