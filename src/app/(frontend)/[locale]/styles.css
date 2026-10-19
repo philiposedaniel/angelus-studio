@@ -110,8 +110,8 @@
     --color-charcoal: #efe8d8;
     --color-graphite: #e2d9c4;
     --color-ivory: #2f3a2c;
-    --color-mist: #6b7262;
-    --color-gold: #5b7553;
+    --color-mist: #57604f;
+    --color-gold: #4a6343;
     --color-copper: #a0522d;
     background-color: #f6f1e5;
     color: var(--color-ivory);
@@ -122,7 +122,7 @@
     --color-charcoal: #f4f4f5;
     --color-graphite: #e4e4e7;
     --color-ivory: #18181b;
-    --color-mist: #71717a;
+    --color-mist: #63636b;
     --color-gold: #18181b;
     --color-copper: #b91c1c;
     --font-display: var(--font-sans);
