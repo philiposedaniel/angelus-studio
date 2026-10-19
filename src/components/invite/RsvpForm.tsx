@@ -6,7 +6,7 @@ import { startTransition, useActionState, useState } from 'react'
 import { sendRsvp } from '@/app/(frontend)/[locale]/invite/[token]/actions'
 import type { Dictionary } from '@/i18n/dictionaries'
 import type { RsvpField, RsvpState } from '@/lib/rsvp'
-import { RSVP_LIMITS } from '@/lib/rsvp'
+import { RSVP_LIMITS } from '@/lib/rsvpLimits'
 
 type Props = {
   token: string
