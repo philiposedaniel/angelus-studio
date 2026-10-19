@@ -58,6 +58,8 @@ editor when the studio offers more than one language.
    Record an answer given by phone by setting *RSVP* on the guest (and the people and meals
    under *Who is coming*). Close replies with *Guests can reply* or a *Reply by* date. If you
    remove a meal option, people who chose it count as not chosen until they pick again.
+   With email set up, the event's organizers (and the address in *Also send replies to*) get an
+   email for every reply; untick *Email the hosts when a guest replies* to stop them.
    *Remind N guests who have not replied* emails a reminder to everyone with an email address
    who has not answered (each guest at most once every 3 days).
 5. **Seat people** under *Events → Tables*, then choose each guest's *Table* (or select several

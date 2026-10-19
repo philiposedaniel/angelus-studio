@@ -327,6 +327,25 @@ export const Events: CollectionConfig = {
           },
         },
         {
+          name: 'replyNotices',
+          label: 'Email the hosts when a guest replies',
+          type: 'checkbox',
+          defaultValue: true,
+          admin: {
+            description:
+              "Each reply, and each change to one, is emailed to the event's organizers and to the address below. Needs email sending set up.",
+          },
+        },
+        {
+          name: 'replyNoticeEmail',
+          label: 'Also send replies to',
+          type: 'email',
+          admin: {
+            description: 'Optional, e.g. the studio\'s events address or a wedding planner.',
+            condition: (data) => data?.replyNotices !== false,
+          },
+        },
+        {
           name: 'mealOptions',
           label: 'Meal choices',
           type: 'array',

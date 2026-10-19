@@ -473,6 +473,18 @@ export const en = {
       guestCode: 'Your invitation shows your entry code. Have it ready on your phone at the entrance.',
       guestAction: 'Open your invitation',
     },
+    replyNotice: {
+      subject: '{name} replied: {event}',
+      body: '{name} replied to the invitation to {event}.',
+      attending: { one: 'Attending, 1 person.', other: 'Attending, {count} people.' },
+      declined: 'Not attending.',
+      party: 'Who is coming: {party}',
+      guestNumber: 'Guest {n}',
+      dietary: 'Dietary needs: {notes}',
+      message: 'Their note: {message}',
+      action: 'Open the guest list',
+      note: 'You receive this because you host this event or asked the studio to copy you on replies. Ask the studio to turn these emails off.',
+    },
   },
   footer: { rights: 'All rights reserved.' },
 }

@@ -541,6 +541,13 @@ error if it fails.
   has not answered and has an email address, with their link and the *Reply by* date if set. A
   guest is reminded at most once every 3 days (`REMIND_AGAIN_AFTER_DAYS`), and not at all once
   replies are closed. It runs at `POST /api/event-guests/send-reminders`, as the signed-in user.
+- **Reply notices:** each time a guest answers or changes their answer from their link, the
+  event's organizers and the optional *Also send replies to* address get one email with the
+  answer, who is coming with their meals, dietary needs and the guest's note, and a link to the
+  guest list. It is in the studio's first language and never contains the guest's own link.
+  Answers staff record by hand send nothing. Turn it off with *Email the hosts when a guest
+  replies* on the event. The guest's hidden `replyNoticeSentFor` holds the reply time last
+  announced, so a reply is announced once however often the job runs.
 - **Day-before reminders:** the `send-event-reminders` job runs every 5 minutes and, for each
   published event starting within 24 hours, emails guests who are coming and confirmed ticket
   holders once, with the time, the place and their invitation or ticket (and its entry code).
@@ -558,7 +565,7 @@ waitlist entry show when they were emailed (*Invitation emailed*, *Ticket emaile
 emailed*, *Reply reminder emailed*, *Reminder emailed*). `tests/int/eventEmails.int.spec.ts` and `eventReminders.int.spec.ts` send through a
 real SMTP server.
 
-Known limits: no RSVP reply notices to the studio yet, and reminders are not sent to guests
+Known limits: reply notices go one by one (no daily digest yet), and reminders are not sent to guests
 who were never given an email address. An event moved to a later date after its day-before
 reminders went out does not send them again. Inquiry
 alerts, client gallery links and vendor notices are not emailed yet. Delivery problems (bounces,

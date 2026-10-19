@@ -2,6 +2,7 @@ import { APIError, Forbidden, type Access, type CollectionConfig, type FieldAcce
 
 import { isSuperAdmin, tenantIdsWithRole } from '@/access'
 import { DEFAULT_LOCALE, LOCALE_LABELS, LOCALES } from '@/i18n/config'
+import { queueEmail } from '@/lib/email'
 import { exportGuestList, importGuestList, sendInvitations, sendReplyReminders } from '@/lib/guestListEndpoints'
 import { idOf } from '@/lib/ids'
 import { GUEST_LIST_STAFF_ROLES, isGuestListStaff, organizedEventIds } from '@/lib/organizers'
@@ -85,6 +86,15 @@ export const EventGuests: CollectionConfig = {
           }
         }
         return data
+      },
+    ],
+    afterChange: [
+      // The hosts hear about each reply the guest sends from their link (staff edits set no reply time).
+      async ({ doc, previousDoc, req }) => {
+        if (doc.respondedAt && doc.respondedAt !== previousDoc?.respondedAt) {
+          await queueEmail(req, 'replyNotice', doc.id)
+        }
+        return doc
       },
     ],
     beforeChange: [
@@ -194,6 +204,13 @@ export const EventGuests: CollectionConfig = {
       admin: { readOnly: true, position: 'sidebar', date: { pickerAppearance: 'dayAndTime' }, description: 'When the invitation was emailed. Guests already emailed are skipped when invitations are sent.' },
       // Set only by the email job.
       access: { create: () => false, update: () => false },
+    },
+    {
+      name: 'replyNoticeSentFor',
+      type: 'date',
+      admin: { hidden: true },
+      // The reply the hosts were last emailed about, set only by the email job.
+      access: { read: staffField, create: () => false, update: () => false },
     },
     {
       name: 'replyReminderSentAt',

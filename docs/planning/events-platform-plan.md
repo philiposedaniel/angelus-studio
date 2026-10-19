@@ -41,8 +41,8 @@ depends on it.
    and a vendor link with their event details. *Needs nothing; documents stay on local disk
    until R2.*
 5. **Email** (invitations, ticket confirmations, waitlist offers, reply reminders and
-   day-before reminders built; they send once SMTP details are set). Still to do: RSVP notices
-   to the studio, vendor notices and inquiry alerts. *Sending needs the email account.*
+   day-before reminders, and reply notices to the hosts built; they send once SMTP details are
+   set). Still to do: vendor notices and inquiry alerts. *Sending needs the email account.*
 6. **Contracts, invoices and balances** (HoneyBook). Contract from a quote, e-signature,
    invoices with a payment schedule, balance payments by Stripe. *Needs the e-signature
    choice and Stripe.*

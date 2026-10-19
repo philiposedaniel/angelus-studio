@@ -475,6 +475,18 @@ export const es: Dictionary = {
       guestCode: 'Tu invitación muestra tu código de acceso. Tenlo a mano en el móvil en la entrada.',
       guestAction: 'Abrir tu invitación',
     },
+    replyNotice: {
+      subject: '{name} ha respondido: {event}',
+      body: '{name} ha respondido a la invitación a {event}.',
+      attending: { one: 'Asiste, 1 persona.', other: 'Asisten {count} personas.' },
+      declined: 'No asiste.',
+      party: 'Quién viene: {party}',
+      guestNumber: 'Invitado {n}',
+      dietary: 'Necesidades alimentarias: {notes}',
+      message: 'Su nota: {message}',
+      action: 'Abrir la lista de invitados',
+      note: 'Recibes esto porque organizas este evento o pediste al estudio copia de las respuestas. Pide al estudio que desactive estos correos.',
+    },
   },
   footer: { rights: 'Todos los derechos reservados.' },
 }

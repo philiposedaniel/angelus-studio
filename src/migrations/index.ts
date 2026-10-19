@@ -29,6 +29,7 @@ import * as migration_20261017_215543_equipment_checkout from './20261017_215543
 import * as migration_20261017_234930_event_emails from './20261017_234930_event_emails';
 import * as migration_20261018_023933_meal_choices from './20261018_023933_meal_choices';
 import * as migration_20261018_122540_event_reminders from './20261018_122540_event_reminders';
+import * as migration_20261019_135403_reply_notices from './20261019_135403_reply_notices';
 
 export const migrations = [
   {
@@ -184,6 +185,11 @@ export const migrations = [
   {
     up: migration_20261018_122540_event_reminders.up,
     down: migration_20261018_122540_event_reminders.down,
-    name: '20261018_122540_event_reminders'
+    name: '20261018_122540_event_reminders',
+  },
+  {
+    up: migration_20261019_135403_reply_notices.up,
+    down: migration_20261019_135403_reply_notices.down,
+    name: '20261019_135403_reply_notices'
   },
 ];

@@ -17,6 +17,8 @@ The studio can name you as an organizer of your event. You then manage its guest
 4. **Copy invitation link** next to each guest gives you their personal invitation to send by
    email, WhatsApp or text. Each guest's link is theirs alone: send it only to them.
 5. **Download the guest list** as a spreadsheet at any time.
+6. If the studio sends email, you get an email each time a guest replies or changes their reply,
+   with who is coming and their meals. Ask the studio if you would rather not get them.
 
 The studio handles the invitation design, seating, vendors and the event details. Ask them for
 changes to those.

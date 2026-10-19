@@ -881,6 +881,14 @@ export interface Event {
    */
   rsvpDeadline?: string | null;
   /**
+   * Each reply, and each change to one, is emailed to the event's organizers and to the address below. Needs email sending set up.
+   */
+  replyNotices?: boolean | null;
+  /**
+   * Optional, e.g. the studio's events address or a wedding planner.
+   */
+  replyNoticeEmail?: string | null;
+  /**
    * Optional. When set, each person coming picks one of these when they reply, and the counts show above, in the guest list download and at check-in. People who chose a meal that is later removed count as not chosen.
    */
   mealOptions?:
@@ -973,6 +981,7 @@ export interface EventGuest {
    * When the invitation was emailed. Guests already emailed are skipped when invitations are sent.
    */
   invitationSentAt?: string | null;
+  replyNoticeSentFor?: string | null;
   /**
    * When the guest was last reminded to reply.
    */
@@ -1970,6 +1979,8 @@ export interface EventsSelect<T extends boolean = true> {
       };
   rsvpOpen?: T;
   rsvpDeadline?: T;
+  replyNotices?: T;
+  replyNoticeEmail?: T;
   mealOptions?:
     | T
     | {
@@ -1997,6 +2008,7 @@ export interface EventGuestsSelect<T extends boolean = true> {
   partySize?: T;
   language?: T;
   invitationSentAt?: T;
+  replyNoticeSentFor?: T;
   replyReminderSentAt?: T;
   dayBeforeSentAt?: T;
   rsvpStatus?: T;
@@ -2373,7 +2385,14 @@ export interface TaskCleanupGalleryZips {
  */
 export interface TaskSendEmail {
   input: {
-    kind: 'invitation' | 'ticket' | 'waitlistOffer' | 'replyReminder' | 'guestDayBefore' | 'ticketDayBefore';
+    kind:
+      | 'invitation'
+      | 'ticket'
+      | 'waitlistOffer'
+      | 'replyReminder'
+      | 'guestDayBefore'
+      | 'ticketDayBefore'
+      | 'replyNotice';
     id: number;
   };
   output?: unknown;
