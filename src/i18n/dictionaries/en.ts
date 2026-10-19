@@ -200,6 +200,9 @@ export const en = {
     signFailed: 'We could not record your signature. Please refresh the page and try again.',
     signFirst: 'Please sign the contract above before paying the deposit.',
     viewInvoice: 'View the invoice',
+    title: 'Quote',
+    reference: 'Reference',
+    downloadPdf: 'Download as PDF',
   },
   invoice: {
     reference: 'Reference',

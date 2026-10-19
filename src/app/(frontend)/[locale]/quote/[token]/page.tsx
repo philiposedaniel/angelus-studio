@@ -75,6 +75,9 @@ export default async function QuotePage({ params, searchParams }: PageProps<'/[l
         <Link href={`/${locale}/quote/${token}/invoice`} className="text-gold underline underline-offset-4">
           {t.viewInvoice}
         </Link>
+        <a href={`/${locale}/quote/${token}/pdf`} className="text-gold underline underline-offset-4">
+          {t.downloadPdf}
+        </a>
       </header>
 
       {query.payment === 'success' && <p role="status" className="text-gold">{t.paymentConfirming}</p>}

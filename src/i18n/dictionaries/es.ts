@@ -202,6 +202,9 @@ export const es: Dictionary = {
     signFailed: 'No hemos podido registrar tu firma. Actualiza la página e inténtalo de nuevo.',
     signFirst: 'Firma el contrato de arriba antes de pagar el depósito.',
     viewInvoice: 'Ver la factura',
+    title: 'Presupuesto',
+    reference: 'Referencia',
+    downloadPdf: 'Descargar en PDF',
   },
   invoice: {
     reference: 'Referencia',
