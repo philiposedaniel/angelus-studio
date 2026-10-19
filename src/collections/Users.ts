@@ -1,4 +1,4 @@
-import { APIError, type Access, type CollectionConfig, type Where } from 'payload'
+import { APIError, type Access, type CollectionConfig, type FieldAccess, type Where } from 'payload'
 
 import {
   canChangeMemberships,
@@ -14,6 +14,7 @@ import {
   tenantIdsWithRole,
 } from '@/access'
 import { GALLERY_STAFF_ROLES } from '@/access/galleries'
+import { requireMfaCodeAtLogin } from '@/lib/mfa'
 
 /** Super admins: everyone. Studio admins: members of their studios. Everyone: themselves. */
 const readOrManageUsers: Access = ({ req: { user } }) => {
@@ -43,6 +44,23 @@ const readUsers: Access = ({ req: { user } }) => {
   return { or: [self, { 'tenants.tenant': { in: studios } }] }
 }
 
+/**
+ * Authenticator secrets and their counters: only server code running without a signed-in user can read
+ * or write them (the sign-in and security actions). Anything arriving over the API is refused.
+ */
+const serverOnlyField: FieldAccess = ({ req }) => !req.user && req.payloadAPI === 'local'
+
+/** Studio admins can turn authenticator sign-in off for members of their studios; super admins for anyone. */
+const mfaResetAccess: FieldAccess = ({ req: { user }, doc }) => {
+  if (!user) return false
+  if (isSuperAdmin(user)) return true
+  const administered = tenantIdsWithRole(user, ['admin']).map(String)
+  const memberOf = ((doc?.tenants ?? []) as Array<{ tenant?: unknown }>).map((m) =>
+    String(typeof m.tenant === 'object' && m.tenant !== null ? (m.tenant as { id: unknown }).id : m.tenant),
+  )
+  return memberOf.some((id) => administered.includes(id))
+}
+
 export const Users: CollectionConfig = {
   slug: 'users',
   admin: {
@@ -69,8 +87,19 @@ export const Users: CollectionConfig = {
     delete: superAdminsOnly,
   },
   hooks: {
+    beforeLogin: [requireMfaCodeAtLogin],
     beforeChange: [
       async ({ data, operation, originalDoc, req }) => {
+        // Turning authenticator sign-in off for someone who lost their phone clears their secret too.
+        if (data.mfaReset === true) {
+          data.mfaReset = false
+          data.mfaEnabled = false
+          data.mfaSecret = null
+          data.mfaLastCounter = null
+          data.mfaFailedAttempts = 0
+          data.mfaLockedUntil = null
+        }
+
         // The very first account created through the admin UI becomes the platform owner.
         if (operation === 'create' && !req.user && req.payloadAPI !== 'local') {
           const { totalDocs } = await req.payload.count({ collection: 'users', req })
@@ -150,5 +179,33 @@ export const Users: CollectionConfig = {
         },
       ],
     },
+    {
+      name: 'mfaEnabled',
+      label: 'Authenticator sign-in on',
+      type: 'checkbox',
+      defaultValue: false,
+      access: { create: serverOnlyField, update: serverOnlyField },
+      admin: {
+        position: 'sidebar',
+        readOnly: true,
+        description: 'The person turns this on from their Security page in the portal.',
+      },
+    },
+    {
+      name: 'mfaReset',
+      label: 'Turn off authenticator sign-in',
+      type: 'checkbox',
+      defaultValue: false,
+      access: { create: () => false, update: mfaResetAccess },
+      admin: {
+        position: 'sidebar',
+        description: 'Use this if the person lost their phone. Saving clears their authenticator secret.',
+      },
+    },
+    // Internal to the sign-in checks: never read through the API or the admin panel.
+    { name: 'mfaSecret', type: 'text', access: { read: serverOnlyField, create: serverOnlyField, update: serverOnlyField }, admin: { hidden: true } },
+    { name: 'mfaLastCounter', type: 'number', access: { read: serverOnlyField, create: serverOnlyField, update: serverOnlyField }, admin: { hidden: true } },
+    { name: 'mfaFailedAttempts', type: 'number', access: { read: serverOnlyField, create: serverOnlyField, update: serverOnlyField }, admin: { hidden: true } },
+    { name: 'mfaLockedUntil', type: 'date', access: { read: serverOnlyField, create: serverOnlyField, update: serverOnlyField }, admin: { hidden: true } },
   ],
 }
