@@ -9,6 +9,7 @@ type Labels = {
   signIn: string
   signingIn: string
   loginFailed: string
+  authenticatorCode: string
 }
 
 export function LoginForm({ redirectTo, labels }: { redirectTo: string; labels: Labels }) {
@@ -25,7 +26,12 @@ export function LoginForm({ redirectTo, labels }: { redirectTo: string; labels: 
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: form.get('email'), password: form.get('password') }),
+      body: JSON.stringify({
+        email: form.get('email'),
+        password: form.get('password'),
+        // Only staff with authenticator sign-in on need a code; it is sent only when typed.
+        ...(String(form.get('totp') ?? '').trim() && { totp: String(form.get('totp')).trim() }),
+      }),
     }).catch(() => null)
     if (response?.ok) {
       router.replace(redirectTo)
@@ -52,6 +58,15 @@ export function LoginForm({ redirectTo, labels }: { redirectTo: string; labels: 
           type="password"
           autoComplete="current-password"
           required
+          className={inputClass}
+        />
+      </label>
+      <label className="block text-sm text-mist">
+        {labels.authenticatorCode}
+        <input
+          name="totp"
+          inputMode="numeric"
+          autoComplete="one-time-code"
           className={inputClass}
         />
       </label>

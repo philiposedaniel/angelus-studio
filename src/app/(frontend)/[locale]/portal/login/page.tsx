@@ -27,6 +27,7 @@ export default async function LoginPage({ params }: PageProps<'/[locale]/portal/
           signIn: t.signIn,
           signingIn: t.signingIn,
           loginFailed: t.loginFailed,
+          authenticatorCode: t.authenticatorCode,
         }}
       />
     </section>
