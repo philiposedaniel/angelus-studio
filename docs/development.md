@@ -175,12 +175,8 @@ jobs to a separate worker process.
   already has. It lists the line items, the total, the deposit and balance paid so far, the amount
   still due, and each confirmed payment with its date. Only payments marked *paid* count; pending,
   failed and expired payments and ticket payments do not. Quotes that are still drafts have no
-  invoice. The page links to `/quote/<token>/invoice/pdf`, a PDF of the same invoice made with
-  `pdf-lib` on the server (`src/lib/invoicePdf.ts`), in the studio's language. The PDF is sent as an
-  attachment with `Cache-Control: private, no-store`. Its standard fonts cover Western European
-  letters only: any other character is printed as `?`. There are no print styles, so printing the
-  page from the browser also prints the site header and footer. A PDF of the quote itself is not
-  made yet.
+  invoice. It has no PDF download and no print styles, so printing from the browser also prints
+  the site header and footer.
 
 ### Stripe setup
 
