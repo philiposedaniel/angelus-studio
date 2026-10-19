@@ -70,6 +70,9 @@ export default async function PortalHome({ params }: PageProps<'/[locale]/portal
           <Link href={`/${locale}/portal/calendar`} className="text-gold hover:underline">
             {t.calendarLink}
           </Link>
+          <Link href={`/${locale}/portal/security`} className="text-gold hover:underline">
+            {t.securityLink}
+          </Link>
           <Link href={`/${locale}/portal/projects`} className="text-sm text-gold hover:text-ivory">
             {t.myProjects}
           </Link>
