@@ -8,6 +8,11 @@ export const en = {
     language: 'Language',
     skipToContent: 'Skip to content',
   },
+  notFoundPage: {
+    title: 'Page not found',
+    text: 'This page does not exist or is no longer available.',
+    home: 'Back to the home page',
+  },
   hero: {
     eyebrow: 'Media production',
     ourServices: 'Our services',
