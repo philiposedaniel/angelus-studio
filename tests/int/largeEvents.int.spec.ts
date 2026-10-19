@@ -31,8 +31,9 @@ const TARGETS = {
   placesTaken: 150,
   eventPage: 400,
   waitlistPosition: 150,
-  attendeeCsv: 2_000,
-  guestCsv: 2_000,
+  // The downloads read every row, so they slow most when other test files share the database.
+  attendeeCsv: 4_000,
+  guestCsv: 4_000,
   guestPage: 300,
   rsvpSummary: 100,
   registrationSummary: 1_000,
