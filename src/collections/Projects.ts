@@ -226,5 +226,18 @@ export const Projects: CollectionConfig = {
       ],
     },
     { name: 'notes', type: 'textarea', access: { read: staffOnly }, admin: { description: 'Internal notes.' } },
+    {
+      // Kit set aside for this production. Read from the reservations, so nothing is stored twice.
+      name: 'kit',
+      type: 'join',
+      collection: 'equipment-reservations',
+      on: 'project',
+      label: 'Kit reserved',
+      access: { read: staffOnly },
+      admin: {
+        description: 'Kit set aside for this production. Add or change reservations under Equipment reservations.',
+        allowCreate: false,
+      },
+    },
   ],
 }

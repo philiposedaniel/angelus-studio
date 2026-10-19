@@ -99,7 +99,11 @@ export interface Config {
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
   };
-  collectionsJoins: {};
+  collectionsJoins: {
+    projects: {
+      kit: 'equipment-reservations';
+    };
+  };
   collectionsSelect: {
     tenants: TenantsSelect<false> | TenantsSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
@@ -1162,6 +1166,37 @@ export interface Project {
    * Internal notes.
    */
   notes?: string | null;
+  /**
+   * Kit set aside for this production. Add or change reservations under Equipment reservations.
+   */
+  kit?: {
+    docs?: (number | EquipmentReservation)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "equipment-reservations".
+ */
+export interface EquipmentReservation {
+  id: number;
+  tenant?: (number | null) | Tenant;
+  equipment: number | Equipment;
+  project: number | Project;
+  startsAt: string;
+  endsAt: string;
+  /**
+   * When the kit left the studio. Leave empty until it does.
+   */
+  checkedOutAt?: string | null;
+  /**
+   * When the kit came back. Needs a check-out time first.
+   */
+  returnedAt?: string | null;
+  notes?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1185,29 +1220,6 @@ export interface Equipment {
   /**
    * Internal notes.
    */
-  notes?: string | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "equipment-reservations".
- */
-export interface EquipmentReservation {
-  id: number;
-  tenant?: (number | null) | Tenant;
-  equipment: number | Equipment;
-  project: number | Project;
-  startsAt: string;
-  endsAt: string;
-  /**
-   * When the kit left the studio. Leave empty until it does.
-   */
-  checkedOutAt?: string | null;
-  /**
-   * When the kit came back. Needs a check-out time first.
-   */
-  returnedAt?: string | null;
   notes?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -2134,6 +2146,7 @@ export interface ProjectsSelect<T extends boolean = true> {
             };
       };
   notes?: T;
+  kit?: T;
   updatedAt?: T;
   createdAt?: T;
 }

@@ -323,10 +323,13 @@ for the order of the next steps.
   the migration creates. Two requests at the same moment cannot both book the same kit.
 - Only production staff can read or change equipment and reservations. Other studios and clients
   see nothing.
+- Each production shows the kit reserved for it in its admin page, under *Kit reserved*. The list is read from the
+  reservations, so nothing is stored twice, and it adds no migration. Only production staff see it; crew and
+  clients do not.
 - **Check-out and return:** staff record *Checked out at* and *Returned at* on a reservation. A return needs
   a check-out time first, and the kit cannot come back before it left. Only production staff can change them.
   Migration `20261017_215543_equipment_checkout` adds the two columns.
-- Not built yet: kit lists per production, and a calendar of kit use.
+- Not built yet: a calendar of kit use.
 
 Not built yet: run-of-show timing and printing, and clients uploading or approving anything on their project.
 
