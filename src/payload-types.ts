@@ -659,6 +659,19 @@ export interface Quote {
    */
   depositPercent: number;
   /**
+   * Optional. Pay the balance after the deposit in dated installments instead of one payment. They must add up to the balance exactly. Locked once the contract is signed or the deposit is paid.
+   */
+  paymentSchedule?:
+    | {
+        dueDate: string;
+        /**
+         * In minor units: 12550 means 125.50.
+         */
+        amount: number;
+        id?: string | null;
+      }[]
+    | null;
+  /**
    * Calculated from the line items, in minor units.
    */
   totalAmount?: number | null;
@@ -710,7 +723,11 @@ export interface Payment {
    */
   amount: number;
   currency: 'eur' | 'usd' | 'gbp';
-  kind: 'deposit' | 'balance' | 'ticket';
+  kind: 'deposit' | 'balance' | 'installment' | 'ticket';
+  /**
+   * Which installment of the quote’s payment schedule this pays, from 1.
+   */
+  installmentNumber?: number | null;
   status: 'pending' | 'paid' | 'failed' | 'expired' | 'refund-pending' | 'refunded';
   /**
    * Refunded so far, in minor units, as Stripe reports it.
@@ -1944,6 +1961,13 @@ export interface QuotesSelect<T extends boolean = true> {
         id?: T;
       };
   depositPercent?: T;
+  paymentSchedule?:
+    | T
+    | {
+        dueDate?: T;
+        amount?: T;
+        id?: T;
+      };
   totalAmount?: T;
   depositAmount?: T;
   status?: T;
@@ -1974,6 +1998,7 @@ export interface PaymentsSelect<T extends boolean = true> {
   amount?: T;
   currency?: T;
   kind?: T;
+  installmentNumber?: T;
   status?: T;
   refundedAmount?: T;
   refundedAt?: T;

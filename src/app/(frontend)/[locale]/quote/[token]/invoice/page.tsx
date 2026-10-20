@@ -32,8 +32,14 @@ export default async function InvoicePage({ params }: PageProps<'/[locale]/quote
 
   const t = getDictionary(locale).invoice
   const money = (amount: number) => formatMoney(amount, quote.currency, locale)
-  const kindLabel = (kind: string | null | undefined) =>
-    kind === 'deposit' ? t.kindDeposit : kind === 'balance' ? t.kindBalance : ''
+  const kindLabel = (payment: { kind?: string | null; installmentNumber?: number | null }) =>
+    payment.kind === 'deposit'
+      ? t.kindDeposit
+      : payment.kind === 'balance'
+        ? t.kindBalance
+        : payment.kind === 'installment'
+          ? `${t.kindInstallment} ${payment.installmentNumber ?? ''}`.trim()
+          : ''
 
   return (
     <main className="mx-auto grid max-w-3xl gap-8 px-6 py-16 text-ivory">
@@ -98,7 +104,7 @@ export default async function InvoicePage({ params }: PageProps<'/[locale]/quote
             {payments.map((payment) => (
               <li key={payment.id} className="flex justify-between border-b border-ivory/10 py-2">
                 <span>
-                  {kindLabel(payment.kind)}
+                  {kindLabel(payment)}
                   {payment.paidAt ? ` · ${t.paidOn} ${formatDate(payment.paidAt, locale)}` : ''}
                 </span>
                 <span>{money(payment.amount)}</span>

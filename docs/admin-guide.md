@@ -55,7 +55,11 @@ Quotes live under **Sales > Quotes**.
 3. Optionally add **contract terms**. If terms are present, the client must sign them on the quote page before
    they can pay the deposit. Signatures record the name, time, IP address and browser, and the terms are
    fingerprinted, so changed terms do not match an earlier signature.
-4. Set the status and send the client the **public link** (`/quote/<token>` in the studio's language).
+4. Optionally set a **payment schedule**: dated installments that split the balance after the deposit (up to 12).
+   The amounts, in minor units, must add up to the balance exactly, and they must be listed in due-date order. The
+   client then pays each installment by its own Stripe payment; the balance button is not shown. The schedule
+   cannot change once the contract is signed or the deposit is paid.
+5. Set the status and send the client the **public link** (`/quote/<token>` in the studio's language).
 
 Quote statuses:
 
@@ -79,7 +83,7 @@ Important rules:
 
 Payments are recorded under **Sales > Payments** and created by the online payment flow. Each payment has:
 
-- **Kind:** Deposit, Balance or Ticket.
+- **Kind:** Deposit, Balance, Installment (with its number in the quote's schedule) or Ticket.
 - **Status:** Waiting for payment, Paid, Failed (amount or currency did not match) or Expired (not paid in time).
 
 Stripe is switched off until `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` are set on the server. While they
@@ -164,6 +168,8 @@ one is set up, invitation links are copied by hand.
 
 ## Known limitations
 
+- The quote PDF shows the balance after the deposit but not its payment schedule. The client sees the
+  schedule on the quote page.
 - No email sending yet, so invitations and waitlist offers are copied by hand.
 - The empty gallery list for clients says photos appear there once published, not that an email is sent. When the
   email account is set up, the wording can go back to promising an email (`portal.noGalleries` in
