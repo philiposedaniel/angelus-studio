@@ -168,6 +168,9 @@ one is set up, invitation links are copied by hand.
 
 ## Known limitations
 
+- A client who opens two payment pages for the same balance or installment and pays both is charged twice. The
+  second payment is recorded as paid and nothing refunds it automatically; refund it in Stripe. See
+  [access-review-overrideaccess.md](access-review-overrideaccess.md).
 - The quote PDF shows the balance after the deposit but not its payment schedule. The client sees the
   schedule on the quote page.
 - No email sending yet, so invitations and waitlist offers are copied by hand.
