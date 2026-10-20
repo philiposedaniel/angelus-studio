@@ -22,13 +22,16 @@ closely should be checked when they are next changed.
 
 ## Open items
 
-- **Duplicate installment or balance payments.** Two Checkout sessions for the same installment can both be
-  paid. The checkout refuses an installment already recorded as paid, but not one that is still waiting, so
-  the webhook records both as paid. The client is then charged twice, and the invoice's amount due stays at
-  zero. Nothing refunds it automatically. Staff refund the extra payment in Stripe. The same is true of the
-  balance payment today.
+- **Duplicate deposit, balance or installment payments.** A new payment page now expires every older page for
+  the same deposit, balance or installment that is still waiting (`src/lib/paymentSessions.ts`). If Stripe
+  refuses to expire an older page, because it was just paid, no new page opens. What remains is a narrow race:
+  a client pays an older page in the same moment the newer one is opened. Both payments are then recorded as
+  paid, and nothing refunds the extra one automatically. Staff refund it in Stripe. The admin guide says so.
+  The webhook is unchanged: it records every verified payment.
 - **Tests.** Cross-studio tests exist for the collections above (`tests/int/access.int.spec.ts`,
-  `staffRoleReads.int.spec.ts`, `projectAccess.int.spec.ts`, `publicTokens.int.spec.ts`).
+  `staffRoleReads.int.spec.ts`, `projectAccess.int.spec.ts`, `publicTokens.int.spec.ts`). The expiry rule is
+  tested in `tests/int/paymentSessions.int.spec.ts`; the page action that calls it needs Stripe and is covered
+  by the webhook and checkout checks only.
 
 ## Rule for new code
 
