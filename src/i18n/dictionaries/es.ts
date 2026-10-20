@@ -258,6 +258,7 @@ export const es: Dictionary = {
     where: 'Dónde',
     watchLive: 'Ver en directo',
     backToEvents: 'Todos los eventos',
+    addToCalendar: 'Añadir a tu calendario',
     notFound: 'Este evento no está disponible.',
     guestAlbumUnavailable: 'El álbum todavía no está disponible. Pide al estudio un enlace actualizado.',
   },

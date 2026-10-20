@@ -256,6 +256,7 @@ export const en = {
     where: 'Where',
     watchLive: 'Watch live',
     backToEvents: 'All events',
+    addToCalendar: 'Add to your calendar',
     notFound: 'This event is not available.',
     guestAlbumUnavailable: 'The album is not available yet. Please ask the studio for an updated link.',
   },
