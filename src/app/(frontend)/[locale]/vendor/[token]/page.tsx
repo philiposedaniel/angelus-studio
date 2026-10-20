@@ -43,7 +43,7 @@ export default async function VendorBookingPage({ params }: PageProps<'/[locale]
       )
     : null
   const confirmed = booking.status === 'confirmed'
-  const time = new Intl.DateTimeFormat(locale, { weekday: 'short', hour: '2-digit', minute: '2-digit', timeZone: zone })
+  const time = new Intl.DateTimeFormat(locale, { weekday: 'short', hour: 'numeric', minute: '2-digit', timeZone: zone })
   const arrivals = await eventArrivals(payload, booking)
   const programme = event.invitation?.schedule ?? []
 
