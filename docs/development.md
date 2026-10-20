@@ -542,6 +542,24 @@ covers every place on a registration. A person who takes a paid offer but does n
 not counted against a limit of their own; the form token and minimum fill time slow guessing, so
 avoid short codes for large discounts.
 
+## Calendar files for guests, ticket holders and vendors
+
+The invitation page, the ticket page and the vendor booking page each have an **Add to your
+calendar** link. It downloads an iCalendar (`.ics`) file with one event: the event's title, place,
+start and end (written in UTC, so every calendar app shows its own local time), and the link back
+to the page it came from. A vendor's entry starts at their arrival time when the studio set one.
+
+- Routes: `/[locale]/invite/[token]/calendar`, `/[locale]/tickets/[token]/calendar`,
+  `/[locale]/vendor/[token]/calendar`, built in `src/lib/eventCalendar.ts`.
+- The token and the site's studio are the only keys, as on the pages. A token from another
+  studio, a declined invitation, a pending or cancelled ticket, a cancelled booking or an
+  unpublished event gets 404.
+- The file never holds other guests, buyers' details, amounts, contact details or staff notes.
+- Each entry has a fixed UID, so downloading again updates the entry rather than adding a copy.
+
+Known limits: the file is a one-off download, not a subscription, so a later change of time or
+place reaches people only if they download it again (or through the reminder emails).
+
 ## Event emails
 
 Emails go through any email service that offers SMTP (Resend, Postmark, Amazon SES, Brevo, a

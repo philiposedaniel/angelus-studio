@@ -76,6 +76,10 @@ export default async function VendorBookingPage({ params }: PageProps<'/[locale]
         )}
       </dl>
 
+      <a href={`/${locale}/vendor/${token}/calendar`} download className="w-fit text-gold underline">
+        {t.addToCalendar}
+      </a>
+
       {confirmed ? (
         <p role="status" className="text-gold">
           {t.alreadyConfirmed}

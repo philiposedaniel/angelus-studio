@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
-import { buildProductionCalendar, escapeIcsText, foldIcsLine } from '@/lib/ics'
+import { buildOccasionCalendar, buildProductionCalendar, escapeIcsText, foldIcsLine } from '@/lib/ics'
 
 const now = new Date('2026-10-19T09:00:00.000Z')
 
 describe('calendar file text', () => {
   it('escapes commas, semicolons, backslashes and line breaks', () => {
     expect(escapeIcsText('Hall A, floor 2; back\\door\nline two')).toBe(
-      'Hall A\\, floor 2\; back\\\\door\\nline two',
+      'Hall A\\, floor 2\\; back\\\\door\\nline two',
     )
   })
 
@@ -45,5 +45,34 @@ describe('production calendar file', () => {
     expect(body).toContain('STATUS:CONFIRMED')
     expect(body).toContain('STATUS:TENTATIVE')
     expect(body).toContain('DTSTAMP:20261019T090000Z')
+  })
+})
+
+describe('buildOccasionCalendar', () => {
+  const occasion = {
+    uid: 'ticket-7',
+    title: 'Summer Gala',
+    startsAt: '2027-06-12T15:00:00.000Z',
+    endsAt: '2027-06-12T23:00:00.000Z',
+    location: 'Sintra; main hall',
+    description: 'Your ticket: https://studio.test/en/tickets/abc',
+    url: 'https://studio.test/en/tickets/abc',
+  }
+
+  it('writes one timed event in UTC with the link back', () => {
+    const body = buildOccasionCalendar({ occasion, host: 'studio.test', now: new Date('2027-01-01T00:00:00Z') })
+    expect(body.startsWith('BEGIN:VCALENDAR\r\n')).toBe(true)
+    expect(body.endsWith('END:VCALENDAR\r\n')).toBe(true)
+    expect(body).toContain('UID:ticket-7@studio.test')
+    expect(body).toContain('DTSTAMP:20270101T000000Z')
+    expect(body).toContain('DTSTART:20270612T150000Z\r\nDTEND:20270612T230000Z')
+    expect(body).toContain('LOCATION:Sintra\\; main hall')
+    expect(body).toContain('URL:https://studio.test/en/tickets/abc')
+    expect(body.match(/BEGIN:VEVENT/g)).toHaveLength(1)
+  })
+
+  it('leaves out a missing or backwards end time', () => {
+    expect(buildOccasionCalendar({ occasion: { ...occasion, endsAt: null }, host: 'h' })).not.toContain('DTEND')
+    expect(buildOccasionCalendar({ occasion: { ...occasion, endsAt: '2027-06-12T10:00:00.000Z' }, host: 'h' })).not.toContain('DTEND')
   })
 })

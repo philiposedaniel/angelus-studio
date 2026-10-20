@@ -117,6 +117,9 @@ export default async function InvitationPage({ params }: PageProps<'/[locale]/in
             dangerouslySetInnerHTML={{ __html: entryCode }}
           />
           <p className="text-sm text-mist">{t.entryCodeHelp}</p>
+          <a href={`/${locale}/invite/${token}/calendar`} download className="w-fit text-gold underline">
+            {t.addToCalendar}
+          </a>
         </section>
       )}
 

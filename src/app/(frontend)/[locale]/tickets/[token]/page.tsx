@@ -75,6 +75,9 @@ export default async function TicketPage({ params }: PageProps<'/[locale]/ticket
               dangerouslySetInnerHTML={{ __html: entryCode ?? '' }}
             />
             <p className="text-sm text-mist">{t.entryCodeHelp}</p>
+            <a href={`/${locale}/tickets/${token}/calendar`} download className="w-fit text-gold underline">
+              {t.addToCalendar}
+            </a>
           </section>
           <p className="rounded-xl border border-gold/40 p-4 text-sm">{t.keepLink}</p>
         </>
