@@ -374,6 +374,7 @@ Not built yet: run-of-show timing and printing, and clients uploading or approvi
   vendors can coordinate load-in. Names, contacts, amounts and notes of other vendors are never
   shown; keep a booking *proposed* to leave it off the list. Below it is the guests' programme
   from the invitation design, when the event has one.
+  Write roles that say who is who ("Live band", "Caterer"), since the list shows roles only.
 - A vendor who is booked for any event cannot be deleted; remove those bookings first. Deleting an
   event deletes its bookings.
 
