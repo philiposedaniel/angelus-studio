@@ -2,6 +2,7 @@ import { getPayload, type Payload } from 'payload'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { DemoDataRefused, demoEmail, seedDemoData } from '@/lib/demoData'
+import { eventTicketSales } from '@/lib/tickets'
 import config from '@/payload.config'
 
 const SLUG = 'int-demo'
@@ -155,6 +156,17 @@ describe('demo data', () => {
       where: { tenant: { equals: first.tenant.id }, table: { exists: true } },
     })
     expect(seated.totalDocs).toBeGreaterThanOrEqual(2)
+
+    // The client hosts a ticketed event with tickets sold and checked in, which her portal shows.
+    const hosted = await payload.find({
+      collection: 'events',
+      where: { tenant: { equals: first.tenant.id }, organizers: { in: [client.id] } },
+      depth: 0,
+    })
+    const party = hosted.docs.find((e) => e.slug === 'demo-ferreira-summer-party')!
+    const sales = [...(await eventTicketSales(payload, party.id)).values()]
+    expect(sales.map((s) => s.sold).sort((a, b) => a - b)).toEqual([5, 17])
+    expect(sales.map((s) => s.arrived).sort((a, b) => a - b)).toEqual([4, 14])
 
     const again = await seedDemoData(payload, { tenantSlug: SLUG, allowExistingUsers: true })
     expect(again.created).toBe(false)
