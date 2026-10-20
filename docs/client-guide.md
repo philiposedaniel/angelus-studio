@@ -46,7 +46,7 @@ The studio sends you a private link to each quote. The link works without signin
 
 1. **Read the quote.** It lists each item with its quantity and price, the total, the deposit due now and the
    balance after the deposit. A quote is valid until its date shown; after that, ask the studio for an updated one. Use
-   **Download as PDF** on the quote page to save a copy, with the contract terms and your signature if you have
+   **Download as PDF** on the quote page to save a copy, with the payment schedule if there is one, the contract terms and your signature if you have
    signed.
 2. **Sign the contract, if there is one.** Some quotes include terms. You must read them and sign with your name
    before you can pay the deposit. Your signature is recorded with the time.
@@ -63,7 +63,8 @@ the page still shows a payment as due after a while, contact the studio with the
 ### Your invoice
 
 Each quote has an invoice view, linked from the quote page. It shows the line items, the total, the deposit and
-balance paid so far, the amount still due, and every confirmed payment. Use **Download as PDF** on that page to
+balance paid so far, the amount still due, the payment schedule if there is one (each installment with its due date and the day it was
+paid), and every confirmed payment. Use **Download as PDF** on that page to
 save a copy.
 
 ## If something looks wrong

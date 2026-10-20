@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { invoiceTotals, type InvoicePayment } from '@/lib/invoices'
+import { invoiceTotals, type InvoicePayment, scheduleLines } from '@/lib/invoices'
 
 const quote = { totalAmount: 100000, depositAmount: 30000 }
 
@@ -68,3 +68,37 @@ describe('invoiceTotals', () => {
     expect(totals.amountDue).toBe(0)
   })
 })
+
+describe('scheduleLines', () => {
+  const schedule = [
+    { dueDate: '2026-11-15T00:00:00.000Z', amount: 7000 },
+    { dueDate: '2026-12-15T00:00:00.000Z', amount: 7000 },
+  ]
+
+  it('lists every installment in order, with no paid day while it is still waiting', () => {
+    expect(scheduleLines(schedule, [])).toEqual([
+      { number: 1, dueDate: '2026-11-15T00:00:00.000Z', amount: 7000, paidAt: null },
+      { number: 2, dueDate: '2026-12-15T00:00:00.000Z', amount: 7000, paidAt: null },
+    ])
+  })
+
+  it('gives an installment the day it was paid, and leaves the others due', () => {
+    const lines = scheduleLines(schedule, [
+      { kind: 'installment', status: 'paid', installmentNumber: 1, amount: 7000, paidAt: '2026-11-16T10:00:00.000Z' },
+    ])
+    expect(lines.map((line) => line.paidAt)).toEqual(['2026-11-16T10:00:00.000Z', null])
+  })
+
+  it('ignores a waiting or failed installment payment', () => {
+    const lines = scheduleLines(schedule, [
+      { kind: 'installment', status: 'pending', installmentNumber: 2, amount: 7000, paidAt: null },
+    ])
+    expect(lines[1]?.paidAt).toBeNull()
+  })
+
+  it('is empty for a quote without a schedule', () => {
+    expect(scheduleLines(undefined, [])).toEqual([])
+    expect(scheduleLines([], [])).toEqual([])
+  })
+})
+

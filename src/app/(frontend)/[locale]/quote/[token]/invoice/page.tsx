@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { getDictionary } from '@/i18n/dictionaries'
-import { loadInvoice } from '@/lib/invoices'
+import { loadInvoice, scheduleLines } from '@/lib/invoices'
 import { resolveLocale } from '@/lib/locale'
 import { formatMoney } from '@/lib/money'
 import { isShareToken } from '@/lib/shareTokens'
@@ -29,6 +29,7 @@ export default async function InvoicePage({ params }: PageProps<'/[locale]/quote
   const invoice = await loadInvoice(payload, tenant.id, token)
   if (!invoice) notFound()
   const { quote, payments, totals } = invoice
+  const schedule = scheduleLines(quote.paymentSchedule, payments)
 
   const t = getDictionary(locale).invoice
   const money = (amount: number) => formatMoney(amount, quote.currency, locale)
@@ -94,6 +95,25 @@ export default async function InvoicePage({ params }: PageProps<'/[locale]/quote
           <dd className="text-gold">{money(totals.amountDue)}</dd>
         </div>
       </dl>
+
+      {schedule.length > 0 && (
+        <section className="grid gap-3">
+          <h2 className="font-serif text-2xl">{t.scheduleHeading}</h2>
+          <ul className="grid gap-2">
+            {schedule.map((line) => (
+              <li key={line.number} className="flex justify-between border-b border-ivory/10 py-2">
+                <span>
+                  {t.kindInstallment} {line.number}
+                  {line.dueDate ? ` · ${t.scheduleDate} ${formatDate(line.dueDate, locale)}` : ''}
+                  {' · '}
+                  {line.paidAt ? `${t.schedulePaid} ${formatDate(line.paidAt, locale)}` : t.scheduleDue}
+                </span>
+                <span>{money(line.amount)}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section className="grid gap-3">
         <h2 className="font-serif text-2xl">{t.paymentsHeading}</h2>
