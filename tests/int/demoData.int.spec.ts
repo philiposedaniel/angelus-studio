@@ -157,6 +157,20 @@ describe('demo data', () => {
     })
     expect(seated.totalDocs).toBeGreaterThanOrEqual(2)
 
+    // The quote's balance is paid in dated installments that add up to it exactly.
+    const [quote] = (
+      await payload.find({
+        collection: 'quotes',
+        where: { tenant: { equals: first.tenant.id } },
+        depth: 0,
+        overrideAccess: true,
+      })
+    ).docs
+    expect(quote!.paymentSchedule).toHaveLength(2)
+    expect(quote!.paymentSchedule!.reduce((sum, row) => sum + row.amount, 0)).toBe(
+      quote!.totalAmount! - quote!.depositAmount!,
+    )
+
     // The client hosts a ticketed event with tickets sold and checked in, which her portal shows.
     const hosted = await payload.find({
       collection: 'events',

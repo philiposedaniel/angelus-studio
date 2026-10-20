@@ -216,6 +216,11 @@ export async function seedDemoData(
         { description: 'Extra hour', quantity: 2, unitAmount: 15000 },
       ],
       depositPercent: 30,
+      // The 2,310.00 balance after the deposit is paid in two dated installments.
+      paymentSchedule: [
+        { dueDate: at(14, 0), amount: 115500 },
+        { dueDate: at(35, 0), amount: 115500 },
+      ],
       status: 'sent',
       contract: {
         terms:
