@@ -369,6 +369,11 @@ Not built yet: run-of-show timing and printing, and clients uploading or approvi
   the event, the vendor's role, arrival time (in the event's time zone) and instructions, and lets
   the vendor confirm with a note for the studio. It never shows amounts or staff notes, and stops
   working when the booking is cancelled. It works whether or not the event is published.
+- The vendor link also lists the day's arrivals: the role and arrival time of every booked or
+  confirmed vendor on the same event, in arrival order, with the vendor's own row marked, so
+  vendors can coordinate load-in. Names, contacts, amounts and notes of other vendors are never
+  shown; keep a booking *proposed* to leave it off the list. Below it is the guests' programme
+  from the invitation design, when the event has one.
 - A vendor who is booked for any event cannot be deleted; remove those bookings first. Deleting an
   event deletes its bookings.
 

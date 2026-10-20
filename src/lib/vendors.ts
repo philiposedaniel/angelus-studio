@@ -118,6 +118,37 @@ export async function findVendorBooking(
   return { booking, vendor, event }
 }
 
+/**
+ * The day's arrivals for a vendor's page: each booked or confirmed vendor's role and arrival time on
+ * the same event, in arrival order. Only the role and time leave the studio, never names, contacts,
+ * amounts or notes, so vendors can coordinate without seeing each other's details.
+ */
+export async function eventArrivals(payload: Payload, booking: Pick<EventVendor, 'id' | 'event' | 'tenant'>) {
+  const eventId = idOf(booking.event)
+  const tenantId = idOf(booking.tenant)
+  if (eventId === undefined || tenantId === undefined) return []
+  const { docs } = await payload.find({
+    collection: 'event-vendors',
+    where: {
+      and: [
+        { tenant: { equals: tenantId } },
+        { event: { equals: eventId } },
+        { status: { in: ['booked', 'confirmed'] } },
+      ],
+    },
+    sort: 'arrivalAt',
+    pagination: false,
+    depth: 0,
+    overrideAccess: true,
+    select: { role: true, arrivalAt: true },
+  })
+  return docs.map((doc) => ({
+    role: doc.role,
+    arrivalAt: doc.arrivalAt ?? null,
+    you: String(doc.id) === String(booking.id),
+  }))
+}
+
 export type ConfirmState = { status: 'idle' } | { status: 'confirmed' } | { status: 'error'; reason: 'failed' }
 
 /** A vendor confirms their booking from their link, optionally with a note for the studio. */
