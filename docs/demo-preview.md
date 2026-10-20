@@ -90,5 +90,8 @@ address that stops working when the command stops.
   amounts with no pay button. No email is sent.
 - Demo dates are relative to the day the command runs: the open day is three weeks later, the
   wedding and its production about six weeks later.
+- In CI, setup has sometimes exited without running or printing anything. On start,
+  `docker/preview-start.sh` repeats the migrations and demo data, up to three times, until the
+  demo data reports in. If it never does, the container stops instead of serving an empty site.
 - Claude's cloud workspace cannot publish a preview itself, because its network blocks tunnel
   services. A preview has to run on a machine you control.

@@ -27,7 +27,7 @@ ENV NODE_ENV=production PORT=3000 HOSTNAME=0.0.0.0
 RUN mkdir -p /app/media /app/private-media
 EXPOSE 3000
 # `next start` warns that it does not suit standalone output; it still serves this full build.
-CMD ["sh", "-c", "pnpm migrate && pnpm seed:demo && exec pnpm start"]
+CMD ["sh", "docker/preview-start.sh"]
 
 FROM base AS runner
 WORKDIR /app
