@@ -564,4 +564,15 @@ export const es: Dictionary = {
     },
   },
   footer: { rights: 'Todos los derechos reservados.' },
+  clientSummary: {
+    heading: 'Presupuestos y producciones',
+    saveFirst: 'Guarde la persona para ver sus presupuestos y producciones.',
+    noQuotes: 'No hay presupuestos para este correo de cliente que pueda leer.',
+    noProductions: 'No hay producciones de este cliente que pueda leer.',
+    quotes: 'Presupuestos',
+    productions: 'Producciones',
+    total: 'Total',
+    shootDate: 'Fecha de rodaje',
+    note: 'Solo aparece lo que su función le permite leer. Se empareja por el correo de cliente del presupuesto y el cliente de la producción.',
+  },
 }

@@ -115,6 +115,14 @@ download it again after the schedule changes.
 
 Deleting a project is limited to studio administrators.
 
+## Client summary
+
+Open a client's user record (a user with the Client role in the studio) to see their **Quotes and productions**
+below the account details. It lists their quotes, matched by the quote's client email, and their productions,
+matched by the production's client. Each entry links to the record. You see only what your role lets you read:
+quotes follow the quote rules, and productions are listed only to studio administrators and production
+managers of that studio, as on the production's own page.
+
 ## Client galleries
 
 Galleries are under **Client delivery > Galleries**. A gallery is delivered to the clients you list in it.
