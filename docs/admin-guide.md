@@ -115,6 +115,14 @@ download it again after the schedule changes.
 
 Deleting a project is limited to studio administrators.
 
+## Availability
+
+The public **availability** page (`/availability`, in each language) shows the next three months, with each day
+marked **Booked** or **Free**. A day is booked when a production on it is confirmed, in production or delivered,
+or when a published event falls on it. Planning and closed productions do not block a day, so set a production to
+Confirmed once the date is held. The page shows days only, never titles, clients or places. Event days are read
+in the event's time zone.
+
 ## Client summary
 
 Open a client's user record (a user with the Client role in the studio) to see their **Quotes and productions**
