@@ -401,6 +401,12 @@ announced; send the link again.
   decline.
 - Staff checking a guest in at the door see the guest's table. Guests do not see it on their
   invitation. The guest list download has a *Table* column.
+- *Download the seating plan (PDF)* in the Seating section prints the plan for the venue and the
+  caterer: each table with seats taken, the parties seated there with each person's name and meal,
+  dietary needs, a meal count per table, and the guests still without a table. Guests who declined
+  are left out; staff notes, contact details and invitation links are never printed. It is written
+  in the studio's first language and served by `GET /api/event-tables/plan?event=<id>`, which reads
+  as the signed-in user, so only the studio's admins and production managers get it.
 - Deleting a table leaves its guests without a table. Deleting an event deletes its tables.
 
 Known limits: seating is a list of tables, not a drawn floor plan, and the guest import does not

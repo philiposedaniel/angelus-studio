@@ -591,4 +591,14 @@ export const es: Dictionary = {
     shootDate: 'Fecha de rodaje',
     note: 'Solo aparece lo que su función le permite leer. Se empareja por el correo de cliente del presupuesto y el cliente de la producción.',
   },
+  seatingPdf: {
+    title: 'Plano de mesas',
+    seats: '{taken} de {capacity} asientos',
+    overCapacity: 'por encima de la capacidad',
+    meals: 'Menús',
+    dietary: 'Necesidades alimentarias',
+    notAnswered: 'aún sin responder',
+    withoutTable: 'Sin mesa',
+    noTables: 'Todavía no hay mesas.',
+  },
 }

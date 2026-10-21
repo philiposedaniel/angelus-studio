@@ -4,6 +4,7 @@ import { hasTenantRole, isSuperAdmin, tenantRoles } from '@/access'
 import { EVENT_GUEST_STAFF_ROLES } from '@/collections/EventGuests'
 import { idOf } from '@/lib/ids'
 import { MAX_TABLE_CAPACITY } from '@/lib/seating'
+import { downloadSeatingPlan } from '@/lib/seatingPdf'
 
 /**
  * A table at an event. Guests are seated by choosing a table on the guest; the event shows each
@@ -25,6 +26,8 @@ export const EventTables: CollectionConfig = {
     update: tenantRoles(EVENT_GUEST_STAFF_ROLES),
     delete: tenantRoles(EVENT_GUEST_STAFF_ROLES),
   },
+  // The seating plan as a PDF to print; it reads as the signed-in user, so the rules above apply.
+  endpoints: [{ path: '/plan', method: 'get', handler: downloadSeatingPlan }],
   hooks: {
     beforeValidate: [
       // A table belongs to its event's studio, and its name is not repeated within the event.
