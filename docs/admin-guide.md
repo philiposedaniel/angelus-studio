@@ -76,8 +76,8 @@ Important rules:
 - A quote is marked deposit paid or paid in full **only** when the payment webhook confirms it. Staff cannot set
   these by hand.
 - A paid quote cannot change status. Create a new quote instead.
-- The client's invoice page shows the line items, totals, deposit and balance paid, amount due and confirmed
-  payments. Clients can download the quote and the invoice as PDF files from their private links.
+- The client's invoice page shows the line items, totals, deposit and balance paid, amount due, the payment
+  schedule with each installment's due date and whether it is paid, and confirmed payments. Clients can download the quote and the invoice as PDF files from their private links.
 
 ## Payments
 
@@ -114,6 +114,14 @@ confirmed status. Notes, quotes and client details are never written into the fi
 download it again after the schedule changes.
 
 Deleting a project is limited to studio administrators.
+
+## Client summary
+
+Open a client's user record (a user with the Client role in the studio) to see their **Quotes and productions**
+below the account details. It lists their quotes, matched by the quote's client email, and their productions,
+matched by the production's client. Each entry links to the record. You see only what your role lets you read:
+quotes follow the quote rules, and productions are listed only to studio administrators and production
+managers of that studio, as on the production's own page.
 
 ## Client galleries
 
@@ -168,8 +176,10 @@ one is set up, invitation links are copied by hand.
 
 ## Known limitations
 
-- The quote PDF shows the balance after the deposit but not its payment schedule. The client sees the
-  schedule on the quote page.
+- A deposit, balance or installment has one payment page at a time: when a client opens a new one, the older
+  waiting page is expired at Stripe and cannot be paid. If the client pays an older page in the same moment, both
+  payments are taken and nothing refunds the extra one automatically; refund it in Stripe. See
+  [access-review-overrideaccess.md](access-review-overrideaccess.md).
 - No email sending yet, so invitations and waitlist offers are copied by hand.
 - The empty gallery list for clients says photos appear there once published, not that an email is sent. When the
   email account is set up, the wording can go back to promising an email (`portal.noGalleries` in

@@ -1,3 +1,5 @@
+import { inflateSync } from 'node:zlib'
+
 import { PDFDocument, type PDFFont, StandardFonts } from 'pdf-lib'
 import { beforeAll, describe, expect, it } from 'vitest'
 
@@ -23,6 +25,10 @@ const labels: InvoicePdfLabels = {
   kindBalance: 'Balance',
   kindInstallment: 'Installment',
   paidOn: 'paid',
+  scheduleHeading: 'Payment schedule',
+  scheduleDate: 'Due date',
+  scheduleDue: 'Due',
+  schedulePaid: 'Paid',
 }
 
 const format = {
@@ -110,5 +116,38 @@ describe('renderInvoicePdf', () => {
 
     const loaded = await PDFDocument.load(bytes)
     expect(loaded.getPageCount()).toBeGreaterThan(1)
+  })
+
+  it('prints the payment schedule with each installment due date and whether it is paid', async () => {
+    const quote = { ...quoteWith(lineItems(1)), depositAmount: 300, totalAmount: 1000 }
+    const totals = invoiceTotals(quote, [])
+    const bytes = await renderInvoicePdf(
+      {
+        quote,
+        payments: [],
+        totals,
+        schedule: [
+          { number: 1, dueDate: '2026-11-15T00:00:00.000Z', amount: 90000, paidAt: '2026-11-16T10:00:00.000Z' },
+          { number: 2, dueDate: '2026-12-15T00:00:00.000Z', amount: 90000, paidAt: null },
+        ],
+      },
+      labels,
+      format,
+    )
+    const text = Buffer.from(bytes).toString('latin1')
+    const drawn = [...text.matchAll(/stream\r?\n([\s\S]*?)\r?\nendstream/g)]
+      .map((match) => {
+        try {
+          return inflateSync(Buffer.from(match[1]!, 'latin1')).toString('latin1')
+        } catch {
+          return ''
+        }
+      })
+      .flatMap((content) => [...content.matchAll(/<([0-9A-F]*)> Tj/g)].map((hex) => Buffer.from(hex[1]!, 'hex').toString('latin1')))
+      .join('\n')
+    expect(drawn).toContain('Payment schedule')
+    expect(drawn).toContain('2026-12-15')
+    expect(drawn).toContain('Due')
+    expect(drawn).toContain('2026-11-16')
   })
 })

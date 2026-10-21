@@ -243,6 +243,10 @@ export const en = {
     kindDeposit: 'Deposit',
     kindBalance: 'Balance',
     kindInstallment: 'Installment',
+    scheduleHeading: 'Payment schedule',
+    scheduleDate: 'Due date',
+    scheduleDue: 'Due',
+    schedulePaid: 'Paid',
     paidOn: 'paid',
     backToQuote: 'Back to the quote',
     title: 'Invoice',
@@ -562,6 +566,17 @@ export const en = {
     },
   },
   footer: { rights: 'All rights reserved.' },
+  clientSummary: {
+    heading: 'Quotes and productions',
+    saveFirst: 'Save the person to see their quotes and productions.',
+    noQuotes: 'No quotes for this client email that you can read.',
+    noProductions: 'No productions for this client that you can read.',
+    quotes: 'Quotes',
+    productions: 'Productions',
+    total: 'Total',
+    shootDate: 'Shoot date',
+    note: 'Only what your role lets you read is listed. Matching is by the quote\'s client email and the production\'s client.',
+  },
 }
 
 export type Dictionary = typeof en

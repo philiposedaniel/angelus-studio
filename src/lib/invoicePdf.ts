@@ -2,7 +2,7 @@ import type { Payload } from 'payload'
 import { PDFDocument, rgb, StandardFonts, type PDFFont, type PDFPage } from 'pdf-lib'
 
 import { getDictionary } from '@/i18n/dictionaries'
-import { type InvoiceTotals, loadInvoice } from '@/lib/invoices'
+import { type InvoiceTotals, loadInvoice, type ScheduleLine, scheduleLines } from '@/lib/invoices'
 import type { Locale } from '@/i18n/config'
 import { formatMoney } from '@/lib/money'
 
@@ -26,6 +26,10 @@ export type InvoicePdfLabels = {
   kindBalance: string
   kindInstallment: string
   paidOn: string
+  scheduleHeading: string
+  scheduleDate: string
+  scheduleDue: string
+  schedulePaid: string
 }
 
 export type InvoicePdfInput = {
@@ -37,6 +41,7 @@ export type InvoicePdfInput = {
   }
   payments: ReadonlyArray<{ kind?: string | null; installmentNumber?: number | null; amount: number; paidAt?: string | null }>
   totals: InvoiceTotals
+  schedule?: readonly ScheduleLine[]
 }
 
 export type InvoicePdfFormat = {
@@ -97,7 +102,7 @@ export async function renderInvoicePdf(
   labels: InvoicePdfLabels,
   format: InvoicePdfFormat,
 ): Promise<Uint8Array> {
-  const { quote, payments, totals } = input
+  const { quote, payments, totals, schedule } = input
   const pdf = await PDFDocument.create()
   pdf.setTitle(pdfSafeText(`${labels.title} #${quote.id}`))
   const regular = await pdf.embedFont(StandardFonts.Helvetica)
@@ -192,6 +197,30 @@ export async function renderInvoicePdf(
   }
   y -= LINE
 
+  // Payment schedule: each installment, when it is due and whether it has been paid
+  if ((schedule ?? []).length > 0) {
+    newPageIfBelow(LINE * ((schedule ?? []).length + 3))
+    write(labels.scheduleHeading, MARGIN, 12, bold)
+    y -= LINE + 2
+    write(labels.kindInstallment, MARGIN, 10, bold, MUTED)
+    write(labels.scheduleDate, TABLE.quantityRight - 40, 10, bold, MUTED)
+    write(labels.schedulePaid, TABLE.priceRight, 10, bold, MUTED)
+    writeRight(labels.amount, TABLE.amountRight, 10, bold, MUTED)
+    y -= LINE
+    rule()
+    y -= 4
+    for (const line of schedule ?? []) {
+      newPageIfBelow(LINE)
+      write(`${labels.kindInstallment} ${line.number}`, MARGIN, 10, regular)
+      if (line.dueDate) write(format.date(line.dueDate), TABLE.quantityRight - 40, 10, regular)
+      if (line.paidAt) write(format.date(line.paidAt), TABLE.priceRight, 10, regular)
+      else write(labels.scheduleDue, TABLE.priceRight, 10, regular, MUTED)
+      writeRight(format.money(line.amount), TABLE.amountRight, 10, regular)
+      y -= LINE
+    }
+    y -= LINE
+  }
+
   // Payments
   newPageIfBelow(LINE * 2)
   write(labels.paymentsHeading, MARGIN, 12, bold)
@@ -226,7 +255,7 @@ export async function loadInvoicePdf(
   if (!invoice) return null
   const labels = getDictionary(locale).invoice
   const currency = invoice.quote.currency
-  const bytes = await renderInvoicePdf(invoice, labels, {
+  const bytes = await renderInvoicePdf({ ...invoice, schedule: scheduleLines(invoice.quote.paymentSchedule, invoice.payments) }, labels, {
     money: (amount) => formatMoney(amount, currency, locale),
     date: (iso) => new Date(iso).toLocaleDateString(locale, { dateStyle: 'long', timeZone: 'UTC' }),
   })

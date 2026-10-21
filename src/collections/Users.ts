@@ -158,6 +158,14 @@ export const Users: CollectionConfig = {
       admin: { position: 'sidebar' },
     },
     {
+      name: 'clientSummary',
+      type: 'ui',
+      admin: {
+        components: { Field: '@/components/admin/ClientSummaryField#ClientSummaryField' },
+        condition: (data) => Boolean(data?.tenants?.some((membership: { roles?: string[] | null }) => membership.roles?.includes('client'))),
+      },
+    },
+    {
       name: 'tenants',
       label: 'Studio memberships',
       type: 'array',

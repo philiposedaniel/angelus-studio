@@ -6,8 +6,39 @@ export const INVOICE_STATUSES = ['sent', 'deposit-paid', 'paid-in-full'] as cons
 export type InvoicePayment = {
   kind?: string | null
   status?: string | null
+  installmentNumber?: number | null
   amount: number
   paidAt?: string | null
+}
+
+/** One installment of a quote's payment schedule, with the day it was paid, if it has been. */
+export type ScheduleLine = {
+  number: number
+  dueDate: string | null
+  amount: number
+  paidAt: string | null
+}
+
+/**
+ * The installments of a quote's schedule, in order, each with the day it was paid. Only confirmed
+ * payments count, so an installment that is still waiting shows as due.
+ */
+export function scheduleLines(
+  schedule: ReadonlyArray<{ dueDate?: string | null; amount?: number | null }> | null | undefined,
+  payments: readonly InvoicePayment[],
+): ScheduleLine[] {
+  return (schedule ?? []).map((row, index) => {
+    const number = index + 1
+    const paid = payments.find(
+      (payment) => payment.kind === 'installment' && payment.status === 'paid' && payment.installmentNumber === number,
+    )
+    return {
+      number,
+      dueDate: row.dueDate ?? null,
+      amount: row.amount ?? 0,
+      paidAt: paid?.paidAt ?? null,
+    }
+  })
 }
 
 export type InvoiceTotals = {
