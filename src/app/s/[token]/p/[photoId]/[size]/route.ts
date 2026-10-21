@@ -15,13 +15,16 @@ import { watermarkImage } from '@/lib/watermark'
 
 const notFound = () => new Response('Not found', { status: 404 })
 
+/** Largest Postgres integer id. A bigger id fails in the query, so it is not found here. Switch to src/lib/ids.ts once #64 is on main. */
+const MAX_ROW_ID = 2147483647
+
 /** Serves a web-size copy of a photo in a shared album. Never the original. */
 export async function GET(
   _request: Request,
   { params }: RouteContext<'/s/[token]/p/[photoId]/[size]'>,
 ) {
   const { token, photoId, size } = await params
-  if (!isSharedSize(size) || !/^\d+$/.test(photoId)) return notFound()
+  if (!isSharedSize(size) || !/^\d+$/.test(photoId) || Number(photoId) > MAX_ROW_ID) return notFound()
   const tenant = await getCurrentTenant()
   if (!tenant) return notFound()
   const gallery = await findSharedGallery(tenant, token)

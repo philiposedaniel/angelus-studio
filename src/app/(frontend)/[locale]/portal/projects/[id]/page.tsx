@@ -9,6 +9,9 @@ import { requirePortalUser } from '@/lib/auth'
 import { resolveLocale } from '@/lib/locale'
 import { getCurrentTenant } from '@/lib/tenant'
 
+/** Largest Postgres integer id. A bigger id fails in the query, so it is not found here. Switch to src/lib/ids.ts once #64 is on main. */
+const MAX_ROW_ID = 2147483647
+
 export const metadata = { robots: { index: false } }
 
 /** One production the user works on or is the client of. The call sheet shows only to staff and crew. */
@@ -19,7 +22,7 @@ export default async function PortalProject({ params }: PageProps<'/[locale]/por
   const locale = await resolveLocale(tenant, requested)
   const user = await requirePortalUser(tenant, locale)
   const numericId = Number(id)
-  if (!Number.isInteger(numericId) || numericId <= 0) notFound()
+  if (!Number.isInteger(numericId) || numericId <= 0 || numericId > MAX_ROW_ID) notFound()
   const t = getDictionary(locale).portal
   const payload = await getPayload({ config })
 
