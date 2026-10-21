@@ -44,21 +44,28 @@ export function emailAdapter() {
 }
 
 /** An adapter that writes each message to the server log instead of sending it (EMAIL_MODE=log). */
-export const logEmailAdapter: EmailAdapter = ({ payload }) => ({
-  defaultFromAddress: process.env.EMAIL_FROM_ADDRESS || LOG_FROM_ADDRESS,
-  defaultFromName: process.env.EMAIL_FROM_NAME || 'Angelus Media Productions',
-  name: 'log',
-  sendEmail: async (message) => {
-    payload.logger.info({
-      msg: 'Email not sent (EMAIL_MODE=log)',
-      to: message.to,
-      from: message.from,
-      subject: message.subject,
-      text: message.text ?? '(HTML only)',
-    })
-    return { logged: true }
-  },
-})
+export const logEmailAdapter: EmailAdapter = ({ payload }) => {
+  // Shown once at startup, so log mode cannot sit unnoticed on a live server.
+  payload.logger.warn('Emails are written to the log, not sent (EMAIL_MODE=log). Unset EMAIL_MODE to send them.')
+  return {
+    defaultFromAddress: process.env.EMAIL_FROM_ADDRESS || LOG_FROM_ADDRESS,
+    defaultFromName: process.env.EMAIL_FROM_NAME || 'Angelus Media Productions',
+    name: 'log',
+    sendEmail: async (message) => {
+      // Payload's password-reset email is HTML only, so its text is logged as this placeholder on purpose.
+      // The reset token is in that HTML, and a token in a server log would let anyone who reads the log
+      // take over the account. Do not change this to log the HTML.
+      payload.logger.info({
+        msg: 'Email not sent (EMAIL_MODE=log)',
+        to: message.to,
+        from: message.from,
+        subject: message.subject,
+        text: message.text ?? '(HTML only)',
+      })
+      return { logged: true }
+    },
+  }
+}
 
 /** The sender as people see it: the studio's name with the platform's sending address. */
 export const fromStudio = (studioName: string) =>

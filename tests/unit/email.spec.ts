@@ -45,15 +45,22 @@ describe('emailAdapter', () => {
 
 describe('log adapter', () => {
   const build = (payload: unknown) => logEmailAdapter({ payload: payload as Payload })
+  const logger = () => ({ info: vi.fn(), warn: vi.fn() })
 
   it('uses the platform sender when no sender address is set', () => {
     delete process.env.EMAIL_FROM_ADDRESS
-    expect(build({}).defaultFromAddress).toBe(LOG_FROM_ADDRESS)
+    expect(build({ logger: logger() }).defaultFromAddress).toBe(LOG_FROM_ADDRESS)
+  })
+
+  it('warns once at startup that emails are written to the log, not sent', () => {
+    const warn = vi.fn()
+    build({ logger: { info: vi.fn(), warn } })
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('not sent (EMAIL_MODE=log)'))
   })
 
   it('writes the full message to the log and returns without sending', async () => {
     const info = vi.fn()
-    const adapter = build({ logger: { info } })
+    const adapter = build({ logger: { info, warn: vi.fn() } })
     const message = { to: 'guest@example.test', from: 'Studio <hi@studio.example>', subject: 'Invitation', text: 'Open: https://studio.example/rsvp/abc' }
 
     await expect(adapter.sendEmail(message)).resolves.toEqual({ logged: true })
@@ -65,7 +72,7 @@ describe('log adapter', () => {
 
   it('logs a placeholder for an HTML-only message', async () => {
     const info = vi.fn()
-    await build({ logger: { info } }).sendEmail({ to: 'a@studio.test', subject: 'Ticket', html: '<p>Ticket</p>' })
+    await build({ logger: { info, warn: vi.fn() } }).sendEmail({ to: 'a@studio.test', subject: 'Ticket', html: '<p>Ticket</p>' })
     expect(info).toHaveBeenCalledWith(expect.objectContaining({ text: '(HTML only)' }))
   })
 })
