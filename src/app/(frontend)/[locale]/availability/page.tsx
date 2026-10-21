@@ -70,7 +70,7 @@ export default async function AvailabilityPage({ params }: PageProps<'/[locale]/
                 const style = {
                   booked: { box: 'border-gold/60 bg-gold/10', label: 'text-xs text-gold', text: t.booked },
                   open: { box: 'border-ivory/10', label: 'text-xs text-mist', text: t.open },
-                  past: { box: 'border-ivory/5 opacity-40', label: 'text-xs text-mist', text: t.past },
+                  past: { box: 'border-ivory/5 bg-ivory/[0.02]', label: 'text-xs text-mist', text: t.past },
                 }[status]
                 return (
                   <span key={iso} className={`grid min-h-14 content-start gap-1 rounded-lg border p-2 text-left ${style.box}`}>
