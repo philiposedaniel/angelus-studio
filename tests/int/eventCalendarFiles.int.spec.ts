@@ -1,7 +1,7 @@
 import { getPayload, type Payload } from 'payload'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
-import { invitationCalendar, ticketCalendar, vendorCalendar } from '@/lib/eventCalendar'
+import { invitationCalendar, publicEventCalendar, ticketCalendar, vendorCalendar } from '@/lib/eventCalendar'
 import config from '@/payload.config'
 import type { Event, Tenant, TicketType, Vendor } from '@/payload-types'
 
@@ -134,6 +134,17 @@ describe('calendar files behind private links', () => {
     expect(await vendorCalendar(payload, studioA.id, token, 'en')).toBeNull()
   })
 
+  it("gives anyone a published event from the studio's own site, and nothing from another studio's", async () => {
+    const found = await publicEventCalendar(payload, studioA.id, event.slug, 'en')
+    const body = unfolded(found!.body)
+    expect(body).toContain('DTSTART:20270612T150000Z')
+    expect(body).toContain(`UID:event-${event.id}@`)
+    expect(body).toContain(`/en/events/${event.slug}`)
+    expect(found!.filename).toBe(`${PREFIX}gala.ics`)
+    expect(await publicEventCalendar(payload, studioB.id, event.slug, 'en')).toBeNull()
+    expect(await publicEventCalendar(payload, studioA.id, 'no-such-event', 'en')).toBeNull()
+  })
+
   it('stops giving files once the event is unpublished', async () => {
     const guest = await payload.create({
       collection: 'event-guests',
@@ -143,6 +154,7 @@ describe('calendar files behind private links', () => {
     await payload.update({ collection: 'events', id: event.id, data: { published: false }, overrideAccess: true })
     try {
       expect(await invitationCalendar(payload, studioA.id, guest.inviteToken, 'en')).toBeNull()
+      expect(await publicEventCalendar(payload, studioA.id, event.slug, 'en')).toBeNull()
     } finally {
       await payload.update({ collection: 'events', id: event.id, data: { published: true }, overrideAccess: true })
     }

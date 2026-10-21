@@ -62,9 +62,12 @@ test.describe('Vendor links', () => {
   test('a vendor sees their booking, without amounts or staff notes, and confirms it', async ({ page }) => {
     await page.goto(`${BASE}/en/vendor/${token}`)
     await expect(page.getByRole('heading', { name: `${PREFIX}Ana and João`, level: 1 })).toBeVisible()
-    await expect(page.getByText('DJ for the reception')).toBeVisible()
+    await expect(page.getByText('DJ for the reception', { exact: true })).toBeVisible()
+    // The day's arrivals list the vendor's own role, marked as theirs.
+    await expect(page.getByText('DJ for the reception (you)')).toBeVisible()
     await expect(page.getByText('Load in through the north gate.')).toBeVisible()
-    await expect(page.getByText('3:00 PM')).toBeVisible()
+    await expect(page.getByText('Saturday, June 12, 2027 at 3:00 PM')).toBeVisible()
+    await expect(page.getByText('Sat 3:00 PM')).toBeVisible()
     await expect(page.getByText('1,200')).toHaveCount(0)
     await expect(page.getByText('Agreed discount')).toHaveCount(0)
 

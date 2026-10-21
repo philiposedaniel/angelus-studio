@@ -8,7 +8,7 @@ import { formatEventWhen } from '@/lib/eventTime'
 import { resolveLocale } from '@/lib/locale'
 import { isShareToken } from '@/lib/shareTokens'
 import { getCurrentTenant } from '@/lib/tenant'
-import { findVendorBooking } from '@/lib/vendors'
+import { eventArrivals, findVendorBooking } from '@/lib/vendors'
 
 // The link is the vendor's key: keep it out of search engines and referrers.
 export const metadata = { robots: { index: false }, referrer: 'no-referrer' }
@@ -43,6 +43,9 @@ export default async function VendorBookingPage({ params }: PageProps<'/[locale]
       )
     : null
   const confirmed = booking.status === 'confirmed'
+  const time = new Intl.DateTimeFormat(locale, { weekday: 'short', hour: 'numeric', minute: '2-digit', timeZone: zone })
+  const arrivals = await eventArrivals(payload, booking)
+  const programme = event.invitation?.schedule ?? []
 
   return (
     <main className="mx-auto grid max-w-2xl gap-8 px-6 py-16 text-ivory">
@@ -75,6 +78,41 @@ export default async function VendorBookingPage({ params }: PageProps<'/[locale]
           </div>
         )}
       </dl>
+
+      {arrivals.length > 0 && (
+        <section className="grid gap-3">
+          <h2 className="font-serif text-2xl">{t.arrivals}</h2>
+          <p className="text-sm text-mist">{t.arrivalsHelp}</p>
+          <ol className="grid gap-2">
+            {arrivals.map((row, index) => (
+              <li key={index} className="grid grid-cols-[8rem_1fr] gap-3 border-t border-ivory/10 pt-2">
+                <span className="text-gold">{row.arrivalAt ? time.format(new Date(row.arrivalAt)) : t.noTime}</span>
+                <span className={row.you ? 'font-semibold' : undefined}>
+                  {row.role}
+                  {row.you && ` (${t.you})`}
+                </span>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
+
+      {programme.length > 0 && (
+        <section className="grid gap-3">
+          <h2 className="font-serif text-2xl">{t.programme}</h2>
+          <ol className="grid gap-2">
+            {programme.map((item, index) => (
+              <li key={item.id ?? index} className="grid grid-cols-[8rem_1fr] gap-3 border-t border-ivory/10 pt-2">
+                <span className="text-gold">{item.time}</span>
+                <span>
+                  {item.title}
+                  {item.place && <span className="block text-sm text-mist">{item.place}</span>}
+                </span>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
 
       <a href={`/${locale}/vendor/${token}/calendar`} download className="w-fit text-gold underline">
         {t.addToCalendar}

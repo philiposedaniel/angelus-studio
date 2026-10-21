@@ -92,6 +92,36 @@ export async function vendorCalendar(payload: Payload, tenantId: number, token: 
   )
 }
 
+/** A published event from the studio's public events page. Anyone can download it, as anyone can read the page. */
+export async function publicEventCalendar(payload: Payload, tenantId: number, slug: string, locale: Locale) {
+  const { docs } = await payload.find({
+    collection: 'events',
+    // Public read: the same access rules as the event page, so unpublished events stay hidden.
+    overrideAccess: false,
+    where: { and: [{ published: { equals: true } }, { tenant: { equals: tenantId } }, { slug: { equals: slug } }] },
+    limit: 1,
+    depth: 0,
+    locale,
+  })
+  const event = docs[0]
+  if (!event) return null
+  const origin = await siteOrigin(payload, tenantId)
+  const url = `${origin}/${locale}/events/${event.slug}`
+  return file(
+    origin,
+    {
+      uid: `event-${event.id}`,
+      title: event.title,
+      startsAt: event.startsAt,
+      endsAt: event.endsAt,
+      location: event.location,
+      description: [event.summary, url].filter(Boolean).join('\n\n'),
+      url,
+    },
+    `${event.slug}.ics`,
+  )
+}
+
 /** The response every calendar route sends: a download that is never cached or indexed. */
 export const calendarResponse = (found: Found | null) =>
   found
