@@ -369,6 +369,12 @@ Not built yet: run-of-show timing and printing, and clients uploading or approvi
   the event, the vendor's role, arrival time (in the event's time zone) and instructions, and lets
   the vendor confirm with a note for the studio. It never shows amounts or staff notes, and stops
   working when the booking is cancelled. It works whether or not the event is published.
+- The vendor link also lists the day's arrivals: the role and arrival time of every booked or
+  confirmed vendor on the same event, in arrival order, with the vendor's own row marked, so
+  vendors can coordinate load-in. Names, contacts, amounts and notes of other vendors are never
+  shown; keep a booking *proposed* to leave it off the list. Below it is the guests' programme
+  from the invitation design, when the event has one.
+  Write roles that say who is who ("Live band", "Caterer"), since the list shows roles only.
 - A vendor who is booked for any event cannot be deleted; remove those bookings first. Deleting an
   event deletes its bookings.
 
@@ -542,14 +548,15 @@ covers every place on a registration. A person who takes a paid offer but does n
 not counted against a limit of their own; the form token and minimum fill time slow guessing, so
 avoid short codes for large discounts.
 
-## Calendar files for guests, ticket holders and vendors
+## Calendar files for events, guests, ticket holders and vendors
 
-The invitation page, the ticket page and the vendor booking page each have an **Add to your
-calendar** link. It downloads an iCalendar (`.ics`) file with one event: the event's title, place,
+The public event page, the invitation page, the ticket page and the vendor booking page each
+have an **Add to your calendar** link. It downloads an iCalendar (`.ics`) file with one event: the event's title, place,
 start and end (written in UTC, so every calendar app shows its own local time), and the link back
 to the page it came from. A vendor's entry starts at their arrival time when the studio set one.
 
-- Routes: `/[locale]/invite/[token]/calendar`, `/[locale]/tickets/[token]/calendar`,
+- Routes: `/[locale]/events/[slug]/calendar` (published events only, like the page),
+  `/[locale]/invite/[token]/calendar`, `/[locale]/tickets/[token]/calendar`,
   `/[locale]/vendor/[token]/calendar`, built in `src/lib/eventCalendar.ts`.
 - The token and the site's studio are the only keys, as on the pages. A token from another
   studio, a declined invitation, a pending or cancelled ticket, a cancelled booking or an

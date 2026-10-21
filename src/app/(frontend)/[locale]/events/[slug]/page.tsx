@@ -89,6 +89,9 @@ export default async function EventPage({ params, searchParams }: PageProps<'/[l
             {event.location}
           </p>
         )}
+        <a href={`/${locale}/events/${event.slug}/calendar`} download className="w-fit text-gold underline">
+          {t.addToCalendar}
+        </a>
       </header>
       {event.summary && <p className="whitespace-pre-line text-ivory/90">{event.summary}</p>}
       {offers.length > 0 && (
