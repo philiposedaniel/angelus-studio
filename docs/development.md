@@ -37,6 +37,7 @@ http://localhost:3000 redirects to `/en` and shows the studio named by `DEFAULT_
 | `pnpm migrate:create <name>` | Create a migration after changing collections or globals. |
 | `pnpm migrate` | Apply pending migrations. |
 | `pnpm generate:types` | Regenerate `src/payload-types.ts`. |
+| `pnpm generate:importmap` | Regenerate the admin import map after adding or renaming a custom admin component. CI fails if it is stale. |
 | `pnpm seed` | Create the default studio if it does not exist. |
 
 Set `PLAYWRIGHT_CHROMIUM_PATH` to use an already installed Chromium instead of

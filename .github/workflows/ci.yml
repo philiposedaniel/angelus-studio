@@ -43,6 +43,12 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
       - run: pnpm typecheck
+      # Payload's admin finds custom field components only through this generated file. A component
+      # missing from it renders nothing and only logs a warning, so a stale map must fail here.
+      - name: Admin import map is up to date
+        run: |
+          pnpm generate:importmap
+          git diff --exit-code -- 'src/app/(payload)/admin/importMap.js'
       - name: Apply migrations
         run: pnpm migrate
       - name: Unit and integration tests
