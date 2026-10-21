@@ -2,7 +2,7 @@ import type { PayloadHandler } from 'payload'
 import { PDFDocument, rgb, StandardFonts, type PDFFont, type PDFPage } from 'pdf-lib'
 
 import { getDictionary } from '@/i18n/dictionaries'
-import { idOf } from '@/lib/ids'
+import { idOf, parseRowId } from '@/lib/ids'
 import { pdfSafeText, wrapText } from '@/lib/invoicePdf'
 import { tenantLocales } from '@/lib/locale'
 import { isGuestListStaff, isOrganizerOf } from '@/lib/organizers'
@@ -151,7 +151,7 @@ const fail = (status: number, message: string) => Response.json({ errors: [{ mes
 export const downloadSeatingPlan: PayloadHandler = async (req) => {
   if (!req.user) return fail(401, 'Sign in first.')
   const eventId = req.searchParams.get('event')
-  if (!eventId || !/^\d+$/.test(eventId)) return fail(404, 'Event not found.')
+  if (!eventId || parseRowId(eventId) === null) return fail(404, 'Event not found.')
   const access = { req, user: req.user, overrideAccess: false } as const
   const event = await req.payload.findByID({ collection: 'events', id: eventId, depth: 0, ...access }).catch(() => null)
   if (!event) return fail(404, 'Event not found.')

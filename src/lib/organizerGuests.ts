@@ -3,7 +3,7 @@ import type { Payload, Where } from 'payload'
 import type { Locale } from '@/i18n/config'
 import { MAX_IMPORT_CHARS, type ImportProblemCode } from '@/lib/guestCsv'
 import { importGuests } from '@/lib/guestListEndpoints'
-import { idOf } from '@/lib/ids'
+import { idOf, parseRowId } from '@/lib/ids'
 import { isGuestListStaff, isOrganizerOf } from '@/lib/organizers'
 import { MAX_PARTY_SIZE } from '@/lib/rsvp'
 import type { User } from '@/payload-types'
@@ -45,7 +45,7 @@ export function validateGuestForm(form: FormData, offeredLanguages: readonly Loc
   // The table is only sent once the event has tables; empty means no table yet. The guest list
   // checks the table belongs to the guest's event.
   const rawTable = form.has('table') ? text(form, 'table') : undefined
-  if (rawTable && !/^\d+$/.test(rawTable)) errors.table = 'invalid'
+  if (rawTable && parseRowId(rawTable) === null) errors.table = 'invalid'
 
   if (Object.keys(errors).length > 0) return { ok: false as const, errors }
   return {
@@ -57,15 +57,12 @@ export function validateGuestForm(form: FormData, offeredLanguages: readonly Loc
       group: group || null,
       partySize,
       language: language as Locale,
-      ...(rawTable === undefined ? {} : { table: rawTable ? Number(rawTable) : null }),
+      ...(rawTable === undefined ? {} : { table: rawTable ? parseRowId(rawTable) : null }),
     },
   }
 }
 
-const idFrom = (form: FormData, key: string) => {
-  const value = text(form, key)
-  return /^\d+$/.test(value) ? Number(value) : null
-}
+const idFrom = (form: FormData, key: string) => parseRowId(text(form, key))
 
 /**
  * Adds, changes or removes a guest on an event the user may manage. Everything runs as the user,
@@ -231,7 +228,7 @@ export function readGuestListFilter(query: Record<string, string | string[] | un
   return {
     search: one('q').trim().slice(0, 100),
     reply: (GUEST_REPLY_FILTERS as readonly string[]).includes(reply) ? (reply as GuestListFilter['reply']) : null,
-    table: table === 'none' ? 'none' : /^\d{1,12}$/.test(table) ? Number(table) : null,
+    table: table === 'none' ? 'none' : parseRowId(table),
   }
 }
 

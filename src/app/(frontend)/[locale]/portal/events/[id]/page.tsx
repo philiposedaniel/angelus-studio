@@ -11,7 +11,7 @@ import { LOCALE_LABELS } from '@/i18n/config'
 import { getDictionary } from '@/i18n/dictionaries'
 import { requirePortalUser } from '@/lib/auth'
 import { formatEventWhen } from '@/lib/eventTime'
-import { idOf } from '@/lib/ids'
+import { idOf, parseRowId } from '@/lib/ids'
 import { resolveLocale, tenantLocales } from '@/lib/locale'
 import { guestListQuery, guestListWhere, readGuestListFilter } from '@/lib/organizerGuests'
 import { isGuestListStaff, isOrganizerOf, ORGANIZER_VENDOR_STATUSES } from '@/lib/organizers'
@@ -35,7 +35,7 @@ export default async function OrganizerEventPage({
   const { locale: requested, id } = await params
   const locale = await resolveLocale(tenant, requested)
   const user = await requirePortalUser(tenant, locale)
-  if (!/^\d+$/.test(id)) notFound()
+  if (parseRowId(id) === null) notFound()
 
   const payload = await getPayload({ config })
   const event = await payload
@@ -73,7 +73,7 @@ export default async function OrganizerEventPage({
     guest.rsvpStatus === 'attending'
       ? describeParty(guest, (mealId) => mealLabels.get(mealId), (n) => t.guestNumber.replace('{n}', String(n)))
       : ''
-  const editId = typeof query.edit === 'string' && /^\d+$/.test(query.edit) ? query.edit : null
+  const editId = typeof query.edit === 'string' ? parseRowId(query.edit) : null
   const editing = editId
     ? await payload
         .findByID({ collection: 'event-guests', id: editId, ...access })

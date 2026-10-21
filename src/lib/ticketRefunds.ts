@@ -3,7 +3,7 @@ import type Stripe from 'stripe'
 
 import { hasTenantRole, isSuperAdmin } from '@/access'
 import { PAYMENT_ROLES } from '@/collections/Payments'
-import { idOf } from '@/lib/ids'
+import { idOf, parseRowId } from '@/lib/ids'
 import { getStripe, stripeConfigured } from '@/lib/stripe'
 import type { Payment, User } from '@/payload-types'
 
@@ -62,7 +62,7 @@ export async function refundTicket({
 }): Promise<RefundState> {
   if (!user) return { status: 'error', reason: 'forbidden' }
   if (typeof registrationId !== 'string' && typeof registrationId !== 'number') return { status: 'error', reason: 'notFound' }
-  if (!/^\d+$/.test(String(registrationId))) return { status: 'error', reason: 'notFound' }
+  if (parseRowId(String(registrationId)) === null) return { status: 'error', reason: 'notFound' }
   const registration = await payload
     .findByID({ collection: 'registrations', id: String(registrationId), depth: 0, overrideAccess: true })
     .catch(() => null)

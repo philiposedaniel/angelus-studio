@@ -181,6 +181,14 @@ describe('seating for event organizers', () => {
         form: form({ intent: 'save', event: wedding.id, guest: maria.id, name: maria.name, partySize: 2, language: 'en', table: 'x' }),
       }),
     ).toEqual({ status: 'error', errors: { table: 'invalid' } })
+    expect(
+      await saveGuestFromPortal({
+        payload,
+        user: hostA,
+        offeredLanguages,
+        form: form({ intent: 'save', event: wedding.id, guest: maria.id, name: maria.name, partySize: 2, language: 'en', table: '2147483648' }),
+      }),
+    ).toEqual({ status: 'error', errors: { table: 'invalid' } })
     expect((await payload.findByID({ collection: 'event-guests', id: maria.id, overrideAccess: true })).table ?? null).toBeNull()
   })
 

@@ -88,6 +88,9 @@ describe('organizer guest list filters', () => {
 
   it("ignores filters it does not know, and finds nobody through another event's table", async () => {
     expect(await names(wedding, { reply: 'maybe', table: 'x; drop' })).toEqual(['Ana', 'Bruno', 'Carla'])
+    // Ids past the database's integer range are ignored rather than sent to Postgres.
+    for (const table of ['2147483648', '999999999999', '0'])
+      expect(await names(wedding, { table })).toEqual(['Ana', 'Bruno', 'Carla'])
     expect(await names(wedding, { table: String(galaTable.id) })).toEqual([])
     expect(await names(gala, {})).toEqual([])
   })

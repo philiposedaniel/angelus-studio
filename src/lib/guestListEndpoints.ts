@@ -4,7 +4,7 @@ import { DEFAULT_LOCALE, isLocale } from '@/i18n/config'
 import { emailConfigured, SEND_EMAIL_TASK } from '@/lib/email'
 import { REMIND_AGAIN_AFTER_DAYS } from '@/lib/eventEmails'
 import { guestsToCsv, MAX_IMPORT_CHARS, planGuestImport, type ImportedGuest, type ImportProblem } from '@/lib/guestCsv'
-import { idOf } from '@/lib/ids'
+import { idOf, parseRowId } from '@/lib/ids'
 import { tenantLocales } from '@/lib/locale'
 import { rsvpIsOpen } from '@/lib/rsvp'
 import { siteOrigin } from '@/lib/siteOrigin'
@@ -18,7 +18,7 @@ const fail = (status: number, message: string) => Response.json({ errors: [{ mes
  */
 async function eventFor(req: PayloadRequest, eventId: unknown) {
   if (typeof eventId !== 'string' && typeof eventId !== 'number') return null
-  if (!/^\d+$/.test(String(eventId))) return null
+  if (parseRowId(String(eventId)) === null) return null
   return req.payload
     .findByID({ collection: 'events', id: String(eventId), depth: 0, req, user: req.user, overrideAccess: false })
     .catch(() => null)

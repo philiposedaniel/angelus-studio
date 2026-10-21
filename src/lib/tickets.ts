@@ -5,7 +5,7 @@ import type { Locale } from '@/i18n/config'
 import { canCheckIn, type CheckInState } from '@/lib/checkIn'
 import { checkFormToken, looksLikeSpam, senderKey } from '@/lib/inquiries'
 import { advisoryLock } from '@/lib/advisoryLock'
-import { idOf } from '@/lib/ids'
+import { idOf, parseRowId } from '@/lib/ids'
 import { isShareToken } from '@/lib/shareTokens'
 import { runSql } from '@/lib/sqlSession'
 import {
@@ -188,7 +188,7 @@ export function validateRegistration(
   const promoText = text(form, 'promoCode')
   const promoCode = promoText ? normalizePromoCode(promoText) : null
 
-  if (!/^\d+$/.test(ticketType)) errors.ticketType = 'required'
+  if (parseRowId(ticketType) === null) errors.ticketType = 'required'
   const quantity = /^\d+$/.test(quantityText) ? Number(quantityText) : NaN
   if (!isWholeNumber(quantity, 1, MAX_PER_ORDER_LIMIT)) errors.quantity = 'invalid'
   if (!name) errors.name = 'required'
