@@ -4,8 +4,9 @@ import path from 'path'
 import type { TaskConfig } from 'payload'
 
 import { MAX_PHOTOS_PER_ZIP, ZIP_LIFETIME_MS, zipPath } from '@/collections/GalleryDownloads'
+import { openGalleryFile } from '@/lib/galleryFiles'
 import { idOf } from '@/lib/ids'
-import { GALLERY_PHOTOS_DIR, GALLERY_ZIPS_DIR } from '@/lib/storage'
+import { GALLERY_ZIPS_DIR } from '@/lib/storage'
 
 /** Gives every file in the archive a unique name, keeping the photographer's filenames. */
 const uniqueName = (taken: Set<string>, name: string) => {
@@ -75,8 +76,7 @@ export const buildGalleryZip: TaskConfig<{ input: { downloadId: number }; output
       const names = new Set<string>()
       for (const photo of photos.docs) {
         if (!photo.filename) continue
-        const source = path.join(GALLERY_PHOTOS_DIR, path.basename(photo.filename))
-        archive.file(source, { name: uniqueName(names, photo.filename) })
+        archive.append(await openGalleryFile(photo.filename), { name: uniqueName(names, photo.filename) })
       }
       await archive.finalize()
       await done
