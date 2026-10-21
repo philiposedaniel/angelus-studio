@@ -573,6 +573,12 @@ export const es: Dictionary = {
       note: 'Recibes esto porque organizas este evento o pediste al estudio copia de las respuestas. Pide al estudio que desactive estos correos.',
     },
   },
+  availability: {
+    heading: 'Disponibilidad',
+    intro: 'Los días marcados como reservados no están libres. Consulte al estudio por cualquier otra fecha.',
+    booked: 'Reservado',
+    open: 'Libre',
+  },
   footer: { rights: 'Todos los derechos reservados.' },
   clientSummary: {
     heading: 'Presupuestos y producciones',

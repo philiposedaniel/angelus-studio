@@ -123,10 +123,10 @@ export async function renderInvoicePdf(
     const text = pdfSafeText(value)
     page.drawText(text, { x: right - font.widthOfTextAtSize(text, size), y, size, font, color })
   }
-  const rule = () => {
+  const rule = (at: number) => {
     page.drawLine({
-      start: { x: MARGIN, y: y + 4 },
-      end: { x: PAGE_WIDTH - MARGIN, y: y + 4 },
+      start: { x: MARGIN, y: at },
+      end: { x: PAGE_WIDTH - MARGIN, y: at },
       thickness: 0.6,
       color: MUTED,
     })
@@ -162,8 +162,8 @@ export async function renderInvoicePdf(
   writeRight(labels.quantity, TABLE.quantityRight, 10, bold, MUTED)
   writeRight(labels.price, TABLE.priceRight, 10, bold, MUTED)
   writeRight(labels.amount, TABLE.amountRight, 10, bold, MUTED)
+  rule(y - 4)
   y -= LINE
-  rule()
   y -= 4
   for (const item of quote.lineItems ?? []) {
     const lines = wrapText(item.description, regular, 10, DESCRIPTION_WIDTH)
@@ -179,7 +179,7 @@ export async function renderInvoicePdf(
     }
     y -= 4
   }
-  rule()
+  rule(y + 4)
   y -= LINE
 
   // Totals
@@ -206,8 +206,8 @@ export async function renderInvoicePdf(
     write(labels.scheduleDate, TABLE.quantityRight - 40, 10, bold, MUTED)
     write(labels.schedulePaid, TABLE.priceRight, 10, bold, MUTED)
     writeRight(labels.amount, TABLE.amountRight, 10, bold, MUTED)
+    rule(y - 4)
     y -= LINE
-    rule()
     y -= 4
     for (const line of schedule ?? []) {
       newPageIfBelow(LINE)

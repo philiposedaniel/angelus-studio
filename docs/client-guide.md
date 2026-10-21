@@ -67,6 +67,11 @@ balance paid so far, the amount still due, the payment schedule if there is one 
 paid), and every confirmed payment. Use **Download as PDF** on that page to
 save a copy.
 
+## Checking a date
+
+The studio's **availability** page (`/availability`) shows the next three months. A day marked **Booked** is taken.
+**Free** days can still be asked about through the studio's contact form or by email.
+
 ## If something looks wrong
 
 - A gallery you expect is missing: it may not be published yet, or it may have expired. Ask the studio.

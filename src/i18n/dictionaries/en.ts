@@ -571,6 +571,12 @@ export const en = {
       note: 'You receive this because you host this event or asked the studio to copy you on replies. Ask the studio to turn these emails off.',
     },
   },
+  availability: {
+    heading: 'Availability',
+    intro: 'Days marked booked are not free. Ask the studio about any other date.',
+    booked: 'Booked',
+    open: 'Free',
+  },
   footer: { rights: 'All rights reserved.' },
   clientSummary: {
     heading: 'Quotes and productions',
