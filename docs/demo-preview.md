@@ -15,7 +15,8 @@ In the studio named by `DEFAULT_TENANT_SLUG` (default `angelus`):
   share link, and a selection of up to five photos for the client to submit.
 - A **quote** with three line items, a 30% deposit, the balance in two dated installments and a
   contract to sign.
-- A **production** with crew, tasks and a call sheet.
+- A **production** with crew, tasks and a call sheet, and three more shoots over the next two months
+  (one still in planning), so the public availability page at `/en/availability` shows booked days.
 - A **private wedding** with a garden invitation and five guests in different RSVP states; the
   client is its organizer, so it shows in their portal.
 - Two **tables** with the coming guests seated, and two **vendors** on the wedding: a florist
