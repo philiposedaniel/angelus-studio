@@ -13,6 +13,7 @@ import { isShareToken } from '@/lib/shareTokens'
 import { getStripe, stripeConfigured } from '@/lib/stripe'
 import { balanceAmount, isQuoteExpired } from '@/lib/quotes'
 import { installmentNumbers } from '@/lib/paymentSchedule'
+import { expireWaitingPayments } from '@/lib/paymentSessions'
 import { getCurrentTenant } from '@/lib/tenant'
 
 export type PaymentState = { status: 'idle' } | { status: 'error'; message: 'failed' | 'unavailable' | 'unsigned' }
@@ -107,6 +108,20 @@ async function startPayment(form: FormData, kind: PaymentKind): Promise<PaymentS
     amount = schedule[installmentNumber - 1]?.amount ?? 0
   }
   if (amount <= 0) return { status: 'error', message: 'failed' }
+
+  // Only one payment page per deposit, balance or installment: older ones still waiting are expired first.
+  try {
+    await expireWaitingPayments({
+      payload,
+      expire: (sessionId) => getStripe().checkout.sessions.expire(sessionId),
+      tenantId: tenant.id,
+      quoteId: quote.id,
+      kind,
+      installmentNumber,
+    })
+  } catch {
+    return { status: 'error', message: 'failed' }
+  }
 
   const origin = await siteOrigin()
   const back = `${origin}/${requested}/quote/${token}`

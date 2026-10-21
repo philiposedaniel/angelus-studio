@@ -22,6 +22,9 @@ export type QuotePdfLabels = {
   balance: string
   contractHeading: string
   signedBy: string
+  installmentName: string
+  scheduleHeading: string
+  scheduleDate: string
 }
 
 export type QuotePdfInput = {
@@ -33,6 +36,7 @@ export type QuotePdfInput = {
     totalAmount?: number | null
     depositAmount?: number | null
     lineItems?: ReadonlyArray<{ description: string; quantity: number; unitAmount: number }> | null
+    paymentSchedule?: ReadonlyArray<{ dueDate?: string | null; amount?: number | null }> | null
     contract?: {
       terms?: string | null
       signedName?: string | null
@@ -50,7 +54,13 @@ const PAGE_WIDTH = 595.28 // A4
 const PAGE_HEIGHT = 841.89
 const MARGIN = 48
 const LINE = 15
-const TABLE = { description: MARGIN, quantityRight: 370, priceRight: 452, amountRight: PAGE_WIDTH - MARGIN }
+const TABLE = {
+  description: MARGIN,
+  quantityRight: 370,
+  priceRight: 452,
+  amountRight: PAGE_WIDTH - MARGIN,
+  schedule: { date: 300 },
+}
 const DESCRIPTION_WIDTH = 300
 const TEXT_WIDTH = PAGE_WIDTH - 2 * MARGIN
 const INK = rgb(0.1, 0.1, 0.1)
@@ -155,6 +165,28 @@ export async function renderQuotePdf(input: QuotePdfInput, labels: QuotePdfLabel
     y -= LINE
   }
   y -= LINE
+
+  // Payment schedule: each installment with its due date, when the balance is paid in instalments
+  const schedule = quote.paymentSchedule ?? []
+  if (schedule.length > 0) {
+    newPageIfBelow(LINE * (schedule.length + 3))
+    write(labels.scheduleHeading, MARGIN, 12, bold)
+    y -= LINE + 2
+    write(labels.installmentName, MARGIN, 10, bold, MUTED)
+    write(labels.scheduleDate, TABLE.schedule.date, 10, bold, MUTED)
+    writeRight(labels.amount, TABLE.amountRight, 10, bold, MUTED)
+    y -= LINE
+    rule()
+    y -= 4
+    for (const [index, row] of schedule.entries()) {
+      newPageIfBelow(LINE)
+      write(`${labels.installmentName} ${index + 1}`, MARGIN, 10, regular)
+      if (row.dueDate) write(format.date(row.dueDate), TABLE.schedule.date, 10, regular)
+      writeRight(format.money(row.amount ?? 0), TABLE.amountRight, 10, regular)
+      y -= LINE
+    }
+    y -= LINE
+  }
 
   // Contract terms, one paragraph at a time, and the client's signature when there is one
   const terms = quote.contract?.terms ?? ''
