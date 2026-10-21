@@ -265,6 +265,27 @@ export async function seedDemoData(
     overrideAccess: true,
   })
 
+  // More productions, so the public availability page has booked days in each month it shows. The one
+  // still being planned holds no day there.
+  for (const [title, clientName, status, days] of [
+    ['Lisbon design week, event coverage', 'Lisbon Design Week', 'confirmed', 12],
+    ['Costa family portraits', 'Marta Costa', 'planning', 26],
+    ['Nunes and Rocha wedding', 'Inês Nunes', 'confirmed', 58],
+  ] as const) {
+    await payload.create({
+      collection: 'projects',
+      data: {
+        tenant: tenant.id,
+        title,
+        clientName,
+        status,
+        shootDate: at(days, 10),
+        crew: [{ user: admin.id, role: 'Photographer' }],
+      },
+      overrideAccess: true,
+    })
+  }
+
   const wedding = await payload.create({
     collection: 'events',
     data: {

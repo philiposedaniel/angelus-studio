@@ -1,6 +1,7 @@
 import { getPayload, type Payload } from 'payload'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
+import { busyDays } from '@/lib/availability'
 import { DemoDataRefused, demoEmail, seedDemoData } from '@/lib/demoData'
 import { eventTicketSales } from '@/lib/tickets'
 import config from '@/payload.config'
@@ -170,6 +171,28 @@ describe('demo data', () => {
     expect(quote!.paymentSchedule!.reduce((sum, row) => sum + row.amount, 0)).toBe(
       quote!.totalAmount! - quote!.depositAmount!,
     )
+
+    // The public availability page has booked shoot days to show; a production still in planning holds none.
+    const tenantId = (
+      await payload.find({ collection: 'tenants', where: { slug: { equals: SLUG } }, depth: 0 })
+    ).docs[0]!.id
+    const productions = (
+      await payload.find({
+        collection: 'projects',
+        where: { tenant: { equals: tenantId } },
+        depth: 0,
+        limit: 10,
+      })
+    ).docs
+    const booked = await busyDays(payload, tenantId, {
+      start: new Date(Date.now() - 10 * 86_400_000).toISOString(),
+      end: new Date(Date.now() + 70 * 86_400_000).toISOString(),
+    })
+    const dayOf = (status: string) =>
+      productions.filter((p) => p.status === status).map((p) => p.shootDate!.slice(0, 10))
+    expect(dayOf('confirmed').length).toBeGreaterThanOrEqual(3)
+    for (const day of dayOf('confirmed')) expect(booked).toContain(day)
+    for (const day of dayOf('planning')) expect(booked).not.toContain(day)
 
     // The client hosts a ticketed event with tickets sold and checked in, which her portal shows.
     const hosted = await payload.find({
