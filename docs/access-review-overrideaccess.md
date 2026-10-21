@@ -41,6 +41,8 @@ closely should be checked when they are next changed.
 - **Unlisted** events are published too, so they also mark their day as Booked. The page shows the day only, so a private
   event's date becomes visible to anyone who opens the availability page. The owner should decide whether that is
   acceptable; the code is unchanged for now.
+- Days before today (the studio's day in Europe/Lisbon) are shown as **Past**, never as **Free**, so a visitor cannot read
+  a date that has gone as bookable. `dayStatus` in `src/lib/availability.ts` is unit tested for this.
 - Events have no cancelled status. A cancelled event must be unpublished to free its day.
 
 ## Rule for new code
