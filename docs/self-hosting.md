@@ -119,9 +119,13 @@ What happens with it on:
 
 Limits:
 
-- **Turn it on before the first upload.** Photos already on the local volume are not read from the bucket. Copy
-  them across by hand (the same three objects per photo, under `gallery-photos/`) before turning it on, or
-  re-upload them.
+- **Photos already on the local volume.** They are not read from the bucket. After setting the variables, run
+  `pnpm storage:move-local`, once. The app image does not include the command-line tools, so run it from a
+  checkout of the same release on the server (`pnpm install`, then the command), with the same database and S3
+  variables, and with `PRIVATE_MEDIA_DIR` pointing at the photos volume. It copies each photo's original and copies
+  into the bucket and removes the local files. It reports how many moved and how many were already stored, and
+  running it again moves nothing. Clients should not use the galleries until it has finished. Back up
+  `private-media` first. This command has not yet been run on a server; the first run is a check to make.
 - **Not yet tested against a live bucket.** The automated tests use an in-memory store and check the shape of
   the signed links. Check the first real setup yourself: upload one photo to a test gallery, confirm three
   objects appear under `gallery-photos/`, open a client's copy and see it load, then reopen the same link after

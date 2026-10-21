@@ -1,7 +1,7 @@
 import type { CollectionConfig, PayloadRequest } from 'payload'
 
 import { galleryRead, galleryStaff, isGalleryStaffFor } from '@/access/galleries'
-import { deleteObjectStorageFiles, moveFilesToObjectStorage, readGalleryFile, signedGalleryFileUrl, type PhotoFile } from '@/lib/galleryFiles'
+import { deleteObjectStorageFiles, moveFilesToObjectStorage, photoFiles, readGalleryFile, signedGalleryFileUrl } from '@/lib/galleryFiles'
 import { idOf } from '@/lib/ids'
 import { objectStorageEnabled } from '@/lib/objectStorage'
 import { GALLERY_PHOTOS_DIR } from '@/lib/storage'
@@ -9,20 +9,6 @@ import { watermarkImage } from '@/lib/watermark'
 
 const forbidden = () =>
   Response.json({ errors: [{ message: 'You are not allowed to download this file.' }] }, { status: 403 })
-
-/** The files a photo document owns: the original and each copy. */
-const photoFiles = (photo: {
-  filename?: string | null
-  mimeType?: string | null
-  sizes?: Record<string, { filename?: string | null; mimeType?: string | null } | undefined>
-}): PhotoFile[] => {
-  const files: PhotoFile[] = []
-  if (photo.filename) files.push({ filename: photo.filename, mimeType: photo.mimeType })
-  for (const copy of Object.values(photo.sizes ?? {})) {
-    if (copy?.filename) files.push({ filename: copy.filename, mimeType: copy.mimeType })
-  }
-  return files
-}
 
 /**
  * Clients may view the resized copies of photos they can see, but only download the

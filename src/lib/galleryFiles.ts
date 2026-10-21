@@ -13,6 +13,23 @@ import { GALLERY_PHOTOS_DIR } from '@/lib/storage'
 
 export type PhotoFile = { filename: string; mimeType?: string | null }
 
+/** The files a photo document owns: the original and each copy. */
+export const photoFiles = (photo: {
+  filename?: string | null
+  mimeType?: string | null
+  sizes?: Record<string, { filename?: string | null; mimeType?: string | null } | undefined>
+}): PhotoFile[] => {
+  const files: PhotoFile[] = []
+  if (photo.filename) files.push({ filename: photo.filename, mimeType: photo.mimeType })
+  for (const copy of Object.values(photo.sizes ?? {})) {
+    if (copy?.filename) files.push({ filename: copy.filename, mimeType: copy.mimeType })
+  }
+  return files
+}
+
+/** Whether a stored file is still on the local disk: photos uploaded before object storage was turned on. */
+export const hasLocalGalleryFile = (filename: string) => fs.existsSync(localPath(filename))
+
 const objectKey = (filename: string) => `gallery-photos/${path.basename(filename)}`
 const localPath = (filename: string) => path.join(GALLERY_PHOTOS_DIR, path.basename(filename))
 
