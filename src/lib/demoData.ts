@@ -395,6 +395,20 @@ export async function seedDemoData(
       amountDue: 960000,
     },
   })
+  // A second booked vendor, so each vendor's page lists who else arrives on the day.
+  const band = await vendor('Fado ao Vivo', 'music', 'Rui Almeida')
+  await payload.create({
+    collection: 'event-vendors',
+    data: {
+      event: wedding.id,
+      vendor: band.id,
+      role: 'Fado trio for the dinner',
+      status: 'booked',
+      arrivalAt: at(40, 17),
+      currency: 'eur',
+      amountDue: 90000,
+    },
+  })
 
   // Kit for the production: two pieces reserved, one already out of the studio.
   const kit = async (name: string, category: string, serialNumber: string) =>
