@@ -583,6 +583,16 @@ export const en = {
     shootDate: 'Shoot date',
     note: 'Only what your role lets you read is listed. Matching is by the quote\'s client email and the production\'s client.',
   },
+  seatingPdf: {
+    title: 'Seating plan',
+    seats: '{taken} of {capacity} seats',
+    overCapacity: 'over capacity',
+    meals: 'Meals',
+    dietary: 'Dietary needs',
+    notAnswered: 'not answered yet',
+    withoutTable: 'Without a table',
+    noTables: 'No tables yet.',
+  },
 }
 
 export type Dictionary = typeof en
