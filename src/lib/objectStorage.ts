@@ -20,8 +20,22 @@ export type ObjectStore = {
   get(key: string): Promise<Readable>
   /** Deletes an object. Deleting a missing object is not an error. */
   delete(key: string): Promise<void>
-  /** A link that opens the object for `expiresInSeconds`, then stops working. */
-  signedUrl(key: string, expiresInSeconds: number): Promise<string>
+  /**
+   * A link that opens the object for `expiresInSeconds`, then stops working. With `downloadName`, the
+   * browser is asked to save the file under that name instead of showing it.
+   */
+  signedUrl(key: string, expiresInSeconds: number, options?: { downloadName?: string }): Promise<string>
+}
+
+/**
+ * A Content-Disposition value that makes a browser save the file as `name`. Browsers ignore the
+ * `download` attribute on a link to another origin, so a link that redirects to the bucket has to ask
+ * for the download in the signed link itself.
+ */
+export function attachmentDisposition(name: string): string {
+  const fallback = name.replace(/[^\x20-\x7e]|["\\]/g, '_')
+  const encoded = encodeURIComponent(name).replace(/['()*]/g, (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`)
+  return `attachment; filename="${fallback}"; filename*=UTF-8''${encoded}`
 }
 
 export type S3Settings = {
@@ -71,8 +85,11 @@ export function createS3Store(settings: S3Settings): ObjectStore {
     async delete(key) {
       await client.send(new DeleteObjectCommand({ Bucket, Key: key }))
     },
-    signedUrl(key, expiresInSeconds) {
-      return getSignedUrl(client, new GetObjectCommand({ Bucket, Key: key }), { expiresIn: expiresInSeconds })
+    signedUrl(key, expiresInSeconds, options) {
+      const ResponseContentDisposition = options?.downloadName ? attachmentDisposition(options.downloadName) : undefined
+      return getSignedUrl(client, new GetObjectCommand({ Bucket, Key: key, ResponseContentDisposition }), {
+        expiresIn: expiresInSeconds,
+      })
     },
   }
 }

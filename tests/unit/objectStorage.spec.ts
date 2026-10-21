@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { createS3Store, objectStorageEnabled, s3Settings, SIGNED_URL_SECONDS } from '@/lib/objectStorage'
+import { attachmentDisposition, createS3Store, objectStorageEnabled, s3Settings, SIGNED_URL_SECONDS } from '@/lib/objectStorage'
 
 const complete = {
   S3_BUCKET: 'studio-private',
@@ -60,6 +60,23 @@ describe('signed download links', () => {
   it('never puts the secret key in the link', async () => {
     const link = await store.signedUrl('gallery-photos/frame-001.jpg', SIGNED_URL_SECONDS)
     expect(link).not.toContain('test-secret-not-real')
+  })
+
+  it('asks the browser to save a download under its own name, and only then', async () => {
+    const download = new URL(
+      await store.signedUrl('gallery-photos/IMG 0001.jpg', SIGNED_URL_SECONDS, { downloadName: 'IMG 0001.jpg' }),
+    )
+    expect(download.searchParams.get('response-content-disposition')).toBe(
+      "attachment; filename=\"IMG 0001.jpg\"; filename*=UTF-8''IMG%200001.jpg",
+    )
+    const view = new URL(await store.signedUrl('gallery-photos/IMG 0001.jpg', SIGNED_URL_SECONDS))
+    expect(view.searchParams.has('response-content-disposition')).toBe(false)
+  })
+
+  it('keeps a download name with quotes and accents safe in the header', () => {
+    expect(attachmentDisposition('Ana "Final" São.jpg')).toBe(
+      "attachment; filename=\"Ana _Final_ S_o.jpg\"; filename*=UTF-8''Ana%20%22Final%22%20S%C3%A3o.jpg",
+    )
   })
 
   it('signs each object on its own, so one link does not open another file', async () => {

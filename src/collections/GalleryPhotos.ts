@@ -86,10 +86,12 @@ export async function serveGalleryFile(
   const marked = await watermarkViewingCopy(req, args)
   if (marked) return marked
   if (!objectStorageEnabled()) return undefined
+  // The original is what the Download link asks for, so its link saves the file rather than showing it.
+  const isOriginal = args.params.filename === (args.doc as { filename?: string | null }).filename
   return new Response(null, {
     status: 302,
     headers: {
-      Location: await signedGalleryFileUrl(args.params.filename),
+      Location: await signedGalleryFileUrl(args.params.filename, { download: isOriginal }),
       'Cache-Control': 'private, no-store',
       'X-Robots-Tag': 'noindex',
     },

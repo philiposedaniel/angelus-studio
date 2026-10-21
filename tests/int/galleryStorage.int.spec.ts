@@ -45,8 +45,9 @@ class MemoryStore implements ObjectStore {
   async delete(key: string) {
     this.objects.delete(key)
   }
-  async signedUrl(key: string, expiresInSeconds: number) {
-    return `https://signed.test/${key}?expires=${expiresInSeconds}`
+  async signedUrl(key: string, expiresInSeconds: number, options?: { downloadName?: string }) {
+    const download = options?.downloadName ? `&download=${encodeURIComponent(options.downloadName)}` : ''
+    return `https://signed.test/${key}?expires=${expiresInSeconds}${download}`
   }
 }
 
@@ -140,8 +141,18 @@ describe('gallery photos in object storage', () => {
     const photo = await addPhoto(open, 'original')
     const response = await fileRequest(client, photo, photo.filename!)
     expect(response?.status).toBe(302)
-    expect(response?.headers.get('Location')).toBe(`https://signed.test/gallery-photos/${photo.filename}?expires=300`)
+    expect(response?.headers.get('Location')).toBe(
+      `https://signed.test/gallery-photos/${photo.filename}?expires=300&download=${encodeURIComponent(photo.filename!)}`,
+    )
     expect(response?.headers.get('Cache-Control')).toBe('private, no-store')
+  })
+
+  it('gives a viewing copy a link that shows the file rather than saving it', async () => {
+    const photo = await addPhoto(open, 'view')
+    const copy = photo.sizes?.web?.filename ?? photo.sizes?.thumbnail?.filename
+    const response = await fileRequest(client, photo, copy!)
+    expect(response?.status).toBe(302)
+    expect(response?.headers.get('Location')).not.toContain('download=')
   })
 
   it('refuses the original to a client when the gallery does not allow downloads', async () => {

@@ -60,9 +60,14 @@ export async function openGalleryFile(filename: string): Promise<Readable> {
   return fs.createReadStream(localPath(filename))
 }
 
-/** A short-lived link to one stored file. Only meaningful with object storage on. */
-export function signedGalleryFileUrl(filename: string): Promise<string> {
-  return objectStore().signedUrl(objectKey(filename), SIGNED_URL_SECONDS)
+/**
+ * A short-lived link to one stored file. Only meaningful with object storage on. With `download`, the
+ * link saves the file under its own name instead of opening it in the tab.
+ */
+export function signedGalleryFileUrl(filename: string, options: { download?: boolean } = {}): Promise<string> {
+  return objectStore().signedUrl(objectKey(filename), SIGNED_URL_SECONDS, {
+    downloadName: options.download ? filename : undefined,
+  })
 }
 
 async function streamToBuffer(stream: Readable): Promise<Buffer> {

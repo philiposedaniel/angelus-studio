@@ -124,7 +124,8 @@ Limits:
   checkout of the same release on the server (`pnpm install`, then the command), with the same database and S3
   variables, and with `PRIVATE_MEDIA_DIR` pointing at the photos volume. It copies each photo's original and copies
   into the bucket and removes the local files. It reports how many moved and how many were already stored, and
-  running it again moves nothing. Clients should not use the galleries until it has finished. Back up
+  running it again moves nothing. The Payload CLI sometimes exits without printing anything, so if the line
+  `Gallery files moved to object storage` is missing from the output, run it again. Clients should not use the galleries until it has finished. Back up
   `private-media` first. This command has not yet been run on a server; the first run is a check to make.
 - **Not yet tested against a live bucket.** The automated tests use an in-memory store and check the shape of
   the signed links. Check the first real setup yourself: upload one photo to a test gallery, confirm three
