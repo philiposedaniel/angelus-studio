@@ -81,13 +81,12 @@ back to unset.
 
 Gallery-link emails are not built yet. Client gallery links are copied by hand.
 
-## Not built yet: storage, video and signatures
+## Not built yet: video and signatures
 
-These three features have no code and read no environment variables in this release. Nothing needs
+These two features have no code and read no environment variables in this release. Nothing needs
 setting for them, and nothing they would need can be pasted yet. When one is built, its variables and
 its check will be added to this section.
 
-- **Off-site file storage (Cloudflare R2).** Files stay on the server's `private-media` volume.
 - **Private video hosting.** Video is not hosted by the platform yet. No provider has been chosen.
 - **E-signature.** Contracts use a typed name with the signer's IP and a fingerprint.
 
@@ -127,7 +126,6 @@ runs hourly. Run exactly one app instance, or set `PAYLOAD_JOBS_AUTORUN=false` o
 | --- | --- | --- |
 | Online deposit and balance payment | Off until `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` are set | Stripe account and test keys. Live payment has never been run. |
 | Email (invitations, tickets, waitlist, vendor and inquiry notices) | Off until `SMTP_HOST` and `EMAIL_FROM_ADDRESS` are set. Staff copy links by hand. See *Email* above. | An email service with SMTP (Resend, Postmark or similar) and a verified sending domain. Gallery-link emails are not built yet. |
-| Off-site file storage (Cloudflare R2) | Not used. Files are on the server's volumes. No variables exist yet. | A Cloudflare account and R2 bucket, and the feature built. |
 | Private video hosting | Not built. No variables exist yet. | A video provider choice, and the feature built. |
 | Contract signature | Typed name with IP and fingerprint, no third-party service. No variables. | A decision on an e-signature provider. |
 
