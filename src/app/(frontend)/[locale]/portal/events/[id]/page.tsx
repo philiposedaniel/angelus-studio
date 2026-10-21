@@ -13,6 +13,7 @@ import { requirePortalUser } from '@/lib/auth'
 import { formatEventWhen } from '@/lib/eventTime'
 import { idOf } from '@/lib/ids'
 import { resolveLocale, tenantLocales } from '@/lib/locale'
+import { guestListQuery, guestListWhere, readGuestListFilter } from '@/lib/organizerGuests'
 import { isGuestListStaff, isOrganizerOf, ORGANIZER_VENDOR_STATUSES } from '@/lib/organizers'
 import { describeParty, eventMealCounts, eventRsvpSummary, summarizeMeals } from '@/lib/rsvp'
 import { seatsNeeded, summarizeSeating } from '@/lib/seating'
@@ -46,17 +47,14 @@ export default async function OrganizerEventPage({
   // A page of guests at a time, optionally narrowed by a search, so a list of thousands stays
   // quick to load and to use on a phone. The headcount is added up over the whole list.
   const query = (await searchParams) ?? {}
-  const search = typeof query.q === 'string' ? query.q.trim().slice(0, 100) : ''
+  const filter = readGuestListFilter(query)
+  const { search } = filter
+  const filtered = Boolean(search || filter.reply || filter.table !== null)
   const requestedPage = typeof query.page === 'string' && /^\d{1,6}$/.test(query.page) ? Number(query.page) : 1
   const access = { depth: 0, user, overrideAccess: false } as const
   const list = await payload.find({
     collection: 'event-guests',
-    where: {
-      and: [
-        { event: { equals: event.id } },
-        ...(search ? [{ or: [{ name: { like: search } }, { email: { like: search } }] }] : []),
-      ],
-    },
+    where: guestListWhere(event.id, filter),
     sort: 'name',
     limit: GUESTS_PER_PAGE,
     page: Math.max(1, requestedPage),
@@ -82,13 +80,7 @@ export default async function OrganizerEventPage({
         .then((guest) => (String(idOf(guest.event)) === String(event.id) ? guest : null))
         .catch(() => null)
     : null
-  const pageHref = (page: number) => {
-    const params = new URLSearchParams()
-    if (search) params.set('q', search)
-    if (page > 1) params.set('page', String(page))
-    const text = params.toString()
-    return `/${locale}/portal/events/${event.id}${text ? `?${text}` : ''}`
-  }
+  const pageHref = (page: number) => `/${locale}/portal/events/${event.id}${guestListQuery(filter, page)}`
   const from = list.totalDocs === 0 ? 0 : (list.page! - 1) * GUESTS_PER_PAGE + 1
   const to = from === 0 ? 0 : from + guests.length - 1
   const languages = offered.map((value) => ({ value, label: LOCALE_LABELS[value] }))
@@ -264,10 +256,33 @@ export default async function OrganizerEventPage({
                 className="w-72 max-w-full rounded-lg border border-ivory/15 bg-ink px-4 py-3 text-ivory focus:border-gold focus:outline-none"
               />
             </label>
+            <div className="grid gap-1 text-sm text-mist">
+              <label htmlFor="guest-filter-reply">{t.replyFilter}</label>
+              <select id="guest-filter-reply" name="reply" defaultValue={filter.reply ?? ''} className="rounded-lg border border-ivory/15 bg-ink px-4 py-3 text-ivory focus:border-gold focus:outline-none">
+                <option value="">{t.allReplies}</option>
+                <option value="attending">{t.attending}</option>
+                <option value="declined">{t.declined}</option>
+                <option value="pending">{t.pending}</option>
+              </select>
+            </div>
+            {tables.length > 0 && (
+              <div className="grid gap-1 text-sm text-mist">
+                <label htmlFor="guest-filter-table">{t.tableFilter}</label>
+                <select id="guest-filter-table" name="table" defaultValue={filter.table === null ? '' : String(filter.table)} className="rounded-lg border border-ivory/15 bg-ink px-4 py-3 text-ivory focus:border-gold focus:outline-none">
+                  <option value="">{t.allTables}</option>
+                  <option value="none">{t.noTable}</option>
+                  {tables.map((table) => (
+                    <option key={table.id} value={String(table.id)}>
+                      {table.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             <button type="submit" className="rounded-full border border-gold px-6 py-3 text-sm font-medium text-gold transition-colors hover:bg-gold hover:text-ink">
               {t.searchButton}
             </button>
-            {search && (
+            {filtered && (
               <Link href={`/${locale}/portal/events/${event.id}`} className="min-h-11 content-center text-sm text-mist underline">
                 {t.clearSearch}
               </Link>
@@ -283,7 +298,7 @@ export default async function OrganizerEventPage({
           </p>
         )}
         {guests.length === 0 ? (
-          <p className="text-mist">{search ? t.noMatches : t.noGuests}</p>
+          <p className="text-mist">{filtered ? t.noMatches : t.noGuests}</p>
         ) : (
           <ul className="grid gap-3">
             {guests.map((guest) => (

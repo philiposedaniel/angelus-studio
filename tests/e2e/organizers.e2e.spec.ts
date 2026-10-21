@@ -141,11 +141,23 @@ test.describe('Organizers manage their guest list', () => {
     await page.getByRole('link', { name: 'Change' }).click()
     await expect(page.getByRole('heading', { name: 'Change guest' })).toBeVisible()
     await waitForHydration(page)
-    await page.getByLabel('Table').selectOption({ label: 'Head table' })
+    await page.getByLabel('Table', { exact: true }).selectOption({ label: 'Head table' })
     await page.getByRole('button', { name: 'Save changes' }).click()
     await expect(page.getByText('2 of 8 seats taken')).toBeVisible()
     await expect(page.getByText('2 of 8 seats', { exact: true })).toBeVisible()
     await expect(page.getByText('Rui Almeida', { exact: true }).first()).toBeVisible()
+
+    // The list narrows to a table, or to the guests still without one.
+    await page.getByLabel('Seated at').selectOption({ label: 'No table yet' })
+    await page.getByRole('button', { name: 'Search' }).click()
+    await expect(page).toHaveURL(/table=none/)
+    await expect(page.getByText('No guests match that search.')).toBeVisible()
+    await page.getByLabel('Seated at').selectOption({ label: 'Head table' })
+    await page.getByLabel('Reply', { exact: true }).selectOption({ label: 'Not answered' })
+    await page.getByRole('button', { name: 'Search' }).click()
+    await expect(page.getByText('Showing 1–1 of 1 guests')).toBeVisible()
+    await page.getByRole('link', { name: 'Show everyone' }).click()
+    await expect(page).toHaveURL(`${BASE}/en/portal/events/${seatedEventId}`)
   })
 
   test('the host adds guests from a spreadsheet after checking it', async ({ page }) => {

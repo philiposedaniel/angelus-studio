@@ -444,8 +444,11 @@ set; there is no per-event colour or font picker yet.
   Staff notes on a guest are never shown to them and they cannot write them. Everything is checked
   on the server through the normal access rules, so the same limits apply to the REST API.
 - Studio admins and production managers can open the same page for any event of their studio.
-- The guest list shows 100 guests a page, sorted by name, with a search by name or email; the
-  headcount and the CSV download always cover the whole list.
+- The guest list shows 100 guests a page, sorted by name, with a search by name or email and
+  filters by reply (attending, not coming, not answered) and, once the event has tables, by table
+  or "no table yet". The filters stay in the page links and always keep to the event
+  (`guestListWhere` in `src/lib/organizerGuests.ts`); the headcount and the CSV download always
+  cover the whole list.
 - The same page lists the event's **vendors** that are *booked* or *confirmed*: name, role,
   arrival time in the event's time zone and status. Organizers read these bookings, and those
   vendors' name and category, through the normal access rules. Field access keeps everything

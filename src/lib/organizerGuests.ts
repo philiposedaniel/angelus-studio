@@ -1,4 +1,4 @@
-import type { Payload } from 'payload'
+import type { Payload, Where } from 'payload'
 
 import type { Locale } from '@/i18n/config'
 import { MAX_IMPORT_CHARS, type ImportProblemCode } from '@/lib/guestCsv'
@@ -212,4 +212,52 @@ export async function importGuestsFromPortal({
     payload.logger.error({ err: error, msg: 'Could not import guests from the portal' })
     return { status: 'error', reason: 'failed' }
   }
+}
+
+/** How the organizer's guest list can be narrowed: by reply, and by table once there are tables. */
+export const GUEST_REPLY_FILTERS = ['attending', 'declined', 'pending'] as const
+export type GuestListFilter = {
+  search: string
+  reply: (typeof GUEST_REPLY_FILTERS)[number] | null
+  /** A table's id, "none" for guests without a table, or null for every guest. */
+  table: number | 'none' | null
+}
+
+/** Reads the guest list filters from the page's query, ignoring anything it does not recognise. */
+export function readGuestListFilter(query: Record<string, string | string[] | undefined>): GuestListFilter {
+  const one = (key: string) => (typeof query[key] === 'string' ? (query[key] as string) : '')
+  const reply = one('reply')
+  const table = one('table')
+  return {
+    search: one('q').trim().slice(0, 100),
+    reply: (GUEST_REPLY_FILTERS as readonly string[]).includes(reply) ? (reply as GuestListFilter['reply']) : null,
+    table: table === 'none' ? 'none' : /^\d{1,12}$/.test(table) ? Number(table) : null,
+  }
+}
+
+/**
+ * The query for one event's guests narrowed by the filters. It always keeps to the event, so a
+ * table id from another event simply matches nobody; the guest list's access rules apply on top.
+ */
+export function guestListWhere(eventId: number, filter: GuestListFilter): Where {
+  return {
+    and: [
+      { event: { equals: eventId } },
+      ...(filter.search ? [{ or: [{ name: { like: filter.search } }, { email: { like: filter.search } }] }] : []),
+      ...(filter.reply ? [{ rsvpStatus: { equals: filter.reply } }] : []),
+      ...(filter.table === 'none' ? [{ table: { exists: false } }] : []),
+      ...(typeof filter.table === 'number' ? [{ table: { equals: filter.table } }] : []),
+    ],
+  }
+}
+
+/** The query string for the guest list with these filters and page. */
+export function guestListQuery(filter: GuestListFilter, page = 1): string {
+  const params = new URLSearchParams()
+  if (filter.search) params.set('q', filter.search)
+  if (filter.reply) params.set('reply', filter.reply)
+  if (filter.table !== null) params.set('table', String(filter.table))
+  if (page > 1) params.set('page', String(page))
+  const text = params.toString()
+  return text ? `?${text}` : ''
 }
