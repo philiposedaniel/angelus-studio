@@ -9,8 +9,10 @@ import { tenantLocales } from '@/lib/locale'
 import {
   importGuestsFromPortal,
   saveGuestFromPortal,
+  seatGuestsFromPortal,
   type GuestFormState,
   type GuestImportState,
+  type GuestSeatState,
 } from '@/lib/organizerGuests'
 import { getCurrentTenant } from '@/lib/tenant'
 
@@ -36,5 +38,15 @@ export async function importGuests(_previous: GuestImportState, form: FormData):
   if (!tenant || !user) return { status: 'error', reason: 'forbidden' }
   const result = await importGuestsFromPortal({ payload: await getPayload({ config }), user, form })
   if (result.status === 'added') revalidatePath('/[locale]/portal/events/[id]', 'page')
+  return result
+}
+
+/** Seats the guests ticked in the organizer's portal list at one table, as the signed-in user. */
+export async function seatGuests(_previous: GuestSeatState, form: FormData): Promise<GuestSeatState> {
+  const tenant = await getCurrentTenant()
+  const user = await getSessionUser()
+  if (!tenant || !user) return { status: 'error', reason: 'forbidden' }
+  const result = await seatGuestsFromPortal({ payload: await getPayload({ config }), user, form })
+  if (result.status === 'seated') revalidatePath('/[locale]/portal/events/[id]', 'page')
   return result
 }

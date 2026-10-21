@@ -1,3 +1,4 @@
+import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
 import { getPayload } from 'payload'
 
@@ -158,6 +159,28 @@ test.describe('Organizers manage their guest list', () => {
     await expect(page.getByText('Showing 1–1 of 1 guests')).toBeVisible()
     await page.getByRole('link', { name: 'Show everyone' }).click()
     await expect(page).toHaveURL(`${BASE}/en/portal/events/${seatedEventId}`)
+
+    // Ticked guests are seated, or taken off their tables, together.
+    await waitForHydration(page)
+    await page.getByRole('button', { name: 'Seat', exact: true }).click()
+    await expect(page.getByText('Tick at least one guest in the list first.')).toBeVisible()
+    await page.getByLabel('Select Rui Almeida').check()
+    await page.getByLabel('Seat the ticked guests at').selectOption({ label: 'No table (take them off their tables)' })
+    await page.getByRole('button', { name: 'Seat', exact: true }).click()
+    await expect(page.getByText('1 guest taken off their table.')).toBeVisible()
+    await expect(page.getByText('0 of 8 seats taken · 2 still without a table')).toBeVisible()
+    await expect(page.getByLabel('Select Rui Almeida')).not.toBeChecked()
+    await page.getByLabel('Select Rui Almeida').check()
+    await page.getByLabel('Seat the ticked guests at').selectOption({ label: 'Head table' })
+    await page.getByRole('button', { name: 'Seat', exact: true }).click()
+    await expect(page.getByText('1 guest seated.')).toBeVisible()
+    await expect(page.getByText('2 of 8 seats taken')).toBeVisible()
+
+    // The seating tools stay accessible, and fit a phone.
+    await page.setViewportSize({ width: 360, height: 780 })
+    const { violations } = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze()
+    expect(violations.map((v) => `${v.id}: ${v.help} (${v.nodes.map((n) => n.target.join(' ')).join(', ')})`)).toEqual([])
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0)
   })
 
   test('the host adds guests from a spreadsheet after checking it', async ({ page }) => {

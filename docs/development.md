@@ -467,6 +467,12 @@ set; there is no per-event colour or font picker yet.
   the organizer seats each party. Organizers read the event's tables but not their staff notes,
   and cannot add, change or remove tables; a table of another event or studio is refused.
   `tests/int/organizerSeating.int.spec.ts` covers these.
+- With tables set up, each guest in the list gets a tick box, and *Seat the ticked guests at*
+  seats every ticked guest on the page at one table, or *No table* takes them off their tables
+  (`seatGuestsFromPortal`, up to 100 guests at once, the size of a list page). It runs as the
+  signed-in user and only touches guests and tables of that event.
+  `tests/int/organizerBulkSeating.int.spec.ts` tries it as the host, as another event's host, as
+  another studio's host and with another event's guests and tables.
 - *Add guests from a spreadsheet* takes a CSV file with the same columns as the admin's import
   (Name required; Email, Phone, Group, Party size, Language). Choosing the file checks it and
   shows how many guests are ready, how many are already on the list (matched by email) and each

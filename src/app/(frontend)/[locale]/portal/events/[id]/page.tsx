@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
+import { BULK_SEAT_FORM_ID, BulkSeatForm } from '@/components/portal/BulkSeatForm'
 import { CopyLinkButton } from '@/components/portal/CopyLinkButton'
 import { GuestForm } from '@/components/portal/GuestForm'
 import { GuestImportForm } from '@/components/portal/GuestImportForm'
@@ -125,6 +126,7 @@ export default async function OrganizerEventPage({
   ])
   const seating = summarizeSeating(tables, seatedGuests)
   const tableName = new Map(tables.map((table) => [String(table.id), table.name]))
+  const tableOptions = tables.map((table) => ({ value: String(table.id), label: table.name }))
   const arrival = new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short', timeZone: event.timeZone || 'Europe/Lisbon' })
 
   return (
@@ -297,6 +299,7 @@ export default async function OrganizerEventPage({
               .replace('{total}', String(list.totalDocs))}
           </p>
         )}
+        {tables.length > 0 && guests.length > 0 && <BulkSeatForm eventId={event.id} tables={tableOptions} t={t.bulkSeat} />}
         {guests.length === 0 ? (
           <p className="text-mist">{filtered ? t.noMatches : t.noGuests}</p>
         ) : (
@@ -306,23 +309,35 @@ export default async function OrganizerEventPage({
                 key={guest.id}
                 className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-ivory/10 bg-charcoal p-4"
               >
-                <div className="grid gap-1">
-                  <span className="font-medium">{guest.name}</span>
-                  <span className="text-sm text-mist">
-                    {[
-                      guest.group,
-                      `${t.partySize}: ${guest.partySize ?? 1}`,
-                      tableName.get(String(idOf(guest.table))),
-                      guest.rsvpStatus === 'attending'
-                        ? t.replyAttending.replace('{count}', String(guest.attendingCount ?? 1))
-                        : guest.rsvpStatus === 'declined'
-                          ? t.declined
-                          : t.pending,
-                    ]
-                      .filter(Boolean)
-                      .join(' · ')}
-                  </span>
-                  {partyOf(guest) && <span className="text-sm text-mist">{partyOf(guest)}</span>}
+                <div className="flex items-start gap-3">
+                  {tables.length > 0 && (
+                    <input
+                      type="checkbox"
+                      name="guest"
+                      value={guest.id}
+                      form={BULK_SEAT_FORM_ID}
+                      aria-label={t.selectGuest.replace('{name}', guest.name)}
+                      className="mt-0.5 size-6 shrink-0 accent-gold"
+                    />
+                  )}
+                  <div className="grid gap-1">
+                    <span className="font-medium">{guest.name}</span>
+                    <span className="text-sm text-mist">
+                      {[
+                        guest.group,
+                        `${t.partySize}: ${guest.partySize ?? 1}`,
+                        tableName.get(String(idOf(guest.table))),
+                        guest.rsvpStatus === 'attending'
+                          ? t.replyAttending.replace('{count}', String(guest.attendingCount ?? 1))
+                          : guest.rsvpStatus === 'declined'
+                            ? t.declined
+                            : t.pending,
+                      ]
+                        .filter(Boolean)
+                        .join(' · ')}
+                    </span>
+                    {partyOf(guest) && <span className="text-sm text-mist">{partyOf(guest)}</span>}
+                  </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
                   {guest.inviteToken && (
@@ -370,7 +385,7 @@ export default async function OrganizerEventPage({
           key={editing?.id ?? 'new'}
           eventId={event.id}
           languages={languages}
-          tables={tables.map((table) => ({ value: String(table.id), label: table.name }))}
+          tables={tableOptions}
           guest={
             editing
               ? {

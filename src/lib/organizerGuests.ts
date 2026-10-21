@@ -211,6 +211,75 @@ export async function importGuestsFromPortal({
   }
 }
 
+/** At most one page of the portal's guest list is seated at once. */
+export const MAX_GUESTS_SEATED_AT_ONCE = 100
+
+export type GuestSeatState =
+  | { status: 'idle' }
+  | { status: 'seated'; count: number; cleared: boolean }
+  | { status: 'error'; reason: 'noneSelected' | 'invalidTable' | 'forbidden' | 'failed' }
+
+/**
+ * Seats the guests ticked in the portal's list at one of the event's tables, or takes them off
+ * their tables (`table` empty). Runs as the user on an event they organize or manage, and only
+ * touches guests of that event, so the guest list's own access rules and checks apply to each.
+ */
+export async function seatGuestsFromPortal({
+  payload,
+  user,
+  form,
+}: {
+  payload: Payload
+  user: User
+  form: FormData
+}): Promise<GuestSeatState> {
+  const eventId = idFrom(form, 'event')
+  if (eventId === null) return { status: 'error', reason: 'failed' }
+  const guestIds = [
+    ...new Set(form.getAll('guest').flatMap((value) => (typeof value === 'string' ? [parseRowId(value)] : []))),
+  ].filter((id): id is number => id !== null)
+  if (guestIds.length === 0) return { status: 'error', reason: 'noneSelected' }
+  if (guestIds.length > MAX_GUESTS_SEATED_AT_ONCE) return { status: 'error', reason: 'failed' }
+  const rawTable = text(form, 'table')
+  const tableId = rawTable ? parseRowId(rawTable) : null
+  if (rawTable && tableId === null) return { status: 'error', reason: 'invalidTable' }
+
+  const event = await payload
+    .findByID({ collection: 'events', id: eventId, depth: 0, user, overrideAccess: false })
+    .catch(() => null)
+  // Anyone signed in may read a published event, so say no before touching its guest list.
+  if (!event || (!isOrganizerOf(user, event) && !isGuestListStaff(user, idOf(event.tenant)))) {
+    return { status: 'error', reason: 'forbidden' }
+  }
+  try {
+    if (tableId !== null) {
+      const { totalDocs } = await payload.count({
+        collection: 'event-tables',
+        where: { and: [{ id: { equals: tableId } }, { event: { equals: eventId } }] },
+        user,
+        overrideAccess: false,
+      })
+      if (totalDocs !== 1) return { status: 'error', reason: 'invalidTable' }
+    }
+    const result = await payload.update({
+      collection: 'event-guests',
+      where: { and: [{ id: { in: guestIds } }, { event: { equals: eventId } }] },
+      data: { table: tableId },
+      depth: 0,
+      user,
+      overrideAccess: false,
+    })
+    if (result.errors.length > 0) {
+      payload.logger.error({ errors: result.errors, msg: 'Some guests could not be seated from the portal' })
+    }
+    if (result.docs.length === 0) return { status: 'error', reason: result.errors.length > 0 ? 'failed' : 'forbidden' }
+    return { status: 'seated', count: result.docs.length, cleared: tableId === null }
+  } catch (error) {
+    payload.logger.error({ err: error, msg: 'Could not seat guests from the portal' })
+    return { status: 'error', reason: 'failed' }
+  }
+}
+
 /** How the organizer's guest list can be narrowed: by reply, and by table once there are tables. */
 export const GUEST_REPLY_FILTERS = ['attending', 'declined', 'pending'] as const
 export type GuestListFilter = {
