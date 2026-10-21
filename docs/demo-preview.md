@@ -13,7 +13,8 @@ In the studio named by `DEFAULT_TENANT_SLUG` (default `angelus`):
   platform super administrator.
 - A **gallery** of eight generated photos, published to the client, with downloads on, a
   share link, and a selection of up to five photos for the client to submit.
-- A **quote** with three line items, a 30% deposit and a contract to sign.
+- A **quote** with three line items, a 30% deposit, the balance in two dated installments and a
+  contract to sign.
 - A **production** with crew, tasks and a call sheet.
 - A **private wedding** with a garden invitation and five guests in different RSVP states; the
   client is its organizer, so it shows in their portal.
@@ -89,5 +90,8 @@ address that stops working when the command stops.
   amounts with no pay button. No email is sent.
 - Demo dates are relative to the day the command runs: the open day is three weeks later, the
   wedding and its production about six weeks later.
+- In CI, setup has sometimes exited without running or printing anything. On start,
+  `docker/preview-start.sh` repeats the migrations and demo data, up to three times, until the
+  demo data reports in. If it never does, the container stops instead of serving an empty site.
 - Claude's cloud workspace cannot publish a preview itself, because its network blocks tunnel
   services. A preview has to run on a machine you control.

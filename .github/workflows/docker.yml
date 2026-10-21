@@ -38,6 +38,13 @@ jobs:
             for i in $(seq 30); do curl -fsS -o /dev/null "http://localhost:3000$path" && break; sleep 2; done
             curl -fsS -o /dev/null -w "$path %{http_code}\n" "http://localhost:3000$path"
           done
+          # Every link the demo seed prints (ticket, invitation, quote, album, vendor, waitlist,
+          # portal, admin) must load in the built image, following sign-in redirects.
+          links=$(docker compose -f docker-compose.preview.yml logs --no-color app | grep -o 'http://localhost:3000[^[:space:]]*' | sort -u)
+          [ "$(printf '%s\n' "$links" | grep -c .)" -ge 10 ]
+          for url in $links; do
+            curl -fsSL -o /dev/null -w "%{http_code} $url\n" "$url"
+          done
 
       - name: Preview logs
         if: always()
