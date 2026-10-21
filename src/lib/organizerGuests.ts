@@ -159,6 +159,7 @@ export type GuestImportState =
       duplicates: number
       added: number
       problems: { line: number; code: ImportProblemCode }[]
+      languageChanged: number[]
       preview: { name: string; partySize: number }[]
     }
 
@@ -204,6 +205,7 @@ export async function importGuestsFromPortal({
       duplicates: result.duplicates,
       added: result.added,
       problems: result.problems.map(({ line, code }) => ({ line, code })),
+      languageChanged: result.languageChanged,
       preview: result.preview.map(({ name, partySize }) => ({ name, partySize })),
     }
   } catch (error) {

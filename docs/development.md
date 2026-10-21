@@ -472,6 +472,12 @@ set; there is no per-event colour or font picker yet.
   `src/lib/organizerGuests.ts`, sharing `importGuests` with the admin's
   `POST /api/event-guests/import`), so only the event's organizers and the studio's staff can
   add to it. Problems are reported as codes and worded from the dictionary.
+- Both imports give a guest whose Language is one the studio's site does not offer the site's
+  main language instead, and list those lines, so every invitation link opens the guest's page.
+  Separately, any page requested in a supported language the studio does not offer (for example
+  an old `/pt/invite/<token>` link) redirects to the same page in the visitor's best offered
+  language, not to the home page: the proxy passes the path in `x-site-path` and
+  `resolveLocale` rebuilds it with `pathInLocale` (`src/i18n/config.ts`), which never leaves the site.
   `tests/int/organizerGuestImport.int.spec.ts` covers these.
 
 Known limits: organizers cannot set up tables, book vendors, sell or

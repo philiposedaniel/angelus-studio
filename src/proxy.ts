@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 
-import { isLocale, LOCALE_HEADER, negotiateLocale } from '@/i18n/config'
+import { isLocale, LOCALE_HEADER, negotiateLocale, PATH_HEADER } from '@/i18n/config'
 
 /**
  * Sends public pages without a language prefix to the visitor's preferred language.
@@ -13,6 +13,8 @@ export function proxy(request: NextRequest) {
     // Not-found pages get no route params, so they read the language from this header.
     const headers = new Headers(request.headers)
     headers.set(LOCALE_HEADER, first)
+    // A page in a language the studio does not offer redirects to itself in one it does.
+    headers.set(PATH_HEADER, `${pathname}${request.nextUrl.search}`)
     return NextResponse.next({ request: { headers } })
   }
 

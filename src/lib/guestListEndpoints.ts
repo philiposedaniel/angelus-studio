@@ -87,6 +87,8 @@ export type GuestImportResult =
       duplicates: number
       added: number
       problems: ImportProblem[]
+      /** Lines whose language the studio's site does not offer; those guests get its main language. */
+      languageChanged: number[]
       preview: Omit<ImportedGuest, 'language'>[]
     }
 
@@ -124,10 +126,16 @@ export async function importGuests({
   if (!existing) return { error: 'forbidden' }
 
   const tenant = await payload.findByID({ collection: 'tenants', id: idOf(event.tenant)!, depth: 0 }).catch(() => null)
-  const defaultLanguage = tenant && isLocale(tenant.defaultLocale) ? tenant.defaultLocale : DEFAULT_LOCALE
+  // Guests get one of the languages the studio's site offers, so their links open their page.
+  const offeredLanguages = tenant ? tenantLocales(tenant) : [DEFAULT_LOCALE]
+  const defaultLanguage =
+    tenant && isLocale(tenant.defaultLocale) && offeredLanguages.includes(tenant.defaultLocale)
+      ? tenant.defaultLocale
+      : offeredLanguages[0]!
   const plan = planGuestImport(csv, {
     existingEmails: existing.docs.flatMap((guest) => (guest.email ? [guest.email] : [])),
     defaultLanguage,
+    offeredLanguages,
   })
   if ('error' in plan) return { error: plan.error }
 
@@ -135,6 +143,7 @@ export async function importGuests({
     ready: plan.guests.length,
     duplicates: plan.duplicates,
     problems: plan.problems,
+    languageChanged: plan.languageChanged,
     preview: plan.guests.slice(0, 10).map(({ line: _line, language: _language, ...guest }) => guest),
   }
   if (dryRun) return { ...summary, added: 0 }

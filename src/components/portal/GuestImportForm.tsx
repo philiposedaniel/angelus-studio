@@ -104,6 +104,14 @@ export function GuestImportForm({ eventId, t }: { eventId: number; t: Dictionary
             {state.problems.length > 20 && <li>{t.more.replace('{count}', String(state.problems.length - 20))}</li>}
           </ul>
         )}
+        {!pending && !tooLarge && (state.status === 'checked' || state.status === 'added') && state.languageChanged.length > 0 && (
+          <p className="text-mist">
+            {(state.languageChanged.length === 1 ? t.languageChanged.one : t.languageChanged.other).replace(
+              '{lines}',
+              state.languageChanged.slice(0, 20).join(', ') + (state.languageChanged.length > 20 ? '…' : ''),
+            )}
+          </p>
+        )}
       </div>
       {!tooLarge && state.status === 'checked' && state.ready > 0 && (
         <button

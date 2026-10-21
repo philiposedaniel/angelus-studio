@@ -130,6 +130,15 @@ describe('guest import from the organizer portal', () => {
     expect(await guestNames(gala)).toEqual(['Carla'])
   })
 
+  it("gives guests in a language the studio's site does not offer its main language, and says so", async () => {
+    const result = await send(hostA, wedding, 'add', 'Name,Email,Language\nPedro,pedro@example.com,pt')
+    expect(result).toMatchObject({ status: 'added', added: 1, languageChanged: [2] })
+    const pedro = (
+      await payload.find({ collection: 'event-guests', where: { email: { equals: 'pedro@example.com' } }, overrideAccess: true })
+    ).docs[0]!
+    expect(pedro.language).toBe('en')
+  })
+
   it('explains a missing file or one without a Name column', async () => {
     expect(await send(hostA, wedding, 'check', null)).toEqual({ status: 'error', reason: 'noFile' })
     expect(await send(hostA, wedding, 'check', 'Email\nx@example.com')).toEqual({ status: 'error', reason: 'noNameColumn' })

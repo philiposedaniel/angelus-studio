@@ -8,6 +8,7 @@ type Result = {
   duplicates: number
   added: number
   problems: { line: number; message: string }[]
+  languageChanged: number[]
   preview: { name: string; email?: string; partySize: number; group?: string }[]
 }
 
@@ -90,6 +91,13 @@ export function GuestImportField() {
           {result.added === 0 && result.preview.length > 0 && (
             <p style={small}>
               First rows: {result.preview.map((g) => `${g.name} (${g.partySize})`).join(', ')}
+            </p>
+          )}
+          {result.languageChanged.length > 0 && (
+            <p style={small}>
+              {result.languageChanged.length === 1 ? 'Line' : 'Lines'} {result.languageChanged.slice(0, 20).join(', ')}
+              {result.languageChanged.length > 20 && '…'}: a language the studio&apos;s site does not offer, so{' '}
+              {result.languageChanged.length === 1 ? 'that guest gets' : 'those guests get'} the site&apos;s main language.
             </p>
           )}
           {result.problems.length > 0 && (

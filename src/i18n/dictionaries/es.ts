@@ -437,6 +437,10 @@ export const es: Dictionary = {
       added: { one: '1 invitado añadido.', other: '{count} invitados añadidos.' },
       line: 'Línea {line}:',
       more: 'y {count} más.',
+      languageChanged: {
+        one: 'Línea {lines}: la web del estudio no está en ese idioma, así que este invitado recibe la invitación en su idioma principal. Puedes cambiarlo en el invitado.',
+        other: 'Líneas {lines}: la web del estudio no está en esos idiomas, así que estos invitados reciben la invitación en su idioma principal. Puedes cambiarlo en cada invitado.',
+      },
       problems: {
         nameMissing: 'falta el nombre.',
         nameTooLong: 'el nombre tiene más de 120 caracteres.',

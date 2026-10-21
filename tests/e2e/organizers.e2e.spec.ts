@@ -165,6 +165,15 @@ test.describe('Organizers manage their guest list', () => {
     await expect(page.getByText('2 guests added.')).toBeVisible()
     await expect(page.getByText('Inês Duarte', { exact: true })).toBeVisible()
     await expect(page.getByText('Paulo Reis', { exact: true })).toBeVisible()
+
+    // A link in a language the studio's site does not offer opens the same page in one it does.
+    const payload = await getPayload({ config })
+    const ines = (await payload.find({ collection: 'event-guests', where: { email: { equals: 'ines@example.com' } } })).docs[0]!
+    await page.goto(`${BASE}/fr/invite/${ines.inviteToken}`)
+    await expect(page).toHaveURL(`${BASE}/en/invite/${ines.inviteToken}`)
+    await page.goto(`${BASE}/fr/portal/events/${eventId}?q=paulo`)
+    await expect(page).toHaveURL(`${BASE}/en/portal/events/${eventId}?q=paulo`)
+    await expect(page.getByText('Showing 1–1 of 1 guests')).toBeVisible()
   })
 
   test('someone who does not organize the event cannot open its guest list', async ({ page }) => {

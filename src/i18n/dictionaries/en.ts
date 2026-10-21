@@ -435,6 +435,10 @@ export const en = {
       added: { one: '1 guest added.', other: '{count} guests added.' },
       line: 'Line {line}:',
       more: 'and {count} more.',
+      languageChanged: {
+        one: "Line {lines}: the studio's site is not in that language, so this guest gets the invitation in its main language. You can change it on the guest.",
+        other: "Lines {lines}: the studio's site is not in those languages, so these guests get the invitation in its main language. You can change it on each guest.",
+      },
       problems: {
         nameMissing: 'the name is missing.',
         nameTooLong: 'the name is longer than 120 characters.',

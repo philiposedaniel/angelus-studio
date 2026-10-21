@@ -28,6 +28,7 @@ describe('planGuestImport', () => {
     expect(plan).toEqual({
       duplicates: 0,
       problems: [],
+      languageChanged: [],
       guests: [
         { line: 2, name: 'Maria Silva', email: 'maria@example.com', phone: undefined, group: 'Family', partySize: 2, language: 'es' },
         { line: 3, name: 'Rui', email: undefined, phone: undefined, group: undefined, partySize: 1, language: 'en' },
@@ -46,6 +47,22 @@ describe('planGuestImport', () => {
     expect(plan.problems.map((p) => p.code)).toEqual(['nameMissing', 'emailInvalid', 'partySize', 'language'])
     expect(plan.guests.map((g) => g.name)).toEqual(['Eva'])
     expect(plan.duplicates).toBe(2)
+  })
+
+  it("gives guests in a language the studio's site does not offer its main language, and says which lines", () => {
+    const plan = planGuestImport('Name,Language\nAna,pt\nBea,es\nCai,', {
+      existingEmails: [],
+      defaultLanguage: 'en',
+      offeredLanguages: ['en', 'es'],
+    })
+    if ('error' in plan) throw new Error(plan.error)
+    expect(plan.guests.map((g) => [g.name, g.language])).toEqual([
+      ['Ana', 'en'],
+      ['Bea', 'es'],
+      ['Cai', 'en'],
+    ])
+    expect(plan.languageChanged).toEqual([2])
+    expect(plan.problems).toEqual([])
   })
 
   it('needs a header line with a Name column', () => {
