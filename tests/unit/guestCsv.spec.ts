@@ -43,6 +43,7 @@ describe('planGuestImport', () => {
     expect('error' in plan).toBe(false)
     if ('error' in plan) return
     expect(plan.problems.map((p) => p.line)).toEqual([2, 3, 4, 5])
+    expect(plan.problems.map((p) => p.code)).toEqual(['nameMissing', 'emailInvalid', 'partySize', 'language'])
     expect(plan.guests.map((g) => g.name)).toEqual(['Eva'])
     expect(plan.duplicates).toBe(2)
   })

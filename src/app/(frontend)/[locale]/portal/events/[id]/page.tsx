@@ -5,6 +5,7 @@ import { getPayload } from 'payload'
 
 import { CopyLinkButton } from '@/components/portal/CopyLinkButton'
 import { GuestForm } from '@/components/portal/GuestForm'
+import { GuestImportForm } from '@/components/portal/GuestImportForm'
 import { RemoveGuestButton } from '@/components/portal/RemoveGuestButton'
 import { LOCALE_LABELS } from '@/i18n/config'
 import { getDictionary } from '@/i18n/dictionaries'
@@ -372,6 +373,11 @@ export default async function OrganizerEventPage({
           cancelHref={`/${locale}/portal/events/${event.id}`}
           t={t}
         />
+      </div>
+
+      <div className="grid gap-4 rounded-xl border border-ivory/10 bg-charcoal p-6">
+        <h2 className="font-display text-2xl">{t.import.title}</h2>
+        <GuestImportForm eventId={event.id} t={t.import} />
       </div>
     </section>
   )

@@ -1,6 +1,10 @@
 import type { Payload } from 'payload'
 
 import type { Locale } from '@/i18n/config'
+import { MAX_IMPORT_CHARS, type ImportProblemCode } from '@/lib/guestCsv'
+import { importGuests } from '@/lib/guestListEndpoints'
+import { idOf } from '@/lib/ids'
+import { isGuestListStaff, isOrganizerOf } from '@/lib/organizers'
 import { MAX_PARTY_SIZE } from '@/lib/rsvp'
 import type { User } from '@/payload-types'
 
@@ -139,6 +143,71 @@ export async function saveGuestFromPortal({
       return { status: 'error', errors: { table: 'invalid' } }
     }
     payload.logger.error({ err: error, msg: 'Could not save a guest from the portal' })
+    return { status: 'error', reason: 'failed' }
+  }
+}
+
+export type GuestImportState =
+  | { status: 'idle' }
+  | {
+      status: 'error'
+      reason: 'noFile' | 'forbidden' | 'failed' | 'empty' | 'noNameColumn' | 'tooLarge' | 'tooManyRows'
+    }
+  | {
+      status: 'checked' | 'added'
+      ready: number
+      duplicates: number
+      added: number
+      problems: { line: number; code: ImportProblemCode }[]
+      preview: { name: string; partySize: number }[]
+    }
+
+/**
+ * Checks a guest list spreadsheet (`intent` "check"), or adds its guests (`intent` "add"), on an
+ * event the user organizes or manages as studio staff. The guests are read and created as the
+ * user, so the guest list's own access rules and checks apply to every row.
+ */
+export async function importGuestsFromPortal({
+  payload,
+  user,
+  form,
+}: {
+  payload: Payload
+  user: User
+  form: FormData
+}): Promise<GuestImportState> {
+  const eventId = idFrom(form, 'event')
+  const file = form.get('file')
+  if (eventId === null) return { status: 'error', reason: 'failed' }
+  if (!(file instanceof File) || file.size === 0) return { status: 'error', reason: 'noFile' }
+  if (file.size > MAX_IMPORT_CHARS) return { status: 'error', reason: 'tooLarge' }
+
+  const event = await payload
+    .findByID({ collection: 'events', id: eventId, depth: 0, user, overrideAccess: false })
+    .catch(() => null)
+  // Anyone signed in may read a published event, so say no before reading its guest list.
+  if (!event || (!isOrganizerOf(user, event) && !isGuestListStaff(user, idOf(event.tenant)))) {
+    return { status: 'error', reason: 'forbidden' }
+  }
+  try {
+    const result = await importGuests({
+      payload,
+      user,
+      event,
+      csv: await file.text(),
+      dryRun: text(form, 'intent') !== 'add',
+    })
+    if ('error' in result) return { status: 'error', reason: result.error }
+    return {
+      status: result.added > 0 ? 'added' : 'checked',
+      ready: result.ready,
+      duplicates: result.duplicates,
+      added: result.added,
+      problems: result.problems.map(({ line, code }) => ({ line, code })),
+      preview: result.preview.map(({ name, partySize }) => ({ name, partySize })),
+    }
+  } catch (error) {
+    payload.logger.error({ err: error, msg: 'Could not import guests from the portal' })
     return { status: 'error', reason: 'failed' }
   }
 }

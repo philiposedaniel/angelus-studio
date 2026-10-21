@@ -71,7 +71,18 @@ export type ImportedGuest = {
   language: Locale
 }
 
-export type ImportProblem = { line: number; message: string }
+/** What is wrong with a row, so each screen can say it in its own language. */
+export type ImportProblemCode =
+  | 'nameMissing'
+  | 'nameTooLong'
+  | 'emailInvalid'
+  | 'phoneTooLong'
+  | 'groupTooLong'
+  | 'partySize'
+  | 'language'
+  | 'notAdded'
+
+export type ImportProblem = { line: number; code: ImportProblemCode; message: string }
 
 export type ImportPlan = {
   guests: (ImportedGuest & { line: number })[]
@@ -119,19 +130,19 @@ export function planGuestImport(
     const seats = cell('partySize')
     const language = cell('language').toLowerCase()
 
-    if (!name) return plan.problems.push({ line, message: 'The name is missing.' })
-    if (name.length > 120) return plan.problems.push({ line, message: 'The name is longer than 120 characters.' })
+    if (!name) return plan.problems.push({ line, code: 'nameMissing', message: 'The name is missing.' })
+    if (name.length > 120) return plan.problems.push({ line, code: 'nameTooLong', message: 'The name is longer than 120 characters.' })
     if (email && (email.length > 200 || !EMAIL.test(email))) {
-      return plan.problems.push({ line, message: `"${email.slice(0, 60)}" is not an email address.` })
+      return plan.problems.push({ line, code: 'emailInvalid', message: `"${email.slice(0, 60)}" is not an email address.` })
     }
-    if (phone.length > 40) return plan.problems.push({ line, message: 'The phone number is too long.' })
-    if (group.length > 80) return plan.problems.push({ line, message: 'The group is longer than 80 characters.' })
+    if (phone.length > 40) return plan.problems.push({ line, code: 'phoneTooLong', message: 'The phone number is too long.' })
+    if (group.length > 80) return plan.problems.push({ line, code: 'groupTooLong', message: 'The group is longer than 80 characters.' })
     const partySize = seats === '' ? 1 : /^\d+$/.test(seats) ? Number(seats) : NaN
     if (!Number.isInteger(partySize) || partySize < 1 || partySize > MAX_PARTY_SIZE) {
-      return plan.problems.push({ line, message: `The party size must be a whole number from 1 to ${MAX_PARTY_SIZE}.` })
+      return plan.problems.push({ line, code: 'partySize', message: `The party size must be a whole number from 1 to ${MAX_PARTY_SIZE}.` })
     }
     if (language && !isLocale(language)) {
-      return plan.problems.push({ line, message: `"${language.slice(0, 20)}" is not a language code such as en or es.` })
+      return plan.problems.push({ line, code: 'language', message: `"${language.slice(0, 20)}" is not a language code such as en or es.` })
     }
     if (email) {
       if (seen.has(email)) {

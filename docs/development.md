@@ -464,9 +464,19 @@ set; there is no per-event colour or font picker yet.
   the organizer seats each party. Organizers read the event's tables but not their staff notes,
   and cannot add, change or remove tables; a table of another event or studio is refused.
   `tests/int/organizerSeating.int.spec.ts` covers these.
+- *Add guests from a spreadsheet* takes a CSV file with the same columns as the admin's import
+  (Name required; Email, Phone, Group, Party size, Language). Choosing the file checks it and
+  shows how many guests are ready, how many are already on the list (matched by email) and each
+  problem row by its line; *Add N guests* then adds them. The page's server action reads the
+  event and creates every guest as the signed-in user (`importGuestsFromPortal` in
+  `src/lib/organizerGuests.ts`, sharing `importGuests` with the admin's
+  `POST /api/event-guests/import`), so only the event's organizers and the studio's staff can
+  add to it. Problems are reported as codes and worded from the dictionary.
+  `tests/int/organizerGuestImport.int.spec.ts` covers these.
 
-Known limits: organizers cannot import guests from CSV, set up tables, book vendors, sell or
-refund tickets, or edit the event itself from the portal; staff do those in the admin.
+Known limits: organizers cannot set up tables, book vendors, sell or
+refund tickets, or edit the event itself from the portal; staff do those in the admin. A guest
+file from the portal can be at most 1 MB, the limit Next.js sets on server action uploads.
 
 ## Registration and tickets
 

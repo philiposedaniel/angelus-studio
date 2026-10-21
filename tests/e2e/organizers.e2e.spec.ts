@@ -148,6 +148,25 @@ test.describe('Organizers manage their guest list', () => {
     await expect(page.getByText('Rui Almeida', { exact: true }).first()).toBeVisible()
   })
 
+  test('the host adds guests from a spreadsheet after checking it', async ({ page }) => {
+    await signIn(page, host)
+    await page.goto(`${BASE}/en/portal/events/${eventId}`)
+    await waitForHydration(page)
+    await page.getByLabel('Guest list file (CSV)').setInputFiles({
+      name: 'guests.csv',
+      mimeType: 'text/csv',
+      buffer: Buffer.from('Name,Email,Party size\nInês Duarte,ines@example.com,2\nPaulo Reis,,1\n,missing@example.com,1\n'),
+    })
+    await expect(page.getByText('2 guests ready to add. 1 row has a problem and is left out.')).toBeVisible()
+    await expect(page.getByText('Line 4: the name is missing.')).toBeVisible()
+    await expect(page.getByText('Inês Duarte', { exact: true })).toHaveCount(0)
+
+    await page.getByRole('button', { name: 'Add 2 guests' }).click()
+    await expect(page.getByText('2 guests added.')).toBeVisible()
+    await expect(page.getByText('Inês Duarte', { exact: true })).toBeVisible()
+    await expect(page.getByText('Paulo Reis', { exact: true })).toBeVisible()
+  })
+
   test('someone who does not organize the event cannot open its guest list', async ({ page }) => {
     await signIn(page, outsider)
     await expect(page.getByText(`${PREFIX}Ana and João`)).toHaveCount(0)
