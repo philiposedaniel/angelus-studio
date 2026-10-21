@@ -406,7 +406,8 @@ announced; send the link again.
   dietary needs, a meal count per table, and the guests still without a table. Guests who declined
   are left out; staff notes, contact details and invitation links are never printed. It is written
   in the studio's first language and served by `GET /api/event-tables/plan?event=<id>`, which reads
-  as the signed-in user, so only the studio's admins and production managers get it.
+  as the signed-in user, so only the studio's admins and production managers and the event's
+  organizers get it.
 - Deleting a table leaves its guests without a table. Deleting an event deletes its tables.
 
 Known limits: seating is a list of tables, not a drawn floor plan, and the guest import does not
@@ -457,8 +458,14 @@ set; there is no per-event colour or font picker yet.
 - Organizers can change none of this, and only studio staff can send a vendor their link.
   `tests/int/organizerVendorsTickets.int.spec.ts` tries each of these as the host, as another
   event's host and as another studio's host.
+- Once the studio has added the event's tables, the page shows **seating**: seats taken of the
+  total, how many still have no table, each table with its seats and who sits there (red when
+  over capacity), and *Download the seating plan (PDF)*. The guest form gets a *Table* choice, so
+  the organizer seats each party. Organizers read the event's tables but not their staff notes,
+  and cannot add, change or remove tables; a table of another event or studio is refused.
+  `tests/int/organizerSeating.int.spec.ts` covers these.
 
-Known limits: organizers cannot import guests from CSV, manage seating, book vendors, sell or
+Known limits: organizers cannot import guests from CSV, set up tables, book vendors, sell or
 refund tickets, or edit the event itself from the portal; staff do those in the admin.
 
 ## Registration and tickets

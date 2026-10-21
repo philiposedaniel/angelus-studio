@@ -3,13 +3,15 @@ import { APIError, Forbidden, type CollectionConfig } from 'payload'
 import { hasTenantRole, isSuperAdmin, tenantRoles } from '@/access'
 import { EVENT_GUEST_STAFF_ROLES } from '@/collections/EventGuests'
 import { idOf } from '@/lib/ids'
+import { staffOnlyField, staffOrEventOrganizers } from '@/lib/organizers'
 import { MAX_TABLE_CAPACITY } from '@/lib/seating'
 import { downloadSeatingPlan } from '@/lib/seatingPdf'
 
 /**
  * A table at an event. Guests are seated by choosing a table on the guest; the event shows each
  * table with who sits there and how many seats are taken (src/lib/seating.ts). Same staff as the
- * guest list, because the seating plan shows guests' names.
+ * guest list, because the seating plan shows guests' names. An event's organizers see its tables,
+ * without the staff notes, so they can seat their guests from the portal; only staff add tables.
  */
 export const EventTables: CollectionConfig = {
   slug: 'event-tables',
@@ -21,7 +23,7 @@ export const EventTables: CollectionConfig = {
   },
   defaultSort: 'sortOrder',
   access: {
-    read: tenantRoles(EVENT_GUEST_STAFF_ROLES),
+    read: staffOrEventOrganizers(EVENT_GUEST_STAFF_ROLES),
     create: tenantRoles(EVENT_GUEST_STAFF_ROLES),
     update: tenantRoles(EVENT_GUEST_STAFF_ROLES),
     delete: tenantRoles(EVENT_GUEST_STAFF_ROLES),
@@ -114,6 +116,12 @@ export const EventTables: CollectionConfig = {
       defaultValue: 0,
       admin: { description: 'Lower numbers are listed first.' },
     },
-    { name: 'notes', type: 'textarea', maxLength: 1000, admin: { description: 'Only staff see this.' } },
+    {
+      name: 'notes',
+      type: 'textarea',
+      maxLength: 1000,
+      access: { read: staffOnlyField(EVENT_GUEST_STAFF_ROLES) },
+      admin: { description: 'Only staff see this.' },
+    },
   ],
 }

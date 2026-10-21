@@ -17,6 +17,7 @@ type Guest = {
   group: string
   partySize: number
   language: string
+  table: string
 }
 
 const input =
@@ -27,12 +28,15 @@ export function GuestForm({
   eventId,
   guest,
   languages,
+  tables,
   cancelHref,
   t,
 }: {
   eventId: number
   guest: Guest | null
   languages: { value: string; label: string }[]
+  /** The event's tables; the choice only appears once the studio has added some. */
+  tables: { value: string; label: string }[]
   cancelHref: string
   t: Dictionary['organizer']
 }) {
@@ -107,6 +111,33 @@ export function GuestForm({
           ))}
         </select>
       </div>
+      {tables.length > 0 && (
+        <div className="grid gap-2">
+          <label htmlFor="guest-table" className="text-sm text-mist">
+            {t.table}
+          </label>
+          <select
+            id="guest-table"
+            name="table"
+            defaultValue={guest?.table ?? ''}
+            aria-invalid={errors.table ? true : undefined}
+            aria-describedby={errors.table ? 'guest-table-error' : undefined}
+            className={input}
+          >
+            <option value="">{t.noTable}</option>
+            {tables.map((table) => (
+              <option key={table.value} value={table.value}>
+                {table.label}
+              </option>
+            ))}
+          </select>
+          {errors.table && (
+            <p id="guest-table-error" className="text-sm text-copper">
+              {t.errors[errors.table]}
+            </p>
+          )}
+        </div>
+      )}
       <div className="flex flex-wrap items-center gap-4 sm:col-span-2">
         <button
           type="submit"

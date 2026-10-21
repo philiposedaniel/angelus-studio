@@ -11,6 +11,7 @@ const host = { email: `${PREFIX}host@angelus.test`, password: 'e2e-Password-1' }
 const outsider = { email: `${PREFIX}outsider@angelus.test`, password: 'e2e-Password-1' }
 
 let eventId: number
+let seatedEventId: number
 
 async function signIn(page: Page, user: { email: string; password: string }) {
   await page.goto(`${BASE}/en/portal/login`)
@@ -70,6 +71,24 @@ test.describe('Organizers manage their guest list', () => {
       collection: 'ticket-types',
       data: { event: event.id, name: 'Reception seats', capacity: 20, maxPerOrder: 5 } as never,
     })
+    const dinner = await payload.create({
+      collection: 'events',
+      data: {
+        tenant: tenant.id,
+        title: `${PREFIX}Anniversary dinner`,
+        slug: `${PREFIX}dinner`,
+        startsAt: '2027-07-10T19:00:00.000Z',
+        timeZone: 'Europe/Lisbon',
+        published: false,
+        organizers: [hostUser.id],
+      },
+    })
+    seatedEventId = dinner.id
+    await payload.create({
+      collection: 'event-tables',
+      data: { event: dinner.id, name: 'Head table', capacity: 8, notes: 'Keep away from the speakers' } as never,
+    })
+    await payload.create({ collection: 'event-guests', data: { event: dinner.id, name: 'Rui Almeida', partySize: 2 } as never })
   })
 
   test('the host adds, changes and removes guests from their portal', async ({ page }) => {
@@ -109,6 +128,24 @@ test.describe('Organizers manage their guest list', () => {
     await expect(page.getByText('0 of 20 sold')).toBeVisible()
     const text = await page.locator('main').innerText()
     for (const hidden of ['1,200', '1200', 'Negotiated', '+351']) expect(text).not.toContain(hidden)
+  })
+
+  test('the host seats a guest at one of the tables the studio set up', async ({ page }) => {
+    await signIn(page, host)
+    await page.goto(`${BASE}/en/portal/events/${seatedEventId}`)
+    await expect(page.getByRole('heading', { name: 'Seating' })).toBeVisible()
+    await expect(page.getByText('0 of 8 seats taken · 2 still without a table')).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Download the seating plan (PDF)' })).toBeVisible()
+    await expect(page.locator('main')).not.toContainText('speakers')
+
+    await page.getByRole('link', { name: 'Change' }).click()
+    await expect(page.getByRole('heading', { name: 'Change guest' })).toBeVisible()
+    await waitForHydration(page)
+    await page.getByLabel('Table').selectOption({ label: 'Head table' })
+    await page.getByRole('button', { name: 'Save changes' }).click()
+    await expect(page.getByText('2 of 8 seats taken')).toBeVisible()
+    await expect(page.getByText('2 of 8 seats', { exact: true })).toBeVisible()
+    await expect(page.getByText('Rui Almeida', { exact: true }).first()).toBeVisible()
   })
 
   test('someone who does not organize the event cannot open its guest list', async ({ page }) => {

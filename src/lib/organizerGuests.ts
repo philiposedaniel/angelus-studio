@@ -4,7 +4,7 @@ import type { Locale } from '@/i18n/config'
 import { MAX_PARTY_SIZE } from '@/lib/rsvp'
 import type { User } from '@/payload-types'
 
-export type GuestField = 'name' | 'email' | 'phone' | 'group' | 'partySize' | 'language'
+export type GuestField = 'name' | 'email' | 'phone' | 'group' | 'partySize' | 'language' | 'table'
 export type GuestFieldError = 'required' | 'invalid' | 'tooLong'
 
 export type GuestFormState =
@@ -38,6 +38,10 @@ export function validateGuestForm(form: FormData, offeredLanguages: readonly Loc
   if (group.length > LIMITS.group) errors.group = 'tooLong'
   if (!Number.isInteger(partySize) || partySize < 1 || partySize > MAX_PARTY_SIZE) errors.partySize = 'invalid'
   if (!offeredLanguages.includes(language as Locale)) errors.language = 'invalid'
+  // The table is only sent once the event has tables; empty means no table yet. The guest list
+  // checks the table belongs to the guest's event.
+  const rawTable = form.has('table') ? text(form, 'table') : undefined
+  if (rawTable && !/^\d+$/.test(rawTable)) errors.table = 'invalid'
 
   if (Object.keys(errors).length > 0) return { ok: false as const, errors }
   return {
@@ -49,6 +53,7 @@ export function validateGuestForm(form: FormData, offeredLanguages: readonly Loc
       group: group || null,
       partySize,
       language: language as Locale,
+      ...(rawTable === undefined ? {} : { table: rawTable ? Number(rawTable) : null }),
     },
   }
 }
@@ -93,6 +98,17 @@ export async function saveGuestFromPortal({
 
     const checked = validateGuestForm(form, offeredLanguages)
     if (!checked.ok) return { status: 'error', errors: checked.errors }
+    const tableId = checked.data.table
+    if (tableId !== undefined && tableId !== null) {
+      // One of this event's tables that the user can see; the guest list checks it again on save.
+      const { totalDocs } = await payload.count({
+        collection: 'event-tables',
+        where: { and: [{ id: { equals: tableId } }, { event: { equals: eventId } }] },
+        user,
+        overrideAccess: false,
+      })
+      if (totalDocs !== 1) return { status: 'error', errors: { table: 'invalid' } }
+    }
 
     if (guestId !== null) {
       const result = await payload.update({
@@ -118,6 +134,9 @@ export async function saveGuestFromPortal({
     if (status === 403) return { status: 'error', reason: 'forbidden' }
     if (status === 400 && /party|seats/i.test(String((error as Error).message))) {
       return { status: 'error', errors: { partySize: 'invalid' } }
+    }
+    if (status === 400 && /table/i.test(String((error as Error).message))) {
+      return { status: 'error', errors: { table: 'invalid' } }
     }
     payload.logger.error({ err: error, msg: 'Could not save a guest from the portal' })
     return { status: 'error', reason: 'failed' }
