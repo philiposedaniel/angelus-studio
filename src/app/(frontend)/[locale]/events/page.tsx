@@ -17,7 +17,7 @@ export default async function EventsPage({ params }: PageProps<'/[locale]/events
   const events = await listPublishedEvents(tenant.id, locale)
 
   return (
-    <main className="mx-auto grid max-w-4xl gap-8 px-6 py-16 text-ivory">
+    <div className="mx-auto grid max-w-4xl gap-8 px-6 py-16 text-ivory">
       <h1 className="font-serif text-4xl">{t.heading}</h1>
       {events.length === 0 && <p className="text-mist">{t.noEvents}</p>}
       <ul className="grid gap-6">
@@ -31,6 +31,6 @@ export default async function EventsPage({ params }: PageProps<'/[locale]/events
           </li>
         ))}
       </ul>
-    </main>
+    </div>
   )
 }

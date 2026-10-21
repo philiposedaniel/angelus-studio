@@ -16,7 +16,9 @@ export const metadata = { robots: { index: false } }
  * A guest's way in: checks the event's guest token, then sends the guest to the event's album.
  * Shows nothing about the album itself, so an unknown or old link gives no clue.
  */
-export default async function GuestEntryPage({ params }: PageProps<'/[locale]/events/[slug]/guests/[token]'>) {
+export default async function GuestEntryPage({
+  params,
+}: PageProps<'/[locale]/events/[slug]/guests/[token]'>) {
   const tenant = await getCurrentTenant()
   if (!tenant) notFound()
   const { locale: requested, slug, token } = await params
@@ -43,12 +45,13 @@ export default async function GuestEntryPage({ params }: PageProps<'/[locale]/ev
   if (!event) notFound()
 
   const galleryId = idOf(event.gallery)
-  const shared = galleryId === undefined ? null : await findSharedGalleryById(tenant, Number(galleryId), locale)
+  const shared =
+    galleryId === undefined ? null : await findSharedGalleryById(tenant, Number(galleryId), locale)
   if (!shared) {
     return (
-      <main className="mx-auto max-w-2xl px-6 py-16 text-ivory">
+      <div className="mx-auto max-w-2xl px-6 py-16 text-ivory">
         <p className="text-mist">{t.guestAlbumUnavailable}</p>
-      </main>
+      </div>
     )
   }
   redirect(`/s/${shared.token}`)

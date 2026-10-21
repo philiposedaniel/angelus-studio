@@ -23,7 +23,9 @@ const plural = (forms: { one: string; other: string }, count: number) =>
  * Where a ticket's entry code leads. Studio staff signed in on this site see the registration and
  * check it in; anyone else is told to show the code at the entrance, and learns nothing more.
  */
-export default async function TicketCheckInPage({ params }: PageProps<'/[locale]/tickets/[token]/check-in'>) {
+export default async function TicketCheckInPage({
+  params,
+}: PageProps<'/[locale]/tickets/[token]/check-in'>) {
   const tenant = await getCurrentTenant()
   if (!tenant) notFound()
   const { locale: requested, token } = await params
@@ -40,23 +42,29 @@ export default async function TicketCheckInPage({ params }: PageProps<'/[locale]
   if (!canCheckIn(user, tenant.id)) {
     const back = `/${locale}/tickets/${token}/check-in`
     return (
-      <main className="mx-auto grid max-w-xl gap-6 px-6 py-16 text-ivory">
+      <div className="mx-auto grid max-w-xl gap-6 px-6 py-16 text-ivory">
         <h1 className="font-serif text-3xl">{t.showAtEntrance}</h1>
         <p className="text-mist">{t.staffOnly}</p>
-        <a href={`/admin/login?redirect=${encodeURIComponent(back)}`} className="text-sm text-mist underline">
+        <a
+          href={`/admin/login?redirect=${encodeURIComponent(back)}`}
+          className="text-sm text-mist underline"
+        >
           {t.staffSignIn}
         </a>
-      </main>
+      </div>
     )
   }
 
   const { registration, event, ticketType } = found
   const quantity = registration.quantity ?? 1
   const arrived = registration.checkedInCount ?? 0
-  const time = new Intl.DateTimeFormat(locale, { timeStyle: 'short', timeZone: event.timeZone || 'Europe/Lisbon' })
+  const time = new Intl.DateTimeFormat(locale, {
+    timeStyle: 'short',
+    timeZone: event.timeZone || 'Europe/Lisbon',
+  })
 
   return (
-    <main className="mx-auto grid max-w-xl gap-6 px-6 py-12 text-ivory">
+    <div className="mx-auto grid max-w-xl gap-6 px-6 py-12 text-ivory">
       <header className="grid gap-1">
         <p className="text-sm uppercase tracking-widest text-gold">{t.heading}</p>
         <p className="text-mist">
@@ -69,7 +77,10 @@ export default async function TicketCheckInPage({ params }: PageProps<'/[locale]
         <p>{plural(dictionary.tickets.admits, quantity)}</p>
         {arrived > 0 && registration.checkedInAt && (
           <p role="status" className="text-gold">
-            {plural(t.alreadyIn, arrived).replace('{time}', time.format(new Date(registration.checkedInAt)))}
+            {plural(t.alreadyIn, arrived).replace(
+              '{time}',
+              time.format(new Date(registration.checkedInAt)),
+            )}
           </p>
         )}
       </section>
@@ -87,6 +98,6 @@ export default async function TicketCheckInPage({ params }: PageProps<'/[locale]
           {dictionary.tickets.doNotAdmit}
         </p>
       )}
-    </main>
+    </div>
   )
 }

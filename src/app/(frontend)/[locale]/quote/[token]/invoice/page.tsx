@@ -17,7 +17,9 @@ const formatDate = (value: string, locale: string) =>
   new Date(value).toLocaleDateString(locale, { dateStyle: 'long', timeZone: 'UTC' })
 
 /** The invoice for a quote the client was sent: what was agreed, what has been paid, and what is still due. */
-export default async function InvoicePage({ params }: PageProps<'/[locale]/quote/[token]/invoice'>) {
+export default async function InvoicePage({
+  params,
+}: PageProps<'/[locale]/quote/[token]/invoice'>) {
   const tenant = await getCurrentTenant()
   if (!tenant) notFound()
   const { locale: requested, token } = await params
@@ -43,7 +45,7 @@ export default async function InvoicePage({ params }: PageProps<'/[locale]/quote
           : ''
 
   return (
-    <main className="mx-auto grid max-w-3xl gap-8 px-6 py-16 text-ivory">
+    <div className="mx-auto grid max-w-3xl gap-8 px-6 py-16 text-ivory">
       <header className="grid gap-2">
         <p className="text-mist">
           {t.reference} #{quote.id}
@@ -54,7 +56,11 @@ export default async function InvoicePage({ params }: PageProps<'/[locale]/quote
         </p>
       </header>
 
-      {totals.amountDue === 0 && <p role="status" className="text-gold">{t.paidInFull}</p>}
+      {totals.amountDue === 0 && (
+        <p role="status" className="text-gold">
+          {t.paidInFull}
+        </p>
+      )}
 
       <table className="w-full border-collapse text-left">
         <thead>
@@ -106,7 +112,9 @@ export default async function InvoicePage({ params }: PageProps<'/[locale]/quote
                   {t.kindInstallment} {line.number}
                   {line.dueDate ? ` · ${t.scheduleDate} ${formatDate(line.dueDate, locale)}` : ''}
                   {' · '}
-                  {line.paidAt ? `${t.schedulePaid} ${formatDate(line.paidAt, locale)}` : t.scheduleDue}
+                  {line.paidAt
+                    ? `${t.schedulePaid} ${formatDate(line.paidAt, locale)}`
+                    : t.scheduleDue}
                 </span>
                 <span>{money(line.amount)}</span>
               </li>
@@ -145,6 +153,6 @@ export default async function InvoicePage({ params }: PageProps<'/[locale]/quote
           {t.backToQuote}
         </Link>
       </div>
-    </main>
+    </div>
   )
 }
