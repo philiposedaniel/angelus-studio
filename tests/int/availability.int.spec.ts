@@ -69,6 +69,13 @@ describe('studio availability', () => {
     expect(await busyDays(payload, other.id, WINDOW)).toEqual([])
   })
 
+  it('does not let another studio\'s published event or booked shoot block this studio\'s day', async () => {
+    await event(other, 'other published event', true, '2026-12-14T19:00:00.000Z')
+    await production(other, 'other confirmed shoot', 'confirmed', '2026-12-15T00:00:00.000Z')
+    expect(await busyDays(payload, studio.id, WINDOW)).toEqual([])
+    expect(await busyDays(payload, other.id, WINDOW)).toEqual(['2026-12-14', '2026-12-15'])
+  })
+
   it('counts only days inside the window', async () => {
     await production(studio, 'january shoot', 'confirmed', '2027-01-03T00:00:00.000Z')
     expect(await busyDays(payload, studio.id, WINDOW)).toEqual([])

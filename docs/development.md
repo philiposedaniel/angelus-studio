@@ -63,6 +63,7 @@ starts. Every schema change therefore needs `pnpm migrate:create <name>` and a c
 | `STRIPE_SECRET_KEY` | Stripe API key for Checkout deposits. Leave empty to keep online payment off. |
 | `STRIPE_WEBHOOK_SECRET` | Signing secret of the Stripe webhook endpoint `/api/stripe/webhook`. |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` | The email service's SMTP server and login. Leave `SMTP_HOST` empty to send no email. `SMTP_PORT` defaults to 587. |
+| `EMAIL_MODE` | `log` writes each email to the app log instead of sending it (development and preview only: the log holds share links). `off` sends and logs nothing. Unset, email is sent once SMTP is set. See `docs/self-hosting.md`. |
 | `SMTP_SECURE` | `true` for TLS from the start (port 465, the default there), `false` to upgrade with STARTTLS. |
 | `EMAIL_FROM_ADDRESS` | The address emails come from, on a domain verified with the email service. Required to send. |
 | `EMAIL_FROM_NAME` | Sender name for platform emails. Event emails use the studio's name instead. |

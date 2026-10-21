@@ -14,6 +14,7 @@ and the role itself. This review records how each group is kept safe, and what i
 | Collection hooks (events, ticket types, registrations, promo codes, guests, tables, vendors, event vendors, equipment, projects, galleries, favorites) | Hooks look up a parent record only to take its studio, then compare it with the studio of the staff member (`hasTenantRole`) or the event's organizers (`isOrganizerOf`). A record cannot be moved to another studio. |
 | Lookups of users, MFA, selections | Keyed by the signed-in user's own id, taken from the session, never from the form. A client's selection is first read with the client's own access (`overrideAccess: false`). |
 | Jobs and system mail (reminders, notices, demo data) | Run without a user. Each query filters by studio and status. |
+| Public availability page (`/availability`) | The studio comes from the request's host, never from the URL. `busyDays` runs two queries, each filtered by that studio's `tenant`, and returns only `YYYY-MM-DD` days. No title, client, place or count leaves the server. Tests in `tests/int/availability.int.spec.ts` show another studio's published event or confirmed shoot does not block a day. |
 
 Portal pages read with `overrideAccess: false`, for example the galleries list and the calendar.
 
@@ -32,6 +33,15 @@ closely should be checked when they are next changed.
   `staffRoleReads.int.spec.ts`, `projectAccess.int.spec.ts`, `publicTokens.int.spec.ts`). The expiry rule is
   tested in `tests/int/paymentSessions.int.spec.ts`; the page action that calls it needs Stripe and is covered
   by the webhook and checkout checks only.
+
+## Availability page: what a day means
+
+- A day is shown as **Booked** when a production in a booked status (confirmed, in production, delivered) has that shoot date, or
+  when a **published** event starts that day in the event's time zone. Drafts do not count.
+- **Unlisted** events are published too, so they also mark their day as Booked. The page shows the day only, so a private
+  event's date becomes visible to anyone who opens the availability page. The owner should decide whether that is
+  acceptable; the code is unchanged for now.
+- Events have no cancelled status. A cancelled event must be unpublished to free its day.
 
 ## Rule for new code
 
