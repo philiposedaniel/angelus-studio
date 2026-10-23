@@ -4,6 +4,8 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { busyDays } from '@/lib/availability'
 import { DemoDataRefused, demoEmail, seedDemoData } from '@/lib/demoData'
 import { eventTicketSales } from '@/lib/tickets'
+import { idOf } from '@/lib/ids'
+import { eventArrivals } from '@/lib/vendors'
 import config from '@/payload.config'
 
 const SLUG = 'int-demo'
@@ -146,8 +148,8 @@ describe('demo data', () => {
       inquiries: 1,
       equipment: 3,
       'equipment-reservations': 2,
-      vendors: 2,
-      'event-vendors': 2,
+      vendors: 3,
+      'event-vendors': 3,
       'event-tables': 2,
       'promo-codes': 1,
       'waitlist-entries': 1,
@@ -193,6 +195,19 @@ describe('demo data', () => {
     expect(dayOf('confirmed').length).toBeGreaterThanOrEqual(3)
     for (const day of dayOf('confirmed')) expect(booked).toContain(day)
     for (const day of dayOf('planning')) expect(booked).not.toContain(day)
+
+    // The florist's page lists the band arriving after them, and not the caterer who is only proposed.
+    const florist = (
+      await payload.find({
+        collection: 'event-vendors',
+        where: { status: { equals: 'confirmed' } },
+        depth: 0,
+      })
+    ).docs.find((booking) => idOf(booking.tenant) === tenantId)!
+    expect((await eventArrivals(payload, florist)).map((arrival) => arrival.role)).toEqual([
+      'Ceremony and table flowers',
+      'Fado trio for the dinner',
+    ])
 
     // The client hosts a ticketed event with tickets sold and checked in, which her portal shows.
     const hosted = await payload.find({

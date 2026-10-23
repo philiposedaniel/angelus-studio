@@ -31,7 +31,9 @@ export function InvitationShell({
   const schedule = design.schedule ?? []
 
   return (
-    <div className={`${invitationThemeClass(design.style)} mx-auto my-10 max-w-2xl overflow-hidden rounded-2xl`}>
+    <div
+      className={`${invitationThemeClass(design.style)} mx-auto my-10 max-w-2xl overflow-hidden rounded-2xl`}
+    >
       {cover?.url && (
         <div className="relative aspect-[16/9] w-full">
           <Image
@@ -44,9 +46,11 @@ export function InvitationShell({
           />
         </div>
       )}
-      <main className="grid gap-8 px-6 py-12 text-ivory sm:px-10">
+      <div className="grid gap-8 px-6 py-12 text-ivory sm:px-10">
         <header className="grid gap-3 text-center">
-          <p className="text-sm uppercase tracking-widest text-gold">{design.headline || t.heading}</p>
+          <p className="text-sm uppercase tracking-widest text-gold">
+            {design.headline || t.heading}
+          </p>
           <h1 className="font-serif text-4xl">{event.title}</h1>
           <p>{formatEventWhen(event, locale)}</p>
           {event.location && <p className="text-mist">{event.location}</p>}
@@ -59,7 +63,10 @@ export function InvitationShell({
             <h2 className="text-center font-serif text-2xl">{t.programme}</h2>
             <ol className="grid gap-2">
               {schedule.map((item, index) => (
-                <li key={item.id ?? index} className="grid grid-cols-[5rem_1fr] gap-3 border-t border-ivory/10 pt-2">
+                <li
+                  key={item.id ?? index}
+                  className="grid grid-cols-[5rem_1fr] gap-3 border-t border-ivory/10 pt-2"
+                >
                   <span className="text-gold">{item.time}</span>
                   <span>
                     {item.title}
@@ -80,7 +87,12 @@ export function InvitationShell({
               </p>
             )}
             {design.mapUrl && (
-              <a href={design.mapUrl} target="_blank" rel="noopener noreferrer" className="text-gold underline">
+              <a
+                href={design.mapUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gold underline"
+              >
                 {t.openMap}
               </a>
             )}
@@ -89,8 +101,10 @@ export function InvitationShell({
 
         {children}
 
-        {design.signature && <p className="text-center font-serif text-xl text-gold">{design.signature}</p>}
-      </main>
+        {design.signature && (
+          <p className="text-center font-serif text-xl text-gold">{design.signature}</p>
+        )}
+      </div>
     </div>
   )
 }

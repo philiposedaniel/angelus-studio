@@ -37,15 +37,18 @@ export default async function TicketPage({ params }: PageProps<'/[locale]/ticket
 
   // The entry code opens the ticket's check-in page, which only the studio's staff can use.
   const entryCode = confirmed
-    ? await QRCode.toString(`${await siteOrigin(payload, tenant.id)}/${locale}/tickets/${token}/check-in`, {
-        type: 'svg',
-        margin: 1,
-        errorCorrectionLevel: 'M',
-      })
+    ? await QRCode.toString(
+        `${await siteOrigin(payload, tenant.id)}/${locale}/tickets/${token}/check-in`,
+        {
+          type: 'svg',
+          margin: 1,
+          errorCorrectionLevel: 'M',
+        },
+      )
     : null
 
   return (
-    <main className="mx-auto grid max-w-xl gap-8 px-6 py-16 text-ivory">
+    <div className="mx-auto grid max-w-xl gap-8 px-6 py-16 text-ivory">
       <header className="grid gap-2">
         <p className="text-sm uppercase tracking-widest text-gold">{t.yourTicket}</p>
         <h1 className="font-serif text-4xl">{event.title}</h1>
@@ -57,7 +60,10 @@ export default async function TicketPage({ params }: PageProps<'/[locale]/ticket
         <p>
           {ticketType.name} ·{' '}
           {(registration.amount ?? 0) > 0
-            ? t.total.replace('{price}', formatMoney(registration.amount!, registration.currency ?? 'eur', locale))
+            ? t.total.replace(
+                '{price}',
+                formatMoney(registration.amount!, registration.currency ?? 'eur', locale),
+              )
             : t.free}
         </p>
         <p className="text-mist">{plural(t.admits, quantity)}</p>
@@ -75,7 +81,11 @@ export default async function TicketPage({ params }: PageProps<'/[locale]/ticket
               dangerouslySetInnerHTML={{ __html: entryCode ?? '' }}
             />
             <p className="text-sm text-mist">{t.entryCodeHelp}</p>
-            <a href={`/${locale}/tickets/${token}/calendar`} download className="w-fit text-gold underline">
+            <a
+              href={`/${locale}/tickets/${token}/calendar`}
+              download
+              className="w-fit text-gold underline"
+            >
               {t.addToCalendar}
             </a>
           </section>
@@ -90,6 +100,6 @@ export default async function TicketPage({ params }: PageProps<'/[locale]/ticket
           {registration.status === 'pending' ? t.notPaid : t.cancelled}
         </p>
       )}
-    </main>
+    </div>
   )
 }

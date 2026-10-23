@@ -52,12 +52,18 @@ export default async function WaitlistPage({ params }: PageProps<'/[locale]/wait
   const registration =
     entry.status === 'claimed' && idOf(entry.registration) !== undefined
       ? await payload
-          .findByID({ collection: 'registrations', id: idOf(entry.registration)!, depth: 0, overrideAccess: true })
+          .findByID({
+            collection: 'registrations',
+            id: idOf(entry.registration)!,
+            depth: 0,
+            overrideAccess: true,
+          })
           .catch(() => null)
       : null
 
   let message: string | null = null
-  if (entry.status === 'waiting') message = w.position.replace('{position}', String(await waitlistPosition(payload, entry)))
+  if (entry.status === 'waiting')
+    message = w.position.replace('{position}', String(await waitlistPosition(payload, entry)))
   else if (offered) message = w.offered.replace('{date}', until)
   else if (entry.status === 'claimed') message = w.claimed
   else if (entry.status === 'left') message = w.left
@@ -65,7 +71,7 @@ export default async function WaitlistPage({ params }: PageProps<'/[locale]/wait
   else message = w.expired
 
   return (
-    <main className="mx-auto grid max-w-xl gap-8 px-6 py-16 text-ivory">
+    <div className="mx-auto grid max-w-xl gap-8 px-6 py-16 text-ivory">
       <header className="grid gap-2">
         <p className="text-sm uppercase tracking-widest text-gold">{w.yourPlace}</p>
         <h1 className="font-serif text-4xl">{event.title}</h1>
@@ -76,7 +82,12 @@ export default async function WaitlistPage({ params }: PageProps<'/[locale]/wait
         <p className="font-serif text-2xl">{entry.name}</p>
         <p>
           {ticketType.name} ·{' '}
-          {price > 0 ? t.perPlace.replace('{price}', formatMoney(price, ticketType.currency ?? 'eur', locale)) : t.free}
+          {price > 0
+            ? t.perPlace.replace(
+                '{price}',
+                formatMoney(price, ticketType.currency ?? 'eur', locale),
+              )
+            : t.free}
         </p>
         <p className="text-mist">{plural(w.asked, quantity)}</p>
       </section>
@@ -86,7 +97,10 @@ export default async function WaitlistPage({ params }: PageProps<'/[locale]/wait
         </p>
         {entry.status === 'waiting' && <p className="text-sm text-mist">{w.waitingHelp}</p>}
         {registration?.ticketToken && (
-          <Link href={`/${locale}/tickets/${registration.ticketToken}`} className="text-gold underline">
+          <Link
+            href={`/${locale}/tickets/${registration.ticketToken}`}
+            className="text-gold underline"
+          >
             {w.openTicket}
           </Link>
         )}
@@ -100,6 +114,6 @@ export default async function WaitlistPage({ params }: PageProps<'/[locale]/wait
           />
         )}
       </section>
-    </main>
+    </div>
   )
 }

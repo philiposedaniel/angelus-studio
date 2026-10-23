@@ -31,7 +31,10 @@ const plural = (forms: { one: string; other: string }, count: number) =>
   (count === 1 ? forms.one : forms.other).replace('{count}', String(count))
 
 /** One event: when and where, its summary, its tickets and its live stream if it has one. */
-export default async function EventPage({ params, searchParams }: PageProps<'/[locale]/events/[slug]'>) {
+export default async function EventPage({
+  params,
+  searchParams,
+}: PageProps<'/[locale]/events/[slug]'>) {
   const tenant = await getCurrentTenant()
   if (!tenant) notFound()
   const { locale: requested, slug } = await params
@@ -41,11 +44,15 @@ export default async function EventPage({ params, searchParams }: PageProps<'/[l
   const t = getDictionary(locale).events
   const live = parseVideoUrl(event.livestreamUrl)
   const tt = getDictionary(locale).tickets
-  const price = (offer: TicketOffer) => (offer.price > 0 ? formatMoney(offer.price, offer.currency, locale) : tt.free)
+  const price = (offer: TicketOffer) =>
+    offer.price > 0 ? formatMoney(offer.price, offer.currency, locale) : tt.free
   const payload = await getPayload({ config })
-  const offers = await ticketOffers(payload, event, locale, undefined, (id, now) => refreshWaitlist(payload, id, { now }))
+  const offers = await ticketOffers(payload, event, locale, undefined, (id, now) =>
+    refreshWaitlist(payload, id, { now }),
+  )
   const bookable = offers.filter((offer) => offer.state === 'onSale')
-  const promoCodes = bookable.some((offer) => offer.price > 0) && (await eventHasPromoCodes(payload, event.id))
+  const promoCodes =
+    bookable.some((offer) => offer.price > 0) && (await eventHasPromoCodes(payload, event.id))
   const soldOut = offers.filter((offer) => offer.state === 'soldOut')
   const formOffer = (offer: TicketOffer) => ({
     id: offer.id,
@@ -59,7 +66,9 @@ export default async function EventPage({ params, searchParams }: PageProps<'/[l
   const availability = (offer: TicketOffer) => {
     if (offer.state === 'onSale') return plural(tt.placesLeft, offer.left)
     if (offer.state === 'soldOut') {
-      return offer.waiting > 0 ? `${tt.soldOut} · ${plural(tt.waitlist.peopleWaiting, offer.waiting)}` : tt.soldOut
+      return offer.waiting > 0
+        ? `${tt.soldOut} · ${plural(tt.waitlist.peopleWaiting, offer.waiting)}`
+        : tt.soldOut
     }
     if (offer.state === 'notYet' && offer.salesStart) {
       const date = new Intl.DateTimeFormat(locale, {
@@ -73,7 +82,7 @@ export default async function EventPage({ params, searchParams }: PageProps<'/[l
   }
 
   return (
-    <main className="mx-auto grid max-w-4xl gap-8 px-6 py-16 text-ivory">
+    <div className="mx-auto grid max-w-4xl gap-8 px-6 py-16 text-ivory">
       <Link href={`/${locale}/events`} className="text-mist underline">
         {t.backToEvents}
       </Link>
@@ -89,7 +98,11 @@ export default async function EventPage({ params, searchParams }: PageProps<'/[l
             {event.location}
           </p>
         )}
-        <a href={`/${locale}/events/${event.slug}/calendar`} download className="w-fit text-gold underline">
+        <a
+          href={`/${locale}/events/${event.slug}/calendar`}
+          download
+          className="w-fit text-gold underline"
+        >
           {t.addToCalendar}
         </a>
       </header>
@@ -105,7 +118,9 @@ export default async function EventPage({ params, searchParams }: PageProps<'/[l
               >
                 <div className="grid gap-1">
                   <span className="font-medium">{offer.name}</span>
-                  {offer.description && <span className="text-sm text-mist">{offer.description}</span>}
+                  {offer.description && (
+                    <span className="text-sm text-mist">{offer.description}</span>
+                  )}
                 </div>
                 <div className="grid justify-items-end gap-1 text-sm">
                   <span className="text-gold">{price(offer)}</span>
@@ -164,6 +179,6 @@ export default async function EventPage({ params, searchParams }: PageProps<'/[l
           </div>
         </section>
       )}
-    </main>
+    </div>
   )
 }

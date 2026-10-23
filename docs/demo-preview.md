@@ -19,8 +19,9 @@ In the studio named by `DEFAULT_TENANT_SLUG` (default `angelus`):
   (one still in planning), so the public availability page at `/en/availability` shows booked days.
 - A **private wedding** with a garden invitation and five guests in different RSVP states; the
   client is its organizer, so it shows in their portal.
-- Two **tables** with the coming guests seated, and two **vendors** on the wedding: a florist
-  confirmed and part paid, with a private vendor link, and a caterer still proposed.
+- Two **tables** with the coming guests seated, and three **vendors** on the wedding: a florist
+  confirmed and part paid, with a private vendor link, a fado trio booked to arrive later (both show
+  in the day's arrivals on the vendor link), and a caterer still proposed.
 - Three pieces of **kit**, two reserved for the production and one of those already checked out.
 - A **public open day** with a free ticket, a sold-out workshop with one person on its waitlist,
   a priced ticket, a 20% promo code (`OPENDAY20`) and one confirmed registration.

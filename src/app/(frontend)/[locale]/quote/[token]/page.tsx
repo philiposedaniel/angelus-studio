@@ -23,7 +23,10 @@ const formatDate = (value: string, locale: string) =>
   new Date(value).toLocaleDateString(locale, { dateStyle: 'long', timeZone: 'UTC' })
 
 /** A priced quote a client opens from a private link. Shows the deposit and takes payment for it. */
-export default async function QuotePage({ params, searchParams }: PageProps<'/[locale]/quote/[token]'>) {
+export default async function QuotePage({
+  params,
+  searchParams,
+}: PageProps<'/[locale]/quote/[token]'>) {
   const tenant = await getCurrentTenant()
   if (!tenant) notFound()
   const { locale: requested, token } = await params
@@ -77,13 +80,17 @@ export default async function QuotePage({ params, searchParams }: PageProps<'/[l
   })
   const paidAt = new Map<number, string | null | undefined>()
   for (const payment of installmentPayments) {
-    if (typeof payment.installmentNumber === 'number') paidAt.set(payment.installmentNumber, payment.paidAt)
+    if (typeof payment.installmentNumber === 'number')
+      paidAt.set(payment.installmentNumber, payment.paidAt)
   }
-  const nextInstallment = quote.status === 'deposit-paid' ? unpaidInstallments(schedule, new Set(paidAt.keys()))[0] : undefined
+  const nextInstallment =
+    quote.status === 'deposit-paid'
+      ? unpaidInstallments(schedule, new Set(paidAt.keys()))[0]
+      : undefined
   const canPayBalance = balanceDue && stripeConfigured() && schedule.length === 0
 
   return (
-    <main className="mx-auto grid max-w-3xl gap-8 px-6 py-16 text-ivory">
+    <div className="mx-auto grid max-w-3xl gap-8 px-6 py-16 text-ivory">
       <header className="grid gap-2">
         <h1 className="font-serif text-4xl">{quote.title}</h1>
         <p className="text-mist">
@@ -94,18 +101,40 @@ export default async function QuotePage({ params, searchParams }: PageProps<'/[l
             {t.validUntil}: {formatDate(quote.validUntil, locale)}
           </p>
         )}
-        <Link href={`/${locale}/quote/${token}/invoice`} className="text-gold underline underline-offset-4">
+        <Link
+          href={`/${locale}/quote/${token}/invoice`}
+          className="text-gold underline underline-offset-4"
+        >
           {t.viewInvoice}
         </Link>
-        <a href={`/${locale}/quote/${token}/pdf`} className="text-gold underline underline-offset-4">
+        <a
+          href={`/${locale}/quote/${token}/pdf`}
+          className="text-gold underline underline-offset-4"
+        >
           {t.downloadPdf}
         </a>
       </header>
 
-      {query.payment === 'success' && <p role="status" className="text-gold">{t.paymentConfirming}</p>}
-      {query.payment === 'cancelled' && <p role="status" className="text-mist">{t.paymentCancelled}</p>}
-      {quote.status === 'deposit-paid' && <p role="status" className="text-gold">{t.paid}</p>}
-      {quote.status === 'paid-in-full' && <p role="status" className="text-gold">{t.paidInFull}</p>}
+      {query.payment === 'success' && (
+        <p role="status" className="text-gold">
+          {t.paymentConfirming}
+        </p>
+      )}
+      {query.payment === 'cancelled' && (
+        <p role="status" className="text-mist">
+          {t.paymentCancelled}
+        </p>
+      )}
+      {quote.status === 'deposit-paid' && (
+        <p role="status" className="text-gold">
+          {t.paid}
+        </p>
+      )}
+      {quote.status === 'paid-in-full' && (
+        <p role="status" className="text-gold">
+          {t.paidInFull}
+        </p>
+      )}
       {expired && <p className="text-copper">{t.expired}</p>}
 
       <table className="w-full border-collapse text-left">
@@ -150,7 +179,8 @@ export default async function QuotePage({ params, searchParams }: PageProps<'/[l
           <div className="whitespace-pre-line text-mist">{quote.contract?.terms}</div>
           {signed && quote.contract?.signedAt && (
             <p role="status" className="text-gold">
-              {t.signedBy} {quote.contract.signedName} · {formatDate(quote.contract.signedAt, locale)}
+              {t.signedBy} {quote.contract.signedName} ·{' '}
+              {formatDate(quote.contract.signedAt, locale)}
             </p>
           )}
         </section>
@@ -183,7 +213,9 @@ export default async function QuotePage({ params, searchParams }: PageProps<'/[l
                     <td className="py-3">{row.dueDate ? formatDate(row.dueDate, locale) : ''}</td>
                     <td className="py-3 text-right">{money(row.amount ?? 0)}</td>
                     <td className="py-3 text-right">
-                      {paid ? `${t.schedulePaid}${paidAt.get(number) ? ` · ${formatDate(paidAt.get(number)!, locale)}` : ''}` : t.scheduleDue}
+                      {paid
+                        ? `${t.schedulePaid}${paidAt.get(number) ? ` · ${formatDate(paidAt.get(number)!, locale)}` : ''}`
+                        : t.scheduleDue}
                     </td>
                   </tr>
                 )
@@ -194,11 +226,16 @@ export default async function QuotePage({ params, searchParams }: PageProps<'/[l
       )}
 
       {nextInstallment !== undefined && stripeConfigured() && (
-        <PaymentButton kind="installment" installmentNumber={nextInstallment} token={token} locale={locale} t={t} />
+        <PaymentButton
+          kind="installment"
+          installmentNumber={nextInstallment}
+          token={token}
+          locale={locale}
+          t={t}
+        />
       )}
-      {((depositDue && !expired) || balanceDue || nextInstallment !== undefined) && !stripeConfigured() && (
-        <p className="text-mist">{t.paymentUnavailable}</p>
-      )}
-    </main>
+      {((depositDue && !expired) || balanceDue || nextInstallment !== undefined) &&
+        !stripeConfigured() && <p className="text-mist">{t.paymentUnavailable}</p>}
+    </div>
   )
 }
