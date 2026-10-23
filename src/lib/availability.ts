@@ -15,6 +15,18 @@ export function dayIn(iso: string, timeZone: string): string {
   return `${part('year')}-${part('month')}-${part('day')}`
 }
 
+/** The studio's time zone for its public calendar. Days before today are never shown as free. */
+export const STUDIO_TIME_ZONE = 'Europe/Lisbon'
+
+/**
+ * How a day looks on the public calendar: past days are neither booked nor free, booked days are
+ * booked, and every other day is free. `today` is the studio's day (YYYY-MM-DD).
+ */
+export function dayStatus(day: string, today: string, booked: ReadonlySet<string>): 'past' | 'booked' | 'open' {
+  if (day < today) return 'past'
+  return booked.has(day) ? 'booked' : 'open'
+}
+
 /**
  * The days in a window (start inclusive, end exclusive, as ISO instants) that the studio has booked: a
  * production on a booked status, or a published event. Only the days are returned, never titles, clients

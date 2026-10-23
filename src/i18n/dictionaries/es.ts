@@ -578,6 +578,7 @@ export const es: Dictionary = {
     intro: 'Los días marcados como reservados no están libres. Consulte al estudio por cualquier otra fecha.',
     booked: 'Reservado',
     open: 'Libre',
+    past: 'Pasado',
   },
   footer: { rights: 'Todos los derechos reservados.' },
   clientSummary: {

@@ -99,7 +99,7 @@ export default buildConfig({
     shouldAutoRun: () => process.env.PAYLOAD_JOBS_AUTORUN !== 'false',
     deleteJobOnComplete: true,
   },
-  // Sends through SMTP once SMTP_HOST and EMAIL_FROM_ADDRESS are set (see docs/development.md).
+  // SMTP, log or off, chosen by EMAIL_MODE and the SMTP_* variables (see docs/self-hosting.md).
   email: emailAdapter(),
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET,

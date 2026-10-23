@@ -31,8 +31,64 @@ Three volumes hold all the state. Back up all three:
 | `PRIVATE_MEDIA_DIR` | No | Defaults to `/app/private-media` in the image, which is the mounted volume. |
 | `PAYLOAD_JOBS_AUTORUN` | No | Set to `false` on any extra app instance so only one runs background jobs. |
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | No | Both are needed for online deposits. Until both are set, payment stays off. |
+| `EMAIL_MODE` | No | `smtp` (the default once SMTP is set), `log` or `off`. See *Email* below. |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD`, `EMAIL_FROM_ADDRESS`, `EMAIL_FROM_NAME` | No | The email service. See *Email* below. |
 
 Never commit real values. Keep them in Coolify's environment settings.
+
+## Email
+
+Email is chosen by `EMAIL_MODE` and the SMTP variables:
+
+| Mode | When | What happens |
+| --- | --- | --- |
+| `smtp` | `SMTP_HOST` and `EMAIL_FROM_ADDRESS` are set, and `EMAIL_MODE` is unset or `smtp` | Each message is sent through the email service in a background job. A send that fails is tried again up to three times. |
+| `log` | `EMAIL_MODE=log`, with or without SMTP | Each message is written to the app log in full and nothing is sent. The log holds live share links, so use `log` only on a development or preview server, never on the studio's live server. |
+| `off` | Neither SMTP setting is complete (the default), or `EMAIL_MODE=off` | Nothing is sent or logged. Staff copy invitation and ticket links by hand. |
+
+Paste these into Coolify once the account exists. Values come from the email service's SMTP page.
+
+| Name | Example | Notes |
+| --- | --- | --- |
+| `SMTP_HOST` | the host the service gives | Required to send. Setting it alone does nothing: the sender address is also needed. |
+| `SMTP_PORT` | `465` or `587` | Defaults to `587`. |
+| `SMTP_SECURE` | `true` | Optional. `true` means TLS from the start (port 465); `false` means upgrade with STARTTLS. Unset, the port decides. |
+| `SMTP_USER` | the login the service gives | Leave unset if the server needs no login. |
+| `SMTP_PASSWORD` | the password or API key | A secret. Keep it in Coolify only. |
+| `EMAIL_FROM_ADDRESS` | `events@your-domain.example` | Required to send. Must be on a domain verified with the service, or mail is refused or lands in spam. |
+| `EMAIL_FROM_NAME` | `Angelus Media Productions` | Optional. Used for platform emails. Event emails use the studio's name. |
+
+What is sent, and to whom:
+
+| Email | Sent to | Sent when |
+| --- | --- | --- |
+| Invitation, reply reminder, day-before reminder | The guest | Staff send an invitation or reminder, or the day before a guest's event |
+| Reply notice | The event's reply-notice recipients | A guest replies |
+| Ticket and ticket day-before reminder | The ticket buyer | A ticket is bought, and the day before the event |
+| Waitlist offer | The person offered a place | A place opens for someone on the waitlist |
+| Vendor booking and confirmation | The vendor, and the event's reply-notice address | A vendor booking is made, and when it is confirmed |
+| Inquiry alert | The studio's contact address | Someone sends the contact form (turned off in the site settings if not wanted) |
+
+In `off` and `log` mode nothing is sent. Staff copy links by hand in `off` mode, whatever the email.
+A message is written from the record when the job runs, and skipped if it no longer applies (for example
+a guest who has already been invited).
+
+**How to check once set.** Send an invitation to a guest whose address is yours, from the event's guest
+list, then look for the message in your inbox. If it does not arrive, read the app log for the send error:
+the job retries three times before it gives up. To see the full text without sending, set `EMAIL_MODE=log`,
+redeploy, and send the same invitation. The log shows the subject, recipient and body. Then set `EMAIL_MODE`
+back to unset.
+
+Gallery-link emails are not built yet. Client gallery links are copied by hand.
+
+## Not built yet: video and signatures
+
+These two features have no code and read no environment variables in this release. Nothing needs
+setting for them, and nothing they would need can be pasted yet. When one is built, its variables and
+its check will be added to this section.
+
+- **Private video hosting.** Video is not hosted by the platform yet. No provider has been chosen.
+- **E-signature.** Contracts use a typed name with the signer's IP and a fingerprint.
 
 ## Database
 
@@ -69,9 +125,9 @@ runs hourly. Run exactly one app instance, or set `PAYLOAD_JOBS_AUTORUN=false` o
 | Feature | State | Waiting on |
 | --- | --- | --- |
 | Online deposit and balance payment | Off until `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` are set | Stripe account and test keys. Live payment has never been run. |
-| Email (event invitations, tickets, waitlist offers) | Off until `SMTP_HOST` and `EMAIL_FROM_ADDRESS` are set. Staff copy links by hand | An email service with SMTP (Resend, Postmark or similar) and a verified sending domain. Other notices (inquiries, gallery links, vendors) are not built yet. |
-| Off-site file storage (Cloudflare R2) | Not used. Files are on the server's volumes | A Cloudflare account and R2 bucket. |
-| Contract signature | Typed name with IP and fingerprint, no third-party service | A decision on an e-signature provider. |
+| Email (invitations, tickets, waitlist, vendor and inquiry notices) | Off until `SMTP_HOST` and `EMAIL_FROM_ADDRESS` are set. Staff copy links by hand. See *Email* above. | An email service with SMTP (Resend, Postmark or similar) and a verified sending domain. Gallery-link emails are not built yet. |
+| Private video hosting | Not built. No variables exist yet. | A video provider choice, and the feature built. |
+| Contract signature | Typed name with IP and fingerprint, no third-party service. No variables. | A decision on an e-signature provider. |
 
 ## Backups
 

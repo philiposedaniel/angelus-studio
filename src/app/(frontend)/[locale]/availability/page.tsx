@@ -4,7 +4,7 @@ import config from '@payload-config'
 
 import { getDictionary } from '@/i18n/dictionaries'
 import { monthBounds, parseMonth, shiftMonth } from '@/lib/calendar'
-import { busyDays } from '@/lib/availability'
+import { busyDays, dayIn, dayStatus, STUDIO_TIME_ZONE } from '@/lib/availability'
 import { resolveLocale } from '@/lib/locale'
 import { getCurrentTenant } from '@/lib/tenant'
 
@@ -26,6 +26,9 @@ export default async function AvailabilityPage({ params }: PageProps<'/[locale]/
       end: monthBounds(months[MONTHS_SHOWN - 1]!).end,
     }),
   )
+
+  // The studio's today, so days already gone are not shown as free.
+  const today = dayIn(new Date().toISOString(), STUDIO_TIME_ZONE)
 
   // Monday-first weekday names, from a known week.
   const weekdays = Array.from({ length: 7 }, (_, index) =>
@@ -63,18 +66,16 @@ export default async function AvailabilityPage({ params }: PageProps<'/[locale]/
               {Array.from({ length: daysInMonth }, (_, index) => {
                 const day = index + 1
                 const iso = `${month.year}-${String(month.month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-                const isBooked = booked.has(iso)
+                const status = dayStatus(iso, today, booked)
+                const style = {
+                  booked: { box: 'border-gold/60 bg-gold/10', label: 'text-xs text-gold', text: t.booked },
+                  open: { box: 'border-ivory/10', label: 'text-xs text-mist', text: t.open },
+                  past: { box: 'border-ivory/5 bg-ivory/[0.02]', label: 'text-xs text-mist', text: t.past },
+                }[status]
                 return (
-                  <span
-                    key={iso}
-                    className={`grid min-h-14 content-start gap-1 rounded-lg border p-2 text-left ${
-                      isBooked ? 'border-gold/60 bg-gold/10' : 'border-ivory/10'
-                    }`}
-                  >
+                  <span key={iso} className={`grid min-h-14 content-start gap-1 rounded-lg border p-2 text-left ${style.box}`}>
                     <span>{day}</span>
-                    <span className={isBooked ? 'text-xs text-gold' : 'text-xs text-mist'}>
-                      {isBooked ? t.booked : t.open}
-                    </span>
+                    <span className={style.label}>{style.text}</span>
                   </span>
                 )
               })}

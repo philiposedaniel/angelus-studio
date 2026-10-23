@@ -1,16 +1,34 @@
 import { nodemailerAdapter } from '@payloadcms/email-nodemailer'
-import type { PayloadRequest } from 'payload'
+import type { PayloadEmailAdapter as EmailAdapter, PayloadRequest } from 'payload'
 
 /**
- * Email goes out through any SMTP service (Resend, Postmark, Amazon SES, a mail server), set
- * with the SMTP_* and EMAIL_FROM_* variables. Without them nothing is sent: callers check
- * `emailConfigured()` first, because Payload would otherwise only print messages to the log.
+ * How email leaves the platform, set with EMAIL_MODE:
+ * - `smtp`: sent through an SMTP service (Resend, Postmark, Amazon SES, a mail server) set with the
+ *   SMTP_* and EMAIL_FROM_* variables. Chosen when those are set and EMAIL_MODE is not `off` or `log`.
+ * - `log`: nothing is sent. Each message is rendered in full and written to the server log, so
+ *   development and the Docker preview can check what would go out. The log holds share links, so
+ *   use it only where those links are not live data.
+ * - `off`: nothing is sent or logged. Staff copy links by hand. This is the default without SMTP.
  */
-export const emailConfigured = () => Boolean(process.env.SMTP_HOST && process.env.EMAIL_FROM_ADDRESS)
+export type EmailMode = 'smtp' | 'log' | 'off'
 
-/** The email adapter for the Payload config, or none when email is not set up. */
+export function emailMode(env: NodeJS.ProcessEnv = process.env): EmailMode {
+  if (env.EMAIL_MODE === 'off') return 'off'
+  if (env.EMAIL_MODE === 'log') return 'log'
+  return env.SMTP_HOST && env.EMAIL_FROM_ADDRESS ? 'smtp' : 'off'
+}
+
+/** Whether queued emails are written and then sent or logged. Callers check this before queueing. */
+export const emailConfigured = () => emailMode() !== 'off'
+
+/** The sender used in log mode when no EMAIL_FROM_ADDRESS is set. It is never a real mailbox. */
+export const LOG_FROM_ADDRESS = 'log-only@localhost'
+
+/** The email adapter for the Payload config, or none when email is off. */
 export function emailAdapter() {
-  if (!emailConfigured()) return undefined
+  const mode = emailMode()
+  if (mode === 'off') return undefined
+  if (mode === 'log') return logEmailAdapter
   const port = Number(process.env.SMTP_PORT || 587)
   return nodemailerAdapter({
     defaultFromAddress: process.env.EMAIL_FROM_ADDRESS!,
@@ -25,9 +43,33 @@ export function emailAdapter() {
   })
 }
 
+/** An adapter that writes each message to the server log instead of sending it (EMAIL_MODE=log). */
+export const logEmailAdapter: EmailAdapter = ({ payload }) => {
+  // Shown once at startup, so log mode cannot sit unnoticed on a live server.
+  payload.logger.warn('Emails are written to the log, not sent (EMAIL_MODE=log). Unset EMAIL_MODE to send them.')
+  return {
+    defaultFromAddress: process.env.EMAIL_FROM_ADDRESS || LOG_FROM_ADDRESS,
+    defaultFromName: process.env.EMAIL_FROM_NAME || 'Angelus Media Productions',
+    name: 'log',
+    sendEmail: async (message) => {
+      // Payload's password-reset email is HTML only, so its text is logged as this placeholder on purpose.
+      // The reset token is in that HTML, and a token in a server log would let anyone who reads the log
+      // take over the account. Do not change this to log the HTML.
+      payload.logger.info({
+        msg: 'Email not sent (EMAIL_MODE=log)',
+        to: message.to,
+        from: message.from,
+        subject: message.subject,
+        text: message.text ?? '(HTML only)',
+      })
+      return { logged: true }
+    },
+  }
+}
+
 /** The sender as people see it: the studio's name with the platform's sending address. */
 export const fromStudio = (studioName: string) =>
-  `"${studioName.replace(/["\\\r\n]/g, '')}" <${process.env.EMAIL_FROM_ADDRESS}>`
+  `"${studioName.replace(/["\\\r\n]/g, '')}" <${process.env.EMAIL_FROM_ADDRESS || LOG_FROM_ADDRESS}>`
 
 export const EMAIL_KINDS = ['invitation', 'ticket', 'waitlistOffer', 'replyReminder', 'guestDayBefore', 'ticketDayBefore', 'replyNotice', 'vendorBooking', 'vendorConfirmed', 'inquiryAlert'] as const
 export type EmailKind = (typeof EMAIL_KINDS)[number]

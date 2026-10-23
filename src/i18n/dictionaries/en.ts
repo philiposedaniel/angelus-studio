@@ -576,6 +576,7 @@ export const en = {
     intro: 'Days marked booked are not free. Ask the studio about any other date.',
     booked: 'Booked',
     open: 'Free',
+    past: 'Past',
   },
   footer: { rights: 'All rights reserved.' },
   clientSummary: {
