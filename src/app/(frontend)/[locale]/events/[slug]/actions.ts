@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { isLocale } from '@/i18n/config'
+import { parseRowId } from '@/lib/ids'
 import { clientAddress } from '@/lib/inquiries'
 import { tenantLocales } from '@/lib/locale'
 import { requestOrigin } from '@/lib/requestOrigin'
@@ -29,8 +30,8 @@ export async function register(_previous: RegistrationState, form: FormData): Pr
   if (!tenant) return { status: 'error', reason: 'failed' }
   const payload = await getPayload({ config })
   const locale = chosenLocale(tenant, form)
-  const eventId = Number(form.get('event'))
-  if (!Number.isInteger(eventId) || eventId < 1) return { status: 'error', reason: 'closed' }
+  const eventId = parseRowId(String(form.get('event') ?? ''))
+  if (eventId === null) return { status: 'error', reason: 'closed' }
 
   const result = await submitRegistration({
     payload,
@@ -52,8 +53,8 @@ export async function joinWaitlistAction(_previous: WaitlistJoinState, form: For
   if (!tenant) return { status: 'error', reason: 'failed' }
   const payload = await getPayload({ config })
   const locale = chosenLocale(tenant, form)
-  const eventId = Number(form.get('event'))
-  if (!Number.isInteger(eventId) || eventId < 1) return { status: 'error', reason: 'closed' }
+  const eventId = parseRowId(String(form.get('event') ?? ''))
+  if (eventId === null) return { status: 'error', reason: 'closed' }
 
   const result = await joinWaitlist({
     payload,

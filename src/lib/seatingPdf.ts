@@ -2,9 +2,10 @@ import type { PayloadHandler } from 'payload'
 import { PDFDocument, rgb, StandardFonts, type PDFFont, type PDFPage } from 'pdf-lib'
 
 import { getDictionary } from '@/i18n/dictionaries'
-import { idOf } from '@/lib/ids'
+import { idOf, parseRowId } from '@/lib/ids'
 import { pdfSafeText, wrapText } from '@/lib/invoicePdf'
 import { tenantLocales } from '@/lib/locale'
+import { isGuestListStaff, isOrganizerOf } from '@/lib/organizers'
 import { seatsNeeded, summarizeSeating } from '@/lib/seating'
 import type { EventGuest, EventTable } from '@/payload-types'
 
@@ -145,15 +146,17 @@ const fail = (status: number, message: string) => Response.json({ errors: [{ mes
 /**
  * GET /api/event-tables/plan?event=<id>: the event's seating plan as a PDF. The event, its tables
  * and its guests are read as the signed-in user, so the collections' own access rules decide who
- * gets it: the studio's admins and production managers.
+ * gets it: the studio's admins and production managers, and the event's organizers.
  */
 export const downloadSeatingPlan: PayloadHandler = async (req) => {
   if (!req.user) return fail(401, 'Sign in first.')
   const eventId = req.searchParams.get('event')
-  if (!eventId || !/^\d+$/.test(eventId)) return fail(404, 'Event not found.')
+  if (!eventId || parseRowId(eventId) === null) return fail(404, 'Event not found.')
   const access = { req, user: req.user, overrideAccess: false } as const
   const event = await req.payload.findByID({ collection: 'events', id: eventId, depth: 0, ...access }).catch(() => null)
   if (!event) return fail(404, 'Event not found.')
+  // Anyone may read a published event, so say no before reading tables that would come back empty.
+  if (!isGuestListStaff(req.user, idOf(event.tenant)) && !isOrganizerOf(req.user, event)) return fail(404, 'Event not found.')
   const tenant = await req.payload.findByID({ collection: 'tenants', id: idOf(event.tenant)!, depth: 0 }).catch(() => null)
   const locale = tenant ? tenantLocales(tenant)[0]! : 'en'
   const query = { where: { event: { equals: event.id } }, pagination: false, depth: 0, ...access } as const
@@ -169,7 +172,7 @@ export const downloadSeatingPlan: PayloadHandler = async (req) => {
       })
       .catch(() => null),
   ])
-  if (!tables || !guests) return fail(403, 'Only studio admins and production managers can download the seating plan.')
+  if (!tables || !guests) return fail(403, 'Only the studio and the event\'s organizers can download the seating plan.')
 
   const t = getDictionary(locale).seatingPdf
   const when = new Intl.DateTimeFormat(locale, {

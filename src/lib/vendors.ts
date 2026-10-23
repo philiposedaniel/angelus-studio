@@ -2,7 +2,7 @@ import type { Payload, PayloadHandler } from 'payload'
 
 import { hasTenantRole, isSuperAdmin } from '@/access/roles'
 import { emailConfigured, queueEmail } from '@/lib/email'
-import { idOf } from '@/lib/ids'
+import { idOf, parseRowId } from '@/lib/ids'
 import { isShareToken } from '@/lib/shareTokens'
 import type { Event, EventVendor, Vendor } from '@/payload-types'
 
@@ -196,7 +196,7 @@ export const sendVendorLink: PayloadHandler = async (req) => {
   if (!emailConfigured()) return fail(409, 'Email sending is not set up yet.')
   const body = (await req.json?.().catch(() => null)) as { booking?: unknown } | null | undefined
   const id = body?.booking
-  if ((typeof id !== 'string' && typeof id !== 'number') || !/^\d+$/.test(String(id))) return fail(404, 'Booking not found.')
+  if ((typeof id !== 'string' && typeof id !== 'number') || parseRowId(String(id)) === null) return fail(404, 'Booking not found.')
   const booking = await req.payload
     .findByID({ collection: 'event-vendors', id: String(id), depth: 0, req, user: req.user, overrideAccess: false })
     .catch(() => null)

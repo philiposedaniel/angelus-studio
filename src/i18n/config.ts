@@ -14,6 +14,9 @@ export const DEFAULT_LOCALE: Locale = 'en'
 /** Request header the proxy sets to the language in the URL, for pages that get no route params. */
 export const LOCALE_HEADER = 'x-site-locale'
 
+/** Request header the proxy sets to the requested path and query, so a page can redirect to itself. */
+export const PATH_HEADER = 'x-site-path'
+
 export const LOCALE_LABELS: Record<Locale, string> = {
   en: 'English',
   es: 'Español',
@@ -50,4 +53,17 @@ export function negotiateLocale(
     if (offered(base)) return base
   }
   return fallback
+}
+
+/**
+ * The same page in another language: `/pt/invite/abc` becomes `/en/invite/abc`. Anything that
+ * is not a path under `from`, or would leave the site, becomes the home page in `to`.
+ */
+export function pathInLocale(path: string | null | undefined, from: Locale, to: Locale): string {
+  const prefix = `/${from}`
+  if (!path || !(path === prefix || path.startsWith(`${prefix}/`) || path.startsWith(`${prefix}?`))) return `/${to}`
+  const rest = path.slice(prefix.length)
+  // "//host" or a backslash would make the browser leave for another site.
+  if (rest.startsWith('//') || rest.includes('\\')) return `/${to}`
+  return `/${to}${rest}`
 }

@@ -1,13 +1,14 @@
-import type { PayloadHandler, PayloadRequest, Where } from 'payload'
+import type { Payload, PayloadHandler, PayloadRequest, Where } from 'payload'
 
 import { DEFAULT_LOCALE, isLocale } from '@/i18n/config'
 import { emailConfigured, SEND_EMAIL_TASK } from '@/lib/email'
 import { REMIND_AGAIN_AFTER_DAYS } from '@/lib/eventEmails'
-import { guestsToCsv, MAX_IMPORT_CHARS, planGuestImport } from '@/lib/guestCsv'
-import { idOf } from '@/lib/ids'
+import { guestsToCsv, MAX_IMPORT_CHARS, planGuestImport, type ImportedGuest, type ImportProblem } from '@/lib/guestCsv'
+import { idOf, parseRowId } from '@/lib/ids'
 import { tenantLocales } from '@/lib/locale'
 import { rsvpIsOpen } from '@/lib/rsvp'
 import { siteOrigin } from '@/lib/siteOrigin'
+import type { Event, User } from '@/payload-types'
 
 const fail = (status: number, message: string) => Response.json({ errors: [{ message }] }, { status })
 
@@ -17,7 +18,7 @@ const fail = (status: number, message: string) => Response.json({ errors: [{ mes
  */
 async function eventFor(req: PayloadRequest, eventId: unknown) {
   if (typeof eventId !== 'string' && typeof eventId !== 'number') return null
-  if (!/^\d+$/.test(String(eventId))) return null
+  if (parseRowId(String(eventId)) === null) return null
   return req.payload
     .findByID({ collection: 'events', id: String(eventId), depth: 0, req, user: req.user, overrideAccess: false })
     .catch(() => null)
@@ -79,6 +80,91 @@ export const exportGuestList: PayloadHandler = async (req) => {
   })
 }
 
+export type GuestImportResult =
+  | { error: 'forbidden' | 'empty' | 'noNameColumn' | 'tooLarge' | 'tooManyRows' }
+  | {
+      ready: number
+      duplicates: number
+      added: number
+      problems: ImportProblem[]
+      /** Lines whose language the studio's site does not offer; those guests get its main language. */
+      languageChanged: number[]
+      preview: Omit<ImportedGuest, 'language'>[]
+    }
+
+/**
+ * Plans, or with `dryRun: false` adds, the guests in a CSV file for an event already read as the
+ * user. The guest list is read and every guest created as the user, so the collection's own
+ * access rules and checks decide: staff of the studio and the event's organizers.
+ */
+export async function importGuests({
+  payload,
+  user,
+  event,
+  csv,
+  dryRun,
+  req,
+}: {
+  payload: Payload
+  user: User
+  event: Pick<Event, 'id' | 'tenant'>
+  csv: string
+  dryRun: boolean
+  req?: PayloadRequest
+}): Promise<GuestImportResult> {
+  const access = { user, overrideAccess: false, ...(req ? { req } : {}) } as const
+  const existing = await payload
+    .find({
+      collection: 'event-guests',
+      where: { event: { equals: event.id } },
+      pagination: false,
+      depth: 0,
+      select: { email: true },
+      ...access,
+    })
+    .catch(() => null)
+  if (!existing) return { error: 'forbidden' }
+
+  const tenant = await payload.findByID({ collection: 'tenants', id: idOf(event.tenant)!, depth: 0 }).catch(() => null)
+  // Guests get one of the languages the studio's site offers, so their links open their page.
+  const offeredLanguages = tenant ? tenantLocales(tenant) : [DEFAULT_LOCALE]
+  const defaultLanguage =
+    tenant && isLocale(tenant.defaultLocale) && offeredLanguages.includes(tenant.defaultLocale)
+      ? tenant.defaultLocale
+      : offeredLanguages[0]!
+  const plan = planGuestImport(csv, {
+    existingEmails: existing.docs.flatMap((guest) => (guest.email ? [guest.email] : [])),
+    defaultLanguage,
+    offeredLanguages,
+  })
+  if ('error' in plan) return { error: plan.error }
+
+  const summary = {
+    ready: plan.guests.length,
+    duplicates: plan.duplicates,
+    problems: plan.problems,
+    languageChanged: plan.languageChanged,
+    preview: plan.guests.slice(0, 10).map(({ line: _line, language: _language, ...guest }) => guest),
+  }
+  if (dryRun) return { ...summary, added: 0 }
+
+  let added = 0
+  for (const { line, ...guest } of plan.guests) {
+    try {
+      await payload.create({
+        collection: 'event-guests',
+        data: { ...guest, event: event.id, rsvpStatus: 'pending' },
+        ...access,
+      })
+      added += 1
+    } catch (error) {
+      payload.logger.warn({ err: error, msg: `Guest import: line ${line} was not added` })
+      summary.problems.push({ line, code: 'notAdded', message: 'This guest could not be added.' })
+    }
+  }
+  return { ...summary, added }
+}
+
 /**
  * POST /api/event-guests/import with JSON `{ event, csv, dryRun }`. A dry run returns what would
  * be added and the rows with problems; otherwise the guests are created as the signed-in user,
@@ -95,63 +181,25 @@ export const importGuestList: PayloadHandler = async (req) => {
   const event = await eventFor(req, body.event)
   if (!event) return fail(404, 'Event not found.')
 
-  const existing = await req.payload
-    .find({
-      collection: 'event-guests',
-      where: { event: { equals: event.id } },
-      pagination: false,
-      depth: 0,
-      select: { email: true },
-      req,
-      user: req.user,
-      overrideAccess: false,
-    })
-    .catch(() => null)
-  if (!existing) return fail(403, 'Only studio admins and production managers can import guests.')
-
-  const tenant = await req.payload
-    .findByID({ collection: 'tenants', id: idOf(event.tenant)!, depth: 0 })
-    .catch(() => null)
-  const defaultLanguage = tenant && isLocale(tenant.defaultLocale) ? tenant.defaultLocale : DEFAULT_LOCALE
-  const plan = planGuestImport(body.csv, {
-    existingEmails: existing.docs.flatMap((guest) => (guest.email ? [guest.email] : [])),
-    defaultLanguage,
+  const result = await importGuests({
+    payload: req.payload,
+    user: req.user as User,
+    event,
+    csv: body.csv,
+    dryRun: body.dryRun !== false,
+    req,
   })
-  if ('error' in plan) {
+  if ('error' in result) {
     const messages = {
+      forbidden: 'Only the studio and the event\'s organizers can import guests.',
       empty: 'The file has no guests. The first line must name the columns, e.g. Name, Email, Party size.',
       noNameColumn: 'The file needs a Name column.',
       tooLarge: 'The file is larger than 1 MB.',
       tooManyRows: 'A file can hold up to 2,000 guests. Split it and import each part.',
     }
-    return fail(400, messages[plan.error])
+    return fail(result.error === 'forbidden' ? 403 : 400, messages[result.error])
   }
-
-  const summary = {
-    ready: plan.guests.length,
-    duplicates: plan.duplicates,
-    problems: plan.problems,
-    preview: plan.guests.slice(0, 10).map(({ line: _line, ...guest }) => guest),
-  }
-  if (body.dryRun !== false) return Response.json({ ...summary, added: 0 })
-
-  let added = 0
-  for (const { line, ...guest } of plan.guests) {
-    try {
-      await req.payload.create({
-        collection: 'event-guests',
-        data: { ...guest, event: event.id, rsvpStatus: 'pending' },
-        req,
-        user: req.user,
-        overrideAccess: false,
-      })
-      added += 1
-    } catch (error) {
-      req.payload.logger.warn({ err: error, msg: `Guest import: line ${line} was not added` })
-      summary.problems.push({ line, message: 'This guest could not be added.' })
-    }
-  }
-  return Response.json({ ...summary, added })
+  return Response.json(result)
 }
 
 /**

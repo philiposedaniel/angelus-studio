@@ -407,7 +407,8 @@ announced; send the link again.
   dietary needs, a meal count per table, and the guests still without a table. Guests who declined
   are left out; staff notes, contact details and invitation links are never printed. It is written
   in the studio's first language and served by `GET /api/event-tables/plan?event=<id>`, which reads
-  as the signed-in user, so only the studio's admins and production managers get it.
+  as the signed-in user, so only the studio's admins and production managers and the event's
+  organizers get it.
 - Deleting a table leaves its guests without a table. Deleting an event deletes its tables.
 
 Known limits: seating is a list of tables, not a drawn floor plan, and the guest import does not
@@ -444,8 +445,11 @@ set; there is no per-event colour or font picker yet.
   Staff notes on a guest are never shown to them and they cannot write them. Everything is checked
   on the server through the normal access rules, so the same limits apply to the REST API.
 - Studio admins and production managers can open the same page for any event of their studio.
-- The guest list shows 100 guests a page, sorted by name, with a search by name or email; the
-  headcount and the CSV download always cover the whole list.
+- The guest list shows 100 guests a page, sorted by name, with a search by name or email and
+  filters by reply (attending, not coming, not answered) and, once the event has tables, by table
+  or "no table yet". The filters stay in the page links and always keep to the event
+  (`guestListWhere` in `src/lib/organizerGuests.ts`); the headcount and the CSV download always
+  cover the whole list.
 - The same page lists the event's **vendors** that are *booked* or *confirmed*: name, role,
   arrival time in the event's time zone and status. Organizers read these bookings, and those
   vendors' name and category, through the normal access rules. Field access keeps everything
@@ -458,9 +462,37 @@ set; there is no per-event colour or font picker yet.
 - Organizers can change none of this, and only studio staff can send a vendor their link.
   `tests/int/organizerVendorsTickets.int.spec.ts` tries each of these as the host, as another
   event's host and as another studio's host.
+- Once the studio has added the event's tables, the page shows **seating**: seats taken of the
+  total, how many still have no table, each table with its seats and who sits there (red when
+  over capacity), and *Download the seating plan (PDF)*. The guest form gets a *Table* choice, so
+  the organizer seats each party. Organizers read the event's tables but not their staff notes,
+  and cannot add, change or remove tables; a table of another event or studio is refused.
+  `tests/int/organizerSeating.int.spec.ts` covers these.
+- With tables set up, each guest in the list gets a tick box, and *Seat the ticked guests at*
+  seats every ticked guest on the page at one table, or *No table* takes them off their tables
+  (`seatGuestsFromPortal`, up to 100 guests at once, the size of a list page). It runs as the
+  signed-in user and only touches guests and tables of that event.
+  `tests/int/organizerBulkSeating.int.spec.ts` tries it as the host, as another event's host, as
+  another studio's host and with another event's guests and tables.
+- *Add guests from a spreadsheet* takes a CSV file with the same columns as the admin's import
+  (Name required; Email, Phone, Group, Party size, Language). Choosing the file checks it and
+  shows how many guests are ready, how many are already on the list (matched by email) and each
+  problem row by its line; *Add N guests* then adds them. The page's server action reads the
+  event and creates every guest as the signed-in user (`importGuestsFromPortal` in
+  `src/lib/organizerGuests.ts`, sharing `importGuests` with the admin's
+  `POST /api/event-guests/import`), so only the event's organizers and the studio's staff can
+  add to it. Problems are reported as codes and worded from the dictionary.
+- Both imports give a guest whose Language is one the studio's site does not offer the site's
+  main language instead, and list those lines, so every invitation link opens the guest's page.
+  Separately, any page requested in a supported language the studio does not offer (for example
+  an old `/pt/invite/<token>` link) redirects to the same page in the visitor's best offered
+  language, not to the home page: the proxy passes the path in `x-site-path` and
+  `resolveLocale` rebuilds it with `pathInLocale` (`src/i18n/config.ts`), which never leaves the site.
+  `tests/int/organizerGuestImport.int.spec.ts` covers these.
 
-Known limits: organizers cannot import guests from CSV, manage seating, book vendors, sell or
-refund tickets, or edit the event itself from the portal; staff do those in the admin.
+Known limits: organizers cannot set up tables, book vendors, sell or
+refund tickets, or edit the event itself from the portal; staff do those in the admin. A guest
+file from the portal can be at most 1 MB, the limit Next.js sets on server action uploads.
 
 ## Registration and tickets
 

@@ -5,7 +5,7 @@ import { getPayload } from 'payload'
 import { InvitationShell } from '@/components/invite/InvitationShell'
 import { getDictionary } from '@/i18n/dictionaries'
 import { getSessionUser } from '@/lib/auth'
-import { idOf } from '@/lib/ids'
+import { idOf, parseRowId } from '@/lib/ids'
 import { canPreviewInvitation } from '@/lib/invitationDesign'
 import { resolveLocale } from '@/lib/locale'
 import { getCurrentTenant } from '@/lib/tenant'
@@ -21,7 +21,7 @@ export default async function InvitationPreviewPage({ params }: PageProps<'/[loc
   if (!tenant) notFound()
   const { locale: requested, event: eventId } = await params
   const locale = await resolveLocale(tenant, requested)
-  if (!/^\d+$/.test(eventId)) notFound()
+  if (parseRowId(eventId) === null) notFound()
 
   const user = await getSessionUser()
   if (!canPreviewInvitation(user, tenant.id)) notFound()

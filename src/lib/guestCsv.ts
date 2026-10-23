@@ -1,4 +1,4 @@
-import { isLocale, type Locale } from '@/i18n/config'
+import { isLocale, LOCALES, type Locale } from '@/i18n/config'
 import { describeParty, MAX_PARTY_SIZE } from '@/lib/rsvp'
 import type { EventGuest } from '@/payload-types'
 
@@ -71,11 +71,24 @@ export type ImportedGuest = {
   language: Locale
 }
 
-export type ImportProblem = { line: number; message: string }
+/** What is wrong with a row, so each screen can say it in its own language. */
+export type ImportProblemCode =
+  | 'nameMissing'
+  | 'nameTooLong'
+  | 'emailInvalid'
+  | 'phoneTooLong'
+  | 'groupTooLong'
+  | 'partySize'
+  | 'language'
+  | 'notAdded'
+
+export type ImportProblem = { line: number; code: ImportProblemCode; message: string }
 
 export type ImportPlan = {
   guests: (ImportedGuest & { line: number })[]
   problems: ImportProblem[]
+  /** Rows added in the studio's main language because their own is not offered on its site. */
+  languageChanged: number[]
   /** Rows left out because the guest is already on the list or earlier in the file. */
   duplicates: number
 }
@@ -87,7 +100,11 @@ export type ImportPlan = {
  */
 export function planGuestImport(
   text: string,
-  { existingEmails, defaultLanguage }: { existingEmails: Iterable<string>; defaultLanguage: Locale },
+  {
+    existingEmails,
+    defaultLanguage,
+    offeredLanguages = LOCALES,
+  }: { existingEmails: Iterable<string>; defaultLanguage: Locale; offeredLanguages?: readonly Locale[] },
 ): ImportPlan | { error: 'empty' | 'noNameColumn' | 'tooLarge' | 'tooManyRows' } {
   if (text.length > MAX_IMPORT_CHARS) return { error: 'tooLarge' }
   const rows = parseCsv(text)
@@ -104,7 +121,7 @@ export function planGuestImport(
   if (!columns.has('name')) return { error: 'noNameColumn' }
 
   const seen = new Set([...existingEmails].map((email) => email.toLowerCase()))
-  const plan: ImportPlan = { guests: [], problems: [], duplicates: 0 }
+  const plan: ImportPlan = { guests: [], problems: [], languageChanged: [], duplicates: 0 }
   rows.slice(1).forEach((row, index) => {
     // Line numbers as a spreadsheet shows them: the header is line 1.
     const line = index + 2
@@ -119,19 +136,19 @@ export function planGuestImport(
     const seats = cell('partySize')
     const language = cell('language').toLowerCase()
 
-    if (!name) return plan.problems.push({ line, message: 'The name is missing.' })
-    if (name.length > 120) return plan.problems.push({ line, message: 'The name is longer than 120 characters.' })
+    if (!name) return plan.problems.push({ line, code: 'nameMissing', message: 'The name is missing.' })
+    if (name.length > 120) return plan.problems.push({ line, code: 'nameTooLong', message: 'The name is longer than 120 characters.' })
     if (email && (email.length > 200 || !EMAIL.test(email))) {
-      return plan.problems.push({ line, message: `"${email.slice(0, 60)}" is not an email address.` })
+      return plan.problems.push({ line, code: 'emailInvalid', message: `"${email.slice(0, 60)}" is not an email address.` })
     }
-    if (phone.length > 40) return plan.problems.push({ line, message: 'The phone number is too long.' })
-    if (group.length > 80) return plan.problems.push({ line, message: 'The group is longer than 80 characters.' })
+    if (phone.length > 40) return plan.problems.push({ line, code: 'phoneTooLong', message: 'The phone number is too long.' })
+    if (group.length > 80) return plan.problems.push({ line, code: 'groupTooLong', message: 'The group is longer than 80 characters.' })
     const partySize = seats === '' ? 1 : /^\d+$/.test(seats) ? Number(seats) : NaN
     if (!Number.isInteger(partySize) || partySize < 1 || partySize > MAX_PARTY_SIZE) {
-      return plan.problems.push({ line, message: `The party size must be a whole number from 1 to ${MAX_PARTY_SIZE}.` })
+      return plan.problems.push({ line, code: 'partySize', message: `The party size must be a whole number from 1 to ${MAX_PARTY_SIZE}.` })
     }
     if (language && !isLocale(language)) {
-      return plan.problems.push({ line, message: `"${language.slice(0, 20)}" is not a language code such as en or es.` })
+      return plan.problems.push({ line, code: 'language', message: `"${language.slice(0, 20)}" is not a language code such as en or es.` })
     }
     if (email) {
       if (seen.has(email)) {
@@ -140,6 +157,9 @@ export function planGuestImport(
       }
       seen.add(email)
     }
+    // A language the studio's site does not offer would send the guest's link to another page.
+    const offered = isLocale(language) && offeredLanguages.includes(language)
+    if (language && !offered) plan.languageChanged.push(line)
     plan.guests.push({
       line,
       name,
@@ -147,7 +167,7 @@ export function planGuestImport(
       phone: phone || undefined,
       group: group || undefined,
       partySize,
-      language: isLocale(language) ? language : defaultLanguage,
+      language: offered ? (language as Locale) : defaultLanguage,
     })
   })
   return plan

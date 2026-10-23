@@ -3,17 +3,21 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
+import { BULK_SEAT_FORM_ID, BulkSeatForm } from '@/components/portal/BulkSeatForm'
 import { CopyLinkButton } from '@/components/portal/CopyLinkButton'
 import { GuestForm } from '@/components/portal/GuestForm'
+import { GuestImportForm } from '@/components/portal/GuestImportForm'
 import { RemoveGuestButton } from '@/components/portal/RemoveGuestButton'
 import { LOCALE_LABELS } from '@/i18n/config'
 import { getDictionary } from '@/i18n/dictionaries'
 import { requirePortalUser } from '@/lib/auth'
 import { formatEventWhen } from '@/lib/eventTime'
-import { idOf } from '@/lib/ids'
+import { idOf, parseRowId } from '@/lib/ids'
 import { resolveLocale, tenantLocales } from '@/lib/locale'
+import { guestListQuery, guestListWhere, readGuestListFilter } from '@/lib/organizerGuests'
 import { isGuestListStaff, isOrganizerOf, ORGANIZER_VENDOR_STATUSES } from '@/lib/organizers'
 import { describeParty, eventMealCounts, eventRsvpSummary, summarizeMeals } from '@/lib/rsvp'
+import { seatsNeeded, summarizeSeating } from '@/lib/seating'
 import { eventTicketSales } from '@/lib/tickets'
 import { siteOrigin } from '@/lib/siteOrigin'
 import { getCurrentTenant } from '@/lib/tenant'
@@ -32,7 +36,7 @@ export default async function OrganizerEventPage({
   const { locale: requested, id } = await params
   const locale = await resolveLocale(tenant, requested)
   const user = await requirePortalUser(tenant, locale)
-  if (!/^\d+$/.test(id)) notFound()
+  if (parseRowId(id) === null) notFound()
 
   const payload = await getPayload({ config })
   const event = await payload
@@ -44,17 +48,14 @@ export default async function OrganizerEventPage({
   // A page of guests at a time, optionally narrowed by a search, so a list of thousands stays
   // quick to load and to use on a phone. The headcount is added up over the whole list.
   const query = (await searchParams) ?? {}
-  const search = typeof query.q === 'string' ? query.q.trim().slice(0, 100) : ''
+  const filter = readGuestListFilter(query)
+  const { search } = filter
+  const filtered = Boolean(search || filter.reply || filter.table !== null)
   const requestedPage = typeof query.page === 'string' && /^\d{1,6}$/.test(query.page) ? Number(query.page) : 1
   const access = { depth: 0, user, overrideAccess: false } as const
   const list = await payload.find({
     collection: 'event-guests',
-    where: {
-      and: [
-        { event: { equals: event.id } },
-        ...(search ? [{ or: [{ name: { like: search } }, { email: { like: search } }] }] : []),
-      ],
-    },
+    where: guestListWhere(event.id, filter),
     sort: 'name',
     limit: GUESTS_PER_PAGE,
     page: Math.max(1, requestedPage),
@@ -73,27 +74,23 @@ export default async function OrganizerEventPage({
     guest.rsvpStatus === 'attending'
       ? describeParty(guest, (mealId) => mealLabels.get(mealId), (n) => t.guestNumber.replace('{n}', String(n)))
       : ''
-  const editId = typeof query.edit === 'string' && /^\d+$/.test(query.edit) ? query.edit : null
+  const editId = typeof query.edit === 'string' ? parseRowId(query.edit) : null
   const editing = editId
     ? await payload
         .findByID({ collection: 'event-guests', id: editId, ...access })
         .then((guest) => (String(idOf(guest.event)) === String(event.id) ? guest : null))
         .catch(() => null)
     : null
-  const pageHref = (page: number) => {
-    const params = new URLSearchParams()
-    if (search) params.set('q', search)
-    if (page > 1) params.set('page', String(page))
-    const text = params.toString()
-    return `/${locale}/portal/events/${event.id}${text ? `?${text}` : ''}`
-  }
+  const pageHref = (page: number) => `/${locale}/portal/events/${event.id}${guestListQuery(filter, page)}`
   const from = list.totalDocs === 0 ? 0 : (list.page! - 1) * GUESTS_PER_PAGE + 1
   const to = from === 0 ? 0 : from + guests.length - 1
   const languages = offered.map((value) => ({ value, label: LOCALE_LABELS[value] }))
 
   // Who is working the event and how tickets are selling, read as the organizer: the studio's
   // amounts, notes and the vendors' contact details are not readable by them.
-  const [vendors, ticketTypes, sales] = await Promise.all([
+  // The seating plan, read as the organizer: the studio adds the tables, the organizer seats
+  // their guests at them. Table notes are the studio's and not readable here.
+  const [vendors, ticketTypes, sales, tables, seatedGuests] = await Promise.all([
     payload
       .find({
         collection: 'event-vendors',
@@ -111,7 +108,25 @@ export default async function OrganizerEventPage({
       .then((result) => result.docs)
       .catch(() => []),
     eventTicketSales(payload, event.id),
+    payload
+      .find({ collection: 'event-tables', where: { event: { equals: event.id } }, sort: 'sortOrder', pagination: false, ...access })
+      .then((result) => result.docs)
+      .catch(() => []),
+    payload
+      .find({
+        collection: 'event-guests',
+        where: { event: { equals: event.id } },
+        sort: 'name',
+        pagination: false,
+        select: { name: true, table: true, rsvpStatus: true, attendingCount: true, partySize: true },
+        ...access,
+      })
+      .then((result) => result.docs)
+      .catch(() => []),
   ])
+  const seating = summarizeSeating(tables, seatedGuests)
+  const tableName = new Map(tables.map((table) => [String(table.id), table.name]))
+  const tableOptions = tables.map((table) => ({ value: String(table.id), label: table.name }))
   const arrival = new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short', timeZone: event.timeZone || 'Europe/Lisbon' })
 
   return (
@@ -196,6 +211,39 @@ export default async function OrganizerEventPage({
         </div>
       )}
 
+      {tables.length > 0 && (
+        <div className="grid gap-3">
+          <h2 className="text-sm uppercase tracking-widest text-gold">{t.seating}</h2>
+          <p className="text-sm text-mist">
+            {t.seatsTaken.replace('{seated}', String(seating.seated)).replace('{capacity}', String(seating.capacity))}
+            {seating.unseatedSeats > 0 && ` · ${t.seatsWithoutTable.replace('{count}', String(seating.unseatedSeats))}`}
+          </p>
+          <p className="text-sm text-mist">{t.seatingHelp}</p>
+          <ul className="grid gap-3 sm:grid-cols-2">
+            {seating.tables.map((table) => (
+              <li key={table.id} className="grid gap-1 rounded-xl border border-ivory/10 bg-charcoal p-4">
+                <span className="font-medium">{table.name}</span>
+                <span className={`text-sm ${table.over ? 'text-copper' : 'text-mist'}`}>
+                  {t.tableSeats.replace('{seats}', String(table.seats)).replace('{capacity}', String(table.capacity))}
+                  {table.over && ` · ${t.overCapacity}`}
+                </span>
+                {table.guests.some((guest) => seatsNeeded(guest) > 0) && (
+                  <span className="text-sm text-mist">
+                    {table.guests
+                      .filter((guest) => seatsNeeded(guest) > 0)
+                      .map((guest) => guest.name)
+                      .join(', ')}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+          <a href={`/api/event-tables/plan?event=${event.id}`} download className="w-fit text-sm text-gold underline">
+            {t.downloadSeating}
+          </a>
+        </div>
+      )}
+
       <div className="grid gap-3">
         <p className="text-sm text-mist">{t.linkHelp}</p>
         {s.invitations > 0 && (
@@ -210,10 +258,33 @@ export default async function OrganizerEventPage({
                 className="w-72 max-w-full rounded-lg border border-ivory/15 bg-ink px-4 py-3 text-ivory focus:border-gold focus:outline-none"
               />
             </label>
+            <div className="grid gap-1 text-sm text-mist">
+              <label htmlFor="guest-filter-reply">{t.replyFilter}</label>
+              <select id="guest-filter-reply" name="reply" defaultValue={filter.reply ?? ''} className="rounded-lg border border-ivory/15 bg-ink px-4 py-3 text-ivory focus:border-gold focus:outline-none">
+                <option value="">{t.allReplies}</option>
+                <option value="attending">{t.attending}</option>
+                <option value="declined">{t.declined}</option>
+                <option value="pending">{t.pending}</option>
+              </select>
+            </div>
+            {tables.length > 0 && (
+              <div className="grid gap-1 text-sm text-mist">
+                <label htmlFor="guest-filter-table">{t.tableFilter}</label>
+                <select id="guest-filter-table" name="table" defaultValue={filter.table === null ? '' : String(filter.table)} className="rounded-lg border border-ivory/15 bg-ink px-4 py-3 text-ivory focus:border-gold focus:outline-none">
+                  <option value="">{t.allTables}</option>
+                  <option value="none">{t.noTable}</option>
+                  {tables.map((table) => (
+                    <option key={table.id} value={String(table.id)}>
+                      {table.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             <button type="submit" className="rounded-full border border-gold px-6 py-3 text-sm font-medium text-gold transition-colors hover:bg-gold hover:text-ink">
               {t.searchButton}
             </button>
-            {search && (
+            {filtered && (
               <Link href={`/${locale}/portal/events/${event.id}`} className="min-h-11 content-center text-sm text-mist underline">
                 {t.clearSearch}
               </Link>
@@ -228,8 +299,9 @@ export default async function OrganizerEventPage({
               .replace('{total}', String(list.totalDocs))}
           </p>
         )}
+        {tables.length > 0 && guests.length > 0 && <BulkSeatForm eventId={event.id} tables={tableOptions} t={t.bulkSeat} />}
         {guests.length === 0 ? (
-          <p className="text-mist">{search ? t.noMatches : t.noGuests}</p>
+          <p className="text-mist">{filtered ? t.noMatches : t.noGuests}</p>
         ) : (
           <ul className="grid gap-3">
             {guests.map((guest) => (
@@ -237,22 +309,35 @@ export default async function OrganizerEventPage({
                 key={guest.id}
                 className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-ivory/10 bg-charcoal p-4"
               >
-                <div className="grid gap-1">
-                  <span className="font-medium">{guest.name}</span>
-                  <span className="text-sm text-mist">
-                    {[
-                      guest.group,
-                      `${t.partySize}: ${guest.partySize ?? 1}`,
-                      guest.rsvpStatus === 'attending'
-                        ? t.replyAttending.replace('{count}', String(guest.attendingCount ?? 1))
-                        : guest.rsvpStatus === 'declined'
-                          ? t.declined
-                          : t.pending,
-                    ]
-                      .filter(Boolean)
-                      .join(' · ')}
-                  </span>
-                  {partyOf(guest) && <span className="text-sm text-mist">{partyOf(guest)}</span>}
+                <div className="flex items-start gap-3">
+                  {tables.length > 0 && (
+                    <input
+                      type="checkbox"
+                      name="guest"
+                      value={guest.id}
+                      form={BULK_SEAT_FORM_ID}
+                      aria-label={t.selectGuest.replace('{name}', guest.name)}
+                      className="mt-0.5 size-6 shrink-0 accent-gold"
+                    />
+                  )}
+                  <div className="grid gap-1">
+                    <span className="font-medium">{guest.name}</span>
+                    <span className="text-sm text-mist">
+                      {[
+                        guest.group,
+                        `${t.partySize}: ${guest.partySize ?? 1}`,
+                        tableName.get(String(idOf(guest.table))),
+                        guest.rsvpStatus === 'attending'
+                          ? t.replyAttending.replace('{count}', String(guest.attendingCount ?? 1))
+                          : guest.rsvpStatus === 'declined'
+                            ? t.declined
+                            : t.pending,
+                      ]
+                        .filter(Boolean)
+                        .join(' · ')}
+                    </span>
+                    {partyOf(guest) && <span className="text-sm text-mist">{partyOf(guest)}</span>}
+                  </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
                   {guest.inviteToken && (
@@ -300,6 +385,7 @@ export default async function OrganizerEventPage({
           key={editing?.id ?? 'new'}
           eventId={event.id}
           languages={languages}
+          tables={tableOptions}
           guest={
             editing
               ? {
@@ -310,12 +396,18 @@ export default async function OrganizerEventPage({
                   group: editing.group ?? '',
                   partySize: editing.partySize ?? 1,
                   language: editing.language ?? offered[0]!,
+                  table: editing.table ? String(idOf(editing.table)) : '',
                 }
               : null
           }
           cancelHref={`/${locale}/portal/events/${event.id}`}
           t={t}
         />
+      </div>
+
+      <div className="grid gap-4 rounded-xl border border-ivory/10 bg-charcoal p-6">
+        <h2 className="font-display text-2xl">{t.import.title}</h2>
+        <GuestImportForm eventId={event.id} t={t.import} />
       </div>
     </section>
   )

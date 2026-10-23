@@ -2,7 +2,7 @@ import type { PayloadHandler } from 'payload'
 
 import { DEFAULT_LOCALE } from '@/i18n/config'
 import { csvCell, csvFile } from '@/lib/guestCsv'
-import { idOf } from '@/lib/ids'
+import { idOf, parseRowId } from '@/lib/ids'
 import { tenantLocales } from '@/lib/locale'
 import { siteOrigin } from '@/lib/siteOrigin'
 import { holdsPlaces } from '@/lib/tickets'
@@ -75,7 +75,7 @@ export function attendeesToCsv(
 export const exportAttendees: PayloadHandler = async (req) => {
   if (!req.user) return fail(401, 'Sign in first.')
   const eventId = req.searchParams.get('event')
-  if (!eventId || !/^\d+$/.test(eventId)) return fail(404, 'Event not found.')
+  if (!eventId || parseRowId(eventId) === null) return fail(404, 'Event not found.')
   const access = { req, user: req.user, overrideAccess: false } as const
   const event = await req.payload.findByID({ collection: 'events', id: eventId, depth: 0, ...access }).catch(() => null)
   if (!event) return fail(404, 'Event not found.')

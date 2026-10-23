@@ -7,7 +7,7 @@ import type { Event, Tenant, User } from '@/payload-types'
 
 import { ensureTenant } from '../helpers/seedTenant'
 
-/** The seating plan PDF is for the event's studio staff only. */
+/** The seating plan PDF is for the event's studio staff and its organizers. */
 
 const PREFIX = 'int-seatpdf-'
 const password = 'int-Password-1'
@@ -18,6 +18,7 @@ let studioB: Tenant
 let managerA: User
 let managerB: User
 let hostA: User
+let clientA: User
 let event: Event
 
 const makeUser = async (name: string, tenant: Tenant, roles: string[]) => {
@@ -49,6 +50,7 @@ describe('seating plan PDF', () => {
     managerA = await makeUser('manager-a', studioA, ['production-manager'])
     managerB = await makeUser('manager-b', studioB, ['production-manager'])
     hostA = await makeUser('host-a', studioA, ['event-organizer'])
+    clientA = await makeUser('client-a', studioA, ['client'])
     event = await payload.create({
       collection: 'events',
       data: {
@@ -87,9 +89,13 @@ describe('seating plan PDF', () => {
     expect(Buffer.from(bytes).toString('latin1')).not.toContain('Old friend')
   })
 
-  it("refuses another studio's staff, the event's host and visitors", async () => {
+  it("gives the event's host the PDF too", async () => {
+    expect((await download(hostA)).status).toBe(200)
+  })
+
+  it("refuses another studio's staff, the studio's other clients and visitors", async () => {
     expect((await download(managerB)).status).toBe(404)
-    expect((await download(hostA)).status).toBe(403)
+    expect((await download(clientA)).status).toBe(404)
     expect((await download(null)).status).toBe(401)
     expect((await download(managerA, 'abc')).status).toBe(404)
   })
