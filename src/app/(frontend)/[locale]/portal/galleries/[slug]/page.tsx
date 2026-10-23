@@ -15,6 +15,9 @@ import { resolveLocale } from '@/lib/locale'
 import { selectionIsLocked, type SelectionStatus } from '@/lib/selections'
 import { getCurrentTenant } from '@/lib/tenant'
 
+/** Pages are offsets into a list, so a huge page number would overflow the query. Capped here. */
+const MAX_PAGE = 100000
+
 export const metadata = { robots: { index: false } }
 
 /** Large galleries are paged; virtualised scrolling can come later. */
@@ -34,7 +37,7 @@ export default async function GalleryPage({
   const a = dictionary.album
   const query = await searchParams
   const onlyFavorites = query.view === 'favorites'
-  const page = Math.max(1, Number(query.page) || 1)
+  const page = Math.min(MAX_PAGE, Math.max(1, Math.floor(Number(query.page)) || 1))
   const payload = await getPayload({ config })
 
   const { docs } = await payload.find({

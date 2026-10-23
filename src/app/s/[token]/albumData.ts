@@ -6,6 +6,9 @@ import { findSharedGallery, findSharedPhotos } from '@/lib/sharedAlbum'
 import { getSiteSettings } from '@/lib/site'
 import { getCurrentTenant } from '@/lib/tenant'
 
+/** Pages are offsets into a list, so a huge page number would overflow the query. Capped here. */
+const MAX_PAGE = 100000
+
 /** Everything the album and embed pages need, or a 404 when the link is not valid. */
 export async function loadSharedAlbum(
   token: string,
@@ -16,7 +19,7 @@ export async function loadSharedAlbum(
   const locale = await shareLocale(tenant, query.lang)
   const gallery = await findSharedGallery(tenant, token, locale)
   if (!gallery) notFound()
-  const page = Math.max(1, Number(query.page) || 1)
+  const page = Math.min(MAX_PAGE, Math.max(1, Math.floor(Number(query.page)) || 1))
   const photos = await findSharedPhotos(gallery, token, page, locale)
   const settings = await getSiteSettings(tenant.id, locale)
   const t = getDictionary(locale).album

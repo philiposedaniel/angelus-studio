@@ -1,9 +1,9 @@
-import fs from 'fs'
-import path from 'path'
 import type { CollectionConfig, PayloadRequest } from 'payload'
 
 import { galleryRead, galleryStaff, isGalleryStaffFor } from '@/access/galleries'
+import { deleteObjectStorageFiles, moveFilesToObjectStorage, photoFiles, readGalleryFile, signedGalleryFileUrl } from '@/lib/galleryFiles'
 import { idOf } from '@/lib/ids'
+import { objectStorageEnabled } from '@/lib/objectStorage'
 import { GALLERY_PHOTOS_DIR } from '@/lib/storage'
 import { watermarkImage } from '@/lib/watermark'
 
@@ -61,13 +61,39 @@ async function watermarkViewingCopy(
   })
   if (!gallery.watermarkText) return undefined
 
-  const bytes = await fs.promises.readFile(path.join(GALLERY_PHOTOS_DIR, path.basename(params.filename)))
-  const marked = await watermarkImage(bytes, gallery.watermarkText)
+  const marked = await watermarkImage(await readGalleryFile(params.filename), gallery.watermarkText)
   return new Response(new Uint8Array(marked), {
     headers: {
       'Content-Type': 'image/webp',
       'Content-Length': String(marked.length),
       'Cache-Control': 'private, max-age=300',
+    },
+  })
+}
+
+/**
+ * Serves one file of a photo after Payload has checked that the requester can read the photo.
+ * Originals go only to those allowed to download them, and copies are watermarked when the gallery
+ * asks. With object storage on, everything else is a link to the stored file that lasts a few minutes,
+ * and the link is never cached. Without it, Payload serves the local file itself.
+ */
+export async function serveGalleryFile(
+  req: PayloadRequest,
+  args: { doc: unknown; params: { filename: string } },
+): Promise<Response | undefined> {
+  const denied = await guardOriginalDownload(req, args)
+  if (denied) return denied
+  const marked = await watermarkViewingCopy(req, args)
+  if (marked) return marked
+  if (!objectStorageEnabled()) return undefined
+  // The original is what the Download link asks for, so its link saves the file rather than showing it.
+  const isOriginal = args.params.filename === (args.doc as { filename?: string | null }).filename
+  return new Response(null, {
+    status: 302,
+    headers: {
+      Location: await signedGalleryFileUrl(args.params.filename, { download: isOriginal }),
+      'Cache-Control': 'private, no-store',
+      'X-Robots-Tag': 'noindex',
     },
   })
 }
@@ -127,13 +153,26 @@ export const GalleryPhotos: CollectionConfig = {
     focalPoint: false,
     crop: false,
     // Read access has already been checked by Payload when this runs.
-    // Payload's type wants a Response promise; resolving to undefined lets the file through.
-    handlers: [
-      (req, args) => guardOriginalDownload(req, args) as Promise<Response>,
-      (req, args) => watermarkViewingCopy(req, args) as Promise<Response>,
-    ],
+    // Payload's type wants a Response promise; resolving to undefined lets Payload serve the local file.
+    handlers: [(req, args) => serveGalleryFile(req, args) as Promise<Response>],
   },
   hooks: {
+    afterChange: [
+      // With object storage on, the files Payload just wrote locally move to the bucket. A new file
+      // replaces the old one, whose stored copies are then removed.
+      async ({ doc, previousDoc }) => {
+        if (!objectStorageEnabled()) return doc
+        if (previousDoc && previousDoc.filename === doc.filename) return doc
+        await moveFilesToObjectStorage(photoFiles(doc))
+        if (previousDoc) await deleteObjectStorageFiles(photoFiles(previousDoc).map((file) => file.filename))
+        return doc
+      },
+    ],
+    afterDelete: [
+      async ({ doc }) => {
+        if (objectStorageEnabled()) await deleteObjectStorageFiles(photoFiles(doc).map((file) => file.filename))
+      },
+    ],
     beforeValidate: [
       // A photo always belongs to the same studio as its gallery.
       async ({ data, req }) => {

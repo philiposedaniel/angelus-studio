@@ -143,3 +143,47 @@ has not been rehearsed. Rehearse one before relying on it.
 - No PDF copy of a signed contract is produced; the signed record is the database row.
 - The app listens on port 3000. Put TLS in front of it with Coolify's proxy, and serve the public
   site over HTTPS only.
+
+## Object storage for client photos
+
+Gallery photos, their web copies and their thumbnails can be kept in a private bucket on any S3-compatible
+service (Cloudflare R2, Amazon S3, MinIO). It is off until `S3_BUCKET` is set. Until then, photos stay on the
+server's `private-media` volume, as before.
+
+Set all of these together. A bucket set without the others stops the upload with a message naming the
+missing variable. It never quietly falls back to the local disk.
+
+| Name | Example | Notes |
+| --- | --- | --- |
+| `S3_BUCKET` | `studio-private` | A private bucket. Do not make it public: every download is a signed link. |
+| `S3_REGION` | `us-east-1` | Required. Cloudflare R2 uses `auto`. |
+| `S3_ENDPOINT` | `https://<account-id>.r2.cloudflarestorage.com` | Needed for R2 and other services. Leave unset for Amazon S3. |
+| `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` | from the service | A secret. Give the key read, write and delete on this bucket only. |
+| `S3_FORCE_PATH_STYLE` | `true` | Only for services that need it (MinIO). Leave unset otherwise. |
+
+What happens with it on:
+
+- **Uploads.** Payload writes the upload to the local folder first. The app then copies the original and its
+  copies to the bucket and removes the local files. If a copy fails, the upload fails too, nothing is saved,
+  and the photo can be uploaded again.
+- **Downloads.** A client or a shared-album viewer gets a link to the stored file that lasts five minutes and is
+  never cached, so a revoked share stops working on the next request. Watermarked copies are built by the app
+  from the stored file, so the watermark is never skipped.
+- **ZIP downloads** are built from the bucket. The ZIP itself stays on the local volume until it expires, as before.
+- **Deleting a photo** or replacing its file removes the stored copies. If the bucket cannot be reached, the
+  delete fails and the photo stays, rather than leaving files behind.
+
+Limits:
+
+- **Photos already on the local volume.** They are not read from the bucket. After setting the variables, run
+  `pnpm storage:move-local`, once. The app image does not include the command-line tools, so run it from a
+  checkout of the same release on the server (`pnpm install`, then the command), with the same database and S3
+  variables, and with `PRIVATE_MEDIA_DIR` pointing at the photos volume. It copies each photo's original and copies
+  into the bucket and removes the local files. It reports how many moved and how many were already stored, and
+  running it again moves nothing. The Payload CLI sometimes exits without printing anything, so if the line
+  `Gallery files moved to object storage` is missing from the output, run it again. Clients should not use the galleries until it has finished. Back up
+  `private-media` first. This command has not yet been run on a server; the first run is a check to make.
+- **Not yet tested against a live bucket.** The automated tests use an in-memory store and check the shape of
+  the signed links. Check the first real setup yourself: upload one photo to a test gallery, confirm three
+  objects appear under `gallery-photos/`, open a client's copy and see it load, then reopen the same link after
+  five minutes and confirm the service refuses it.
