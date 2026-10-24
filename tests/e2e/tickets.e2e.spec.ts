@@ -11,6 +11,8 @@ const BASE = 'http://localhost:3000'
 const PREFIX = 'e2e-tickets-'
 
 let waitingToken = ''
+let freeToken = ''
+let paidToken = ''
 
 test.describe('Event registration and tickets', () => {
   test.beforeAll(async () => {
@@ -61,6 +63,34 @@ test.describe('Event registration and tickets', () => {
       },
     })
     waitingToken = waiting.ticketToken!
+    // On an event of its own, so cancelling it does not change the places counted above.
+    const otherDay = await payload.create({
+      collection: 'events',
+      data: {
+        tenant: tenant.id,
+        title: `${PREFIX}Second day`,
+        slug: `${PREFIX}second-day`,
+        startsAt: new Date(Date.now() + 31 * 86_400_000).toISOString(),
+        timeZone: 'Europe/Lisbon',
+        published: true,
+      },
+    })
+    const otherAdmission = await payload.create({
+      collection: 'ticket-types',
+      data: { event: otherDay.id, name: 'General admission', capacity: 10, maxPerOrder: 4, price: 0, currency: 'eur' },
+    })
+    freeToken = (
+      await payload.create({
+        collection: 'registrations',
+        data: { ticketType: otherAdmission.id, name: 'Changed plans', email: 'plans@example.com', quantity: 2, status: 'confirmed', language: 'en' },
+      })
+    ).ticketToken!
+    paidToken = (
+      await payload.create({
+        collection: 'registrations',
+        data: { ticketType: gala.id, name: 'Paid guest', email: 'paid@example.com', quantity: 1, status: 'confirmed', language: 'en' },
+      })
+    ).ticketToken!
     await payload.create({
       collection: 'registrations',
       data: { ticketType: full.id, name: 'Early bird', email: 'early@example.com', quantity: 1, status: 'confirmed', language: 'en' },
@@ -139,6 +169,21 @@ test.describe('Event registration and tickets', () => {
     await expect(page.getByText('Total: €90.00')).toBeVisible()
     await expect(page.getByText('We are confirming your payment.')).toBeVisible()
     await expect(page.getByRole('img', { name: 'Your entry code' })).toHaveCount(0)
+  })
+
+  test('the holder cancels a free ticket from its page, and a paid one points to the studio', async ({ page }) => {
+    await page.goto(`${BASE}/en/tickets/${freeToken}`)
+    await expect(page.getByRole('img', { name: 'Your entry code' })).toBeVisible()
+    await waitForHydration(page)
+    page.once('dialog', (dialog) => void dialog.accept())
+    await page.getByRole('button', { name: 'Cancel my registration' }).click()
+    await expect(page.getByText('This registration was cancelled.')).toBeVisible()
+    await expect(page.getByRole('img', { name: 'Your entry code' })).toHaveCount(0)
+    await expect(page.getByRole('button', { name: 'Cancel my registration' })).toHaveCount(0)
+
+    await page.goto(`${BASE}/en/tickets/${paidToken}`)
+    await expect(page.getByText('To cancel a paid ticket, contact the studio')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Cancel my registration' })).toHaveCount(0)
   })
 
   test('the ticket opens in Spanish, and an unknown ticket shows nothing', async ({ page }) => {
