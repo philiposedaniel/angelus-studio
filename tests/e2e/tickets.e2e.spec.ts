@@ -179,7 +179,8 @@ test.describe('Event registration and tickets', () => {
     // One of the two places is given back first.
     await expect(page.getByLabel('Places to keep')).toHaveValue('1')
     await page.getByRole('button', { name: 'Give back the other places' }).click()
-    // With one place left the form goes away; the ticket says what it admits now.
+    // With one place left the form goes away, and the ticket and the result say what it admits now.
+    await expect(page.getByText('Done: your ticket now admits 1 person.')).toBeVisible()
     await expect(page.getByText('Admits 1 person.', { exact: true })).toBeVisible()
     await expect(page.getByLabel('Places to keep')).toHaveCount(0)
 

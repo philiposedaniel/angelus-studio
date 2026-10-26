@@ -93,7 +93,7 @@ export default async function TicketPage({ params }: PageProps<'/[locale]/ticket
             </a>
           </section>
           <p className="rounded-xl border border-gold/40 p-4 text-sm">{t.keepLink}</p>
-          {cancelCheck === 'allowed' && quantity > 1 && <GiveBackPlacesForm token={token} quantity={quantity} t={t.giveBack} />}
+          {cancelCheck === 'allowed' && <GiveBackPlacesForm token={token} quantity={quantity} t={t.giveBack} />}
           {cancelCheck === 'allowed' && <CancelTicketButton token={token} event={event.title} t={t.cancel} />}
           {cancelCheck === 'paid' && arrived === 0 && <p className="text-sm text-mist">{t.cancel.paidHelp}</p>}
         </>

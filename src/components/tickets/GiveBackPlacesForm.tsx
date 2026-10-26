@@ -9,7 +9,10 @@ import type { Dictionary } from '@/i18n/dictionaries'
 const plural = (forms: { one: string; other: string }, count: number) =>
   (count === 1 ? forms.one : forms.other).replace('{count}', String(count))
 
-/** Keeps fewer of a free registration's places, giving the rest back. The server checks again. */
+/**
+ * Keeps fewer of a free registration's places, giving the rest back. The server checks again.
+ * With one place left only the last result stays, so keeping a single place still says it worked.
+ */
 export function GiveBackPlacesForm({ token, quantity, t }: { token: string; quantity: number; t: Dictionary['tickets']['giveBack'] }) {
   const [state, action, pending] = useActionState<GiveBackPlacesState, FormData>(giveBackPlacesAction, { status: 'idle' })
   const router = useRouter()
@@ -17,6 +20,14 @@ export function GiveBackPlacesForm({ token, quantity, t }: { token: string; quan
   useEffect(() => {
     if (state.status === 'reduced') router.refresh()
   }, [state, router])
+
+  const status = (
+    <div role="status" aria-live="polite" className="text-sm">
+      {!pending && state.status === 'reduced' && <p className="text-gold">{plural(t.done, state.quantity)}</p>}
+      {!pending && state.status === 'error' && <p className="text-copper">{t.errors[state.reason]}</p>}
+    </div>
+  )
+  if (quantity <= 1) return status
 
   return (
     <form
@@ -53,10 +64,7 @@ export function GiveBackPlacesForm({ token, quantity, t }: { token: string; quan
           {pending ? t.saving : t.button}
         </button>
       </div>
-      <div role="status" aria-live="polite" className="text-sm">
-        {!pending && state.status === 'reduced' && <p className="text-gold">{plural(t.done, state.quantity)}</p>}
-        {!pending && state.status === 'error' && <p className="text-copper">{t.errors[state.reason]}</p>}
-      </div>
+      {status}
     </form>
   )
 }
