@@ -30,8 +30,9 @@ import {
 } from '@/lib/tickets'
 
 /** Fields only the studio's own guest-list staff may read. */
-const staffOfDoc: FieldAccess = ({ req: { user }, doc }) => {
-  const tenantId = idOf(doc?.tenant)
+const staffOfDoc: FieldAccess = ({ req: { user }, doc, data }) => {
+  // The admin form passes its values as `data` rather than `doc`, so read the studio from either.
+  const tenantId = idOf((doc ?? data)?.tenant)
   return isSuperAdmin(user) || (tenantId !== undefined && hasTenantRole(user, tenantId, EVENT_GUEST_STAFF_ROLES))
 }
 

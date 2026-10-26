@@ -97,7 +97,8 @@ export const Galleries: CollectionConfig = {
       type: 'date',
       // Written only by the background job that sends the link, so the record shows when it went out.
       access: {
-        read: ({ req: { user }, doc }) => isGalleryStaffFor(user, idOf(doc?.tenant)),
+        // The admin form passes its values as `data` rather than `doc`, so read the studio from either.
+        read: ({ req: { user }, doc, data }) => isGalleryStaffFor(user, idOf((doc ?? data)?.tenant)),
         create: () => false,
         update: () => false,
       },
@@ -164,7 +165,8 @@ export const Galleries: CollectionConfig = {
       admin: { hidden: true },
       access: {
         // Only the studio's staff may see the secret part of the link.
-        read: ({ req: { user }, doc }) => isGalleryStaffFor(user, idOf(doc?.tenant)),
+        // The admin form passes its values as `data` rather than `doc`, so read the studio from either.
+        read: ({ req: { user }, doc, data }) => isGalleryStaffFor(user, idOf((doc ?? data)?.tenant)),
       },
     },
     {
