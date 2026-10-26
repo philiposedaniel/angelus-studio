@@ -5,6 +5,7 @@ import { EVENT_GUEST_STAFF_ROLES } from '@/collections/EventGuests'
 import { idOf } from '@/lib/ids'
 import { staffOnlyField, staffOrEventOrganizers } from '@/lib/organizers'
 import { MAX_TABLE_CAPACITY } from '@/lib/seating'
+import { downloadPlaceCards } from '@/lib/placeCardsPdf'
 import { downloadSeatingPlan } from '@/lib/seatingPdf'
 
 /**
@@ -29,7 +30,10 @@ export const EventTables: CollectionConfig = {
     delete: tenantRoles(EVENT_GUEST_STAFF_ROLES),
   },
   // The seating plan as a PDF to print; it reads as the signed-in user, so the rules above apply.
-  endpoints: [{ path: '/plan', method: 'get', handler: downloadSeatingPlan }],
+  endpoints: [
+    { path: '/plan', method: 'get', handler: downloadSeatingPlan },
+    { path: '/place-cards', method: 'get', handler: downloadPlaceCards },
+  ],
   hooks: {
     beforeValidate: [
       // A table belongs to its event's studio, and its name is not repeated within the event.

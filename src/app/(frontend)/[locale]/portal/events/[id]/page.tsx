@@ -238,9 +238,14 @@ export default async function OrganizerEventPage({
               </li>
             ))}
           </ul>
-          <a href={`/api/event-tables/plan?event=${event.id}`} download className="w-fit text-sm text-gold underline">
-            {t.downloadSeating}
-          </a>
+          <div className="flex flex-wrap gap-x-6 gap-y-2">
+            <a href={`/api/event-tables/plan?event=${event.id}`} download className="w-fit text-sm text-gold underline">
+              {t.downloadSeating}
+            </a>
+            <a href={`/api/event-tables/place-cards?event=${event.id}`} download className="w-fit text-sm text-gold underline">
+              {t.downloadPlaceCards}
+            </a>
+          </div>
         </div>
       )}
 

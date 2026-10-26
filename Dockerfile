@@ -36,6 +36,8 @@ RUN groupadd --system --gid 1001 nodejs && useradd --system --uid 1001 --gid nod
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+# The embedded PDF font (src/lib/pdfFonts.ts); file tracing includes it too, this keeps it certain.
+COPY --from=builder /app/src/assets/fonts ./src/assets/fonts
 # Upload folders; mount volumes here (see docker-compose.prod.yml).
 RUN mkdir -p /app/media /app/private-media && chown nextjs:nodejs /app/media /app/private-media
 USER nextjs

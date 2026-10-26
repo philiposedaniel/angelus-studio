@@ -68,11 +68,20 @@ export function pdfSafeText(value: string): string {
     .replace(/[^\x20-\x7E\xA0-\xFF€–—‘’“”•…]/g, '?')
 }
 
-/** Breaks text into lines that fit the width. A single word too long for a line is split across lines. */
-export function wrapText(value: string, font: PDFFont, size: number, width: number): string[] {
+/**
+ * Breaks text into lines that fit the width. A single word too long for a line is split across lines.
+ * `clean` makes the text drawable: the standard fonts' character set unless the font is embedded.
+ */
+export function wrapText(
+  value: string,
+  font: PDFFont,
+  size: number,
+  width: number,
+  clean: (value: string) => string = pdfSafeText,
+): string[] {
   const lines: string[] = []
   let current = ''
-  for (const word of pdfSafeText(value).split(' ').filter(Boolean)) {
+  for (const word of clean(value).split(' ').filter(Boolean)) {
     const candidate = current ? `${current} ${word}` : word
     if (font.widthOfTextAtSize(candidate, size) <= width) {
       current = candidate

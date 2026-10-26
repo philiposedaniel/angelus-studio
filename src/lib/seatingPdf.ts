@@ -1,11 +1,12 @@
-import type { PayloadHandler } from 'payload'
-import { PDFDocument, rgb, StandardFonts, type PDFFont, type PDFPage } from 'pdf-lib'
+import type { PayloadHandler, PayloadRequest } from 'payload'
+import { PDFDocument, rgb, type PDFFont, type PDFPage } from 'pdf-lib'
 
 import { getDictionary } from '@/i18n/dictionaries'
 import { idOf, parseRowId } from '@/lib/ids'
-import { pdfSafeText, wrapText } from '@/lib/invoicePdf'
+import { wrapText } from '@/lib/invoicePdf'
 import { tenantLocales } from '@/lib/locale'
 import { isGuestListStaff, isOrganizerOf } from '@/lib/organizers'
+import { embedTextFonts, fontSafeText } from '@/lib/pdfFonts'
 import { seatsNeeded, summarizeSeating } from '@/lib/seating'
 import type { EventGuest, EventTable } from '@/payload-types'
 
@@ -84,14 +85,13 @@ export async function renderSeatingPdf(input: SeatingPdfInput, labels: SeatingPd
   const full = (guests: readonly { id: PlanGuest['id'] }[]) => guests.map((guest) => byId.get(String(guest.id))!)
 
   const pdf = await PDFDocument.create()
-  pdf.setTitle(pdfSafeText(`${labels.title}: ${input.eventTitle}`))
-  const regular = await pdf.embedFont(StandardFonts.Helvetica)
-  const bold = await pdf.embedFont(StandardFonts.HelveticaBold)
+  pdf.setTitle(`${labels.title}: ${input.eventTitle}`.replace(/\s+/g, ' '))
+  const { regular, bold } = await embedTextFonts(pdf)
   let page: PDFPage = pdf.addPage([PAGE_WIDTH, PAGE_HEIGHT])
   let y = PAGE_HEIGHT - MARGIN
 
   const write = (value: string, size: number, font: PDFFont, color = INK, indent = 0) => {
-    for (const line of wrapText(value, font, size, TEXT_WIDTH - indent)) {
+    for (const line of wrapText(value, font, size, TEXT_WIDTH - indent, (text) => fontSafeText(font, text))) {
       if (y - size < MARGIN) {
         page = pdf.addPage([PAGE_WIDTH, PAGE_HEIGHT])
         y = PAGE_HEIGHT - MARGIN
@@ -144,11 +144,11 @@ export async function renderSeatingPdf(input: SeatingPdfInput, labels: SeatingPd
 const fail = (status: number, message: string) => Response.json({ errors: [{ message }] }, { status })
 
 /**
- * GET /api/event-tables/plan?event=<id>: the event's seating plan as a PDF. The event, its tables
- * and its guests are read as the signed-in user, so the collections' own access rules decide who
- * gets it: the studio's admins and production managers, and the event's organizers.
+ * The event, its tables and its guests for a printout, read as the signed-in user so the
+ * collections' own access rules decide who gets them: the studio's admins and production
+ * managers, and the event's organizers. Anyone else gets a 404 (or 401 when signed out).
  */
-export const downloadSeatingPlan: PayloadHandler = async (req) => {
+export async function readSeatingForPrint(req: PayloadRequest) {
   if (!req.user) return fail(401, 'Sign in first.')
   const eventId = req.searchParams.get('event')
   if (!eventId || parseRowId(eventId) === null) return fail(404, 'Event not found.')
@@ -173,31 +173,37 @@ export const downloadSeatingPlan: PayloadHandler = async (req) => {
       .catch(() => null),
   ])
   if (!tables || !guests) return fail(403, 'Only the studio and the event\'s organizers can download the seating plan.')
-
-  const t = getDictionary(locale).seatingPdf
   const when = new Intl.DateTimeFormat(locale, {
     dateStyle: 'full',
     timeStyle: 'short',
     timeZone: localized.timeZone || 'Europe/Lisbon',
   }).format(new Date(localized.startsAt))
-  const bytes = await renderSeatingPdf(
-    {
-      eventTitle: localized.title,
-      when: localized.location ? `${when} · ${localized.location}` : when,
-      tables: tables.docs,
-      guests: guests.docs,
-      mealLabel: (mealId) => localized.mealOptions?.find((option) => option.id === mealId)?.label,
-    },
-    t,
-  )
-  const name = `seating-${event.slug || event.id}.pdf`.replace(/[^\w.-]/g, '_')
-  return new Response(new Uint8Array(bytes), {
+  return {
+    event,
+    locale,
+    eventTitle: localized.title,
+    when: localized.location ? `${when} · ${localized.location}` : when,
+    tables: tables.docs,
+    guests: guests.docs,
+    mealLabel: (mealId: string) => localized.mealOptions?.find((option) => option.id === mealId)?.label,
+  }
+}
+
+/** A printout as a download that stays out of shared caches: it holds guests' names and dietary needs. */
+export const pdfResponse = (bytes: Uint8Array, filename: string) =>
+  new Response(new Uint8Array(bytes), {
     headers: {
       'Content-Type': 'application/pdf',
-      'Content-Disposition': `attachment; filename="${name}"`,
+      'Content-Disposition': `attachment; filename="${filename.replace(/[^\w.-]/g, '_')}"`,
       'Content-Length': String(bytes.length),
-      // Guests' names and dietary needs: keep it out of shared caches.
       'Cache-Control': 'private, no-store',
     },
   })
+
+/** GET /api/event-tables/plan?event=<id>: the event's seating plan as a PDF. */
+export const downloadSeatingPlan: PayloadHandler = async (req) => {
+  const seating = await readSeatingForPrint(req)
+  if (seating instanceof Response) return seating
+  const bytes = await renderSeatingPdf(seating, getDictionary(seating.locale).seatingPdf)
+  return pdfResponse(bytes, `seating-${seating.event.slug || seating.event.id}.pdf`)
 }

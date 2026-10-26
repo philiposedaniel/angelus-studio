@@ -33,6 +33,7 @@
     "@payloadcms/plugin-multi-tenant": "3.90.2",
     "@payloadcms/richtext-lexical": "3.90.2",
     "@payloadcms/ui": "3.90.2",
+    "@pdf-lib/fontkit": "1.1.1",
     "archiver": "^8.0.0",
     "clsx": "^2.1.1",
     "cross-env": "^7.0.3",

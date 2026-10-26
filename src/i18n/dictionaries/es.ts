@@ -428,6 +428,7 @@ export const es: Dictionary = {
     tableSeats: '{seats} de {capacity} asientos',
     overCapacity: 'supera la capacidad',
     downloadSeating: 'Descargar el plano de mesas (PDF)',
+    downloadPlaceCards: 'Descargar las tarjetas de mesa (PDF)',
     selectGuest: 'Seleccionar a {name}',
     bulkSeat: {
       table: 'Sentar a los invitados marcados en',
@@ -695,5 +696,10 @@ export const es: Dictionary = {
     notAnswered: 'aún sin responder',
     withoutTable: 'Sin mesa',
     noTables: 'Todavía no hay mesas.',
+  },
+  placeCardsPdf: {
+    title: 'Tarjetas de mesa',
+    guestOf: 'Acompañante de {name}',
+    noCards: 'Todavía ningún invitado ha confirmado que viene.',
   },
 }

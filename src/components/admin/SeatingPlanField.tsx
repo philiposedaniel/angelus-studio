@@ -85,6 +85,7 @@ export async function SeatingPlanField(props: UIFieldServerProps) {
         <a href={`/admin/collections/event-tables/create`}>Add a table</a>
         <a href={`/admin/collections/event-tables?where[event][equals]=${id}`}>Open this event&apos;s tables</a>
         {plan.tables.length > 0 && <a href={`/api/event-tables/plan?event=${id}`}>Download the seating plan (PDF)</a>}
+        <a href={`/api/event-tables/place-cards?event=${id}`}>Download place cards (PDF)</a>
       </div>
     </div>
   )

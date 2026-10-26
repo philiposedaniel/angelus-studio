@@ -18,6 +18,10 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   output: 'standalone',
+  // The seating plan and place card PDFs read their embedded font from disk (src/lib/pdfFonts.ts).
+  outputFileTracingIncludes: {
+    '/api/**/*': ['./src/assets/fonts/*.ttf'],
+  },
   poweredByHeader: false,
   images: {
     localPatterns: [

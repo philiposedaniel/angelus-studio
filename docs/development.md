@@ -409,6 +409,18 @@ announced; send the link again.
   in the studio's first language and served by `GET /api/event-tables/plan?event=<id>`, which reads
   as the signed-in user, so only the studio's admins and production managers and the event's
   organizers get it.
+- *Download place cards (PDF)* next to it prints a name card for every seat of every guest who said
+  they are coming, ten to an A4 page with light cut lines, sorted by table: the person's name, their
+  table and their meal, in the order of the guest's reply. A person left unnamed prints "Guest of"
+  the guest's name with the meal chosen for them. Long names shrink, then wrap, to stay on the card.
+  Guests who have not answered or declined get no card. It is served
+  by `GET /api/event-tables/place-cards?event=<id>` with the same access as the plan, and
+  `tests/int/placeCardsPdf.int.spec.ts` tries it as another event's host, a client and another
+  studio's host.
+- Both PDFs embed Liberation Sans (`src/assets/fonts`, SIL Open Font License, loaded by
+  `src/lib/pdfFonts.ts`), so names print in their own letters across European languages, Greek and
+  Cyrillic. A letter the font lacks (Chinese, Arabic, emoji) prints as "?". The image copies the
+  font folder; a server run from a checkout reads it from the repository.
 - Deleting a table leaves its guests without a table. Deleting an event deletes its tables.
 
 Known limits: seating is a list of tables, not a drawn floor plan, and the guest import does not
@@ -464,7 +476,7 @@ set; there is no per-event colour or font picker yet.
   event's host and as another studio's host.
 - Once the studio has added the event's tables, the page shows **seating**: seats taken of the
   total, how many still have no table, each table with its seats and who sits there (red when
-  over capacity), and *Download the seating plan (PDF)*. The guest form gets a *Table* choice, so
+  over capacity), *Download the seating plan (PDF)* and *Download place cards (PDF)*. The guest form gets a *Table* choice, so
   the organizer seats each party. Organizers read the event's tables but not their staff notes,
   and cannot add, change or remove tables; a table of another event or studio is refused.
   `tests/int/organizerSeating.int.spec.ts` covers these.
