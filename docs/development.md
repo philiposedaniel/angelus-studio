@@ -528,7 +528,8 @@ file from the portal can be at most 1 MB, the limit Next.js sets on server actio
   types and registrations.
 - The person holding a free ticket can cancel it from their ticket page (*Cancel my registration*,
   after a confirmation) until the event starts, unless someone has already been checked in on it.
-  Their places go back, to the waitlist first if anyone waits. A paid ticket's page says to contact
+  A ticket for several people can instead keep fewer places (*Give back the other places*,
+  `giveBackTicketPlaces`). Their places go back, to the waitlist first if anyone waits. A paid ticket's page says to contact
   the studio instead, since refunds are made from the admin (`cancelTicket` in `src/lib/tickets.ts`;
   `tests/int/ticketCancel.int.spec.ts`).
 - *Download the attendee list (CSV)* in that section gives everyone registered for the event: name,
@@ -584,9 +585,9 @@ file from the portal can be at most 1 MB, the limit Next.js sets on server actio
   back and whenever the event page or a waitlist link is opened; there is no background timer.
 - Deleting an event deletes its ticket types, registrations and waitlists.
 
-Known limits: refunds from the admin are for the full amount (refund part of it in Stripe). A
-holder cancels their whole registration, not some of its places, and the studio is not notified
-when they do (the registration shows as cancelled). No
+Known limits: refunds from the admin are for the full amount (refund part of it in Stripe). The
+studio is not notified when a holder cancels or gives back places (the registration shows the
+new status and places). No
 booking fee is added (decision 6 in the events plan is open). Paid tickets have been tested with
 signed webhook events, not yet with a live Stripe round trip. Tickets and waitlist offers are
 emailed once email is set up (see *Event emails*); until then the ticket page asks people to save
@@ -667,8 +668,7 @@ real SMTP server.
 
 Known limits: reply notices go one by one (no daily digest yet), and reminders are not sent to guests
 who were never given an email address. An event whose start time changes has its day-before
-reminders cleared, so guests and ticket holders get the reminder again for the new date. Client gallery links are not emailed yet, and
-inquiry alerts go to one address only. Delivery problems (bounces,
+reminders cleared, so guests and ticket holders get the reminder again for the new date. Gallery links are emailed to each client once, when the gallery is published with *Email clients* on. If every send fails the job is retried; if only some fail, the clients who were not emailed are not sent it again, and staff copy the link by hand. Inquiry alerts go to one address only. Delivery problems (bounces,
 spam reports) are only visible in the email service's own dashboard. The sending domain must be
 verified with the service (SPF and DKIM records in DNS), or messages land in spam.
 

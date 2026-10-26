@@ -598,6 +598,53 @@ export async function cancelTicket({
   }
 }
 
+/**
+ * Gives back some of a free registration's places with its own ticket link, keeping `keep` of
+ * them. The same rule as cancelling applies; the freed places go to the waitlist first.
+ */
+export async function giveBackTicketPlaces({
+  payload,
+  tenantId,
+  token,
+  keep,
+  now = Date.now(),
+}: {
+  payload: Payload
+  tenantId: number
+  token: unknown
+  keep: unknown
+  now?: number
+}): Promise<{ status: 'reduced'; quantity: number } | { status: 'error'; reason: 'closed' | 'invalid' | 'failed' }> {
+  const found = await findTicket(payload, tenantId, token)
+  if (!found || ticketCancelCheck(found.registration, found.event, now) !== 'allowed') {
+    return { status: 'error', reason: 'closed' }
+  }
+  const quantity = found.registration.quantity ?? 1
+  const kept = typeof keep === 'string' && /^\d{1,3}$/.test(keep) ? Number(keep) : NaN
+  if (!Number.isInteger(kept) || kept < 1 || kept >= quantity) return { status: 'error', reason: 'invalid' }
+  try {
+    const result = await payload.update({
+      collection: 'registrations',
+      where: {
+        and: [
+          { id: { equals: found.registration.id } },
+          // Read again as the update runs, so a check-in or another change just before is not undone.
+          { status: { equals: 'confirmed' } },
+          { quantity: { equals: quantity } },
+          { or: [{ checkedInCount: { equals: 0 } }, { checkedInCount: { exists: false } }] },
+        ],
+      },
+      data: { quantity: kept },
+      overrideAccess: true,
+    })
+    if (result.docs.length !== 1) return { status: 'error', reason: 'closed' }
+    return { status: 'reduced', quantity: kept }
+  } catch (error) {
+    payload.logger.error({ err: error, msg: 'Could not give back ticket places from its link' })
+    return { status: 'error', reason: 'failed' }
+  }
+}
+
 /* ---- Summary ---- */
 
 type SummaryRegistration = Pick<Registration, 'ticketType' | 'quantity' | 'status' | 'checkedInCount'> &

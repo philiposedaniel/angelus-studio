@@ -523,6 +523,19 @@ export const es: Dictionary = {
     cancelled: 'Esta inscripción fue cancelada. Contacta con el estudio si es un error.',
     checkedIn: { one: 'Llegada registrada: 1 persona.', other: 'Llegada registrada: {count} personas.' },
     doNotAdmit: 'Inscripción cancelada. No admitir.',
+    giveBack: {
+      help: '¿Venís menos personas? Quédate solo con las plazas que necesitas y el resto pasará a otra persona.',
+      keep: 'Plazas que conservas',
+      places: { one: '1 plaza', other: '{count} plazas' },
+      button: 'Devolver las demás plazas',
+      saving: 'Guardando…',
+      done: { one: 'Listo: tu entrada admite ahora a 1 persona.', other: 'Listo: tu entrada admite ahora a {count} personas.' },
+      errors: {
+        closed: 'Esta entrada ya no se puede cambiar aquí. Contacta con el estudio.',
+        invalid: 'Elige cuántas plazas conservas.',
+        failed: 'Algo salió mal y no se cambió nada. Inténtalo de nuevo.',
+      },
+    },
     cancel: {
       help: '¿No puedes venir? Cancela tu inscripción para que tus plazas pasen a otra persona.',
       button: 'Cancelar mi inscripción',
@@ -577,6 +590,12 @@ export const es: Dictionary = {
   },
   emails: {
     greeting: 'Hola, {name}:',
+    galleryReady: {
+      subject: 'Tus fotos están listas: {gallery}',
+      body: 'Las fotos de {gallery} ya se pueden ver en tu portal de clientes de {studio}.',
+      action: 'Abrir tu galería',
+      note: 'Recibes este correo porque el estudio compartió una galería contigo. Inicia sesión en tu portal de clientes para verla.',
+    },
     invitation: {
       subject: 'Estás invitado: {event}',
       body: 'Te invitamos a {event}, {when}.',
