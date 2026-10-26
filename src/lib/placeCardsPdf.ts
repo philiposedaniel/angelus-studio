@@ -1,9 +1,10 @@
 import type { PayloadHandler } from 'payload'
-import { PDFDocument, rgb, StandardFonts, type PDFFont } from 'pdf-lib'
+import { PDFDocument, rgb, type PDFFont } from 'pdf-lib'
 
 import { getDictionary } from '@/i18n/dictionaries'
 import { idOf } from '@/lib/ids'
-import { pdfSafeText } from '@/lib/invoicePdf'
+import { wrapText } from '@/lib/invoicePdf'
+import { embedTextFonts, fontSafeText } from '@/lib/pdfFonts'
 import { pdfResponse, readSeatingForPrint, type SeatingPdfInput } from '@/lib/seatingPdf'
 import { seatsNeeded } from '@/lib/seating'
 
@@ -17,9 +18,10 @@ export type PlaceCardLabels = {
 export type PlaceCard = { name: string; table: string | null; meal: string | null }
 
 /**
- * One card for each person coming: the people a guest named, each with their meal, then
- * "Guest of …" for seats they left unnamed. Only guests who said they are coming get cards, in
- * table order and then by name; guests still without a table come last.
+ * One card for each person coming, in the order of the guest's reply: the guest first, then each
+ * person they named, and "Guest of …" for a person they left unnamed, each with the meal chosen for
+ * them. Seats beyond the reply get "Guest of …" with no meal. Only guests who said they are coming
+ * get cards, in table order and then by name; guests still without a table come last.
  */
 export function placeCards(input: Pick<SeatingPdfInput, 'tables' | 'guests' | 'mealLabel'>, labels: PlaceCardLabels): PlaceCard[] {
   const tableOrder = new Map(input.tables.map((table, index) => [String(table.id), index]))
@@ -33,13 +35,13 @@ export function placeCards(input: Pick<SeatingPdfInput, 'tables' | 'guests' | 'm
   for (const { guest } of coming) {
     const table = tableName.get(String(idOf(guest.table))) ?? null
     const seats = seatsNeeded(guest)
-    const named = (guest.party ?? []).filter((person) => person.name?.trim()).slice(0, seats)
-    const people = named.length > 0 ? named : [{ name: guest.name, meal: guest.party?.[0]?.meal ?? null }]
-    for (const person of people) {
-      cards.push({ name: person.name!.trim(), table, meal: person.meal ? (input.mealLabel(person.meal) ?? null) : null })
-    }
-    for (let extra = people.length; extra < seats; extra++) {
-      cards.push({ name: labels.guestOf.replace('{name}', guest.name), table, meal: null })
+    const guestOf = labels.guestOf.replace('{name}', guest.name)
+    const party = guest.party ?? []
+    for (let seat = 0; seat < seats; seat++) {
+      // The first person in a reply is the guest themselves; the RSVP form does not ask their name.
+      const person = party[seat]
+      const name = person?.name?.trim() || (seat === 0 ? guest.name : guestOf)
+      cards.push({ name, table, meal: person?.meal ? (input.mealLabel(person.meal) ?? null) : null })
     }
   }
   return cards
@@ -56,11 +58,26 @@ const INK = rgb(0.1, 0.1, 0.1)
 const MUTED = rgb(0.4, 0.4, 0.4)
 const CUT = rgb(0.75, 0.75, 0.75)
 
-/** The largest size up to `size` at which the text fits the width, so long names stay on one line. */
+/** The largest size up to `size` at which the text fits the width on one line. */
 const fitSize = (text: string, font: PDFFont, size: number, width: number) => {
   let fitted = size
   while (fitted > 8 && font.widthOfTextAtSize(text, fitted) > width) fitted -= 1
   return fitted
+}
+
+/**
+ * A name's size and lines on the card: one line, shrunk down to 12pt, then two lines down to 8pt,
+ * then as many 8pt lines as it needs, so even the longest name stays inside the card.
+ */
+export const nameLayout = (text: string, font: PDFFont, width: number) => {
+  for (let size = 20; size >= 12; size--) {
+    if (font.widthOfTextAtSize(text, size) <= width) return { size, lines: [text] }
+  }
+  for (let size = 14; size >= 8; size--) {
+    const lines = wrapText(text, font, size, width, (value) => fontSafeText(font, value))
+    if (lines.length <= 2) return { size, lines }
+  }
+  return { size: 8, lines: wrapText(text, font, 8, width, (value) => fontSafeText(font, value)) }
 }
 
 /**
@@ -73,19 +90,18 @@ export async function renderPlaceCardsPdf(
 ): Promise<Uint8Array> {
   const cards = placeCards(input, labels)
   const pdf = await PDFDocument.create()
-  pdf.setTitle(pdfSafeText(`${labels.title}: ${input.eventTitle}`))
-  const regular = await pdf.embedFont(StandardFonts.Helvetica)
-  const bold = await pdf.embedFont(StandardFonts.HelveticaBold)
+  pdf.setTitle(`${labels.title}: ${input.eventTitle}`.replace(/\s+/g, ' '))
+  const { regular, bold } = await embedTextFonts(pdf)
 
   if (cards.length === 0) {
     const page = pdf.addPage([PAGE_WIDTH, PAGE_HEIGHT])
-    page.drawText(pdfSafeText(`${labels.title}: ${input.eventTitle}`), { x: MARGIN, y: PAGE_HEIGHT - MARGIN - 18, size: 18, font: bold, color: INK })
-    page.drawText(pdfSafeText(labels.noCards), { x: MARGIN, y: PAGE_HEIGHT - MARGIN - 44, size: 11, font: regular, color: MUTED })
+    page.drawText(fontSafeText(bold, `${labels.title}: ${input.eventTitle}`), { x: MARGIN, y: PAGE_HEIGHT - MARGIN - 18, size: 18, font: bold, color: INK })
+    page.drawText(fontSafeText(regular, labels.noCards), { x: MARGIN, y: PAGE_HEIGHT - MARGIN - 44, size: 11, font: regular, color: MUTED })
     return pdf.save()
   }
 
   const centred = (page: ReturnType<typeof pdf.addPage>, value: string, size: number, font: PDFFont, color: typeof INK, x: number, y: number) => {
-    const text = pdfSafeText(value)
+    const text = fontSafeText(font, value)
     const fitted = fitSize(text, font, size, CARD_WIDTH - 24)
     page.drawText(text, { x: x + (CARD_WIDTH - font.widthOfTextAtSize(text, fitted)) / 2, y, size: fitted, font, color })
   }
@@ -98,9 +114,16 @@ export async function renderPlaceCardsPdf(
       const top = PAGE_HEIGHT - MARGIN - Math.floor(index / COLUMNS) * CARD_HEIGHT
       page.drawRectangle({ x, y: top - CARD_HEIGHT, width: CARD_WIDTH, height: CARD_HEIGHT, borderColor: CUT, borderWidth: 0.5 })
       const middle = top - CARD_HEIGHT / 2
-      centred(page, card.name, 20, bold, INK, x, middle + 4)
-      if (card.table) centred(page, card.table, 11, regular, MUTED, x, middle - 18)
-      if (card.meal) centred(page, card.meal, 10, regular, MUTED, x, middle - 34)
+      const name = nameLayout(fontSafeText(bold, card.name), bold, CARD_WIDTH - 24)
+      const lineHeight = name.size + 4
+      let y = middle + 4 + ((name.lines.length - 1) * lineHeight) / 2
+      for (const line of name.lines) {
+        page.drawText(line, { x: x + (CARD_WIDTH - bold.widthOfTextAtSize(line, name.size)) / 2, y, size: name.size, font: bold, color: INK })
+        y -= lineHeight
+      }
+      y += lineHeight - 22
+      if (card.table) centred(page, card.table, 11, regular, MUTED, x, y)
+      if (card.meal) centred(page, card.meal, 10, regular, MUTED, x, card.table ? y - 16 : y)
     })
   }
   return pdf.save()

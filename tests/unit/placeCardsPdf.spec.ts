@@ -1,25 +1,14 @@
-import { inflateSync } from 'node:zlib'
-
 import { PDFDocument } from 'pdf-lib'
 import { describe, expect, it } from 'vitest'
 
-import { placeCards, renderPlaceCardsPdf, type PlaceCardLabels } from '@/lib/placeCardsPdf'
+import { nameLayout, placeCards, renderPlaceCardsPdf, type PlaceCardLabels } from '@/lib/placeCardsPdf'
+import { embedTextFonts } from '@/lib/pdfFonts'
+
+import { pdfText } from '../helpers/pdfText'
 
 const labels: PlaceCardLabels = { title: 'Place cards', guestOf: 'Guest of {name}', noCards: 'Nobody yet.' }
 const meals: Record<string, string> = { fish: 'Fish', meat: 'Meat' }
 const mealLabel = (id: string) => meals[id]
-
-const drawnText = (bytes: Uint8Array) =>
-  [...Buffer.from(bytes).toString('latin1').matchAll(/stream\r?\n([\s\S]*?)\r?\nendstream/g)]
-    .map((match) => {
-      try {
-        return inflateSync(Buffer.from(match[1]!, 'latin1')).toString('latin1')
-      } catch {
-        return ''
-      }
-    })
-    .flatMap((content) => [...content.matchAll(/<([0-9A-F]*)> Tj/g)].map((hex) => Buffer.from(hex[1]!, 'hex').toString('latin1')))
-    .join('\n')
 
 const tables = [
   { id: 2, name: 'Head table', capacity: 8 },
@@ -54,6 +43,34 @@ describe('placeCards', () => {
       { name: 'Eva Lima', table: null, meal: null },
     ])
   })
+
+  it('keeps the meal chosen for a person left unnamed, in the order of the reply', () => {
+    const party = [
+      { name: null, meal: 'fish' },
+      { name: null, meal: 'meat' },
+      { name: 'Rita', meal: 'fish' },
+    ]
+    const ines = { ...guests[0]!, name: 'Inês Santos', attendingCount: 4, partySize: 4, party }
+    expect(placeCards({ tables, guests: [ines], mealLabel }, labels)).toEqual([
+      { name: 'Inês Santos', table: 'Table 2', meal: 'Fish' },
+      { name: 'Guest of Inês Santos', table: 'Table 2', meal: 'Meat' },
+      { name: 'Rita', table: 'Table 2', meal: 'Fish' },
+      { name: 'Guest of Inês Santos', table: 'Table 2', meal: null },
+    ])
+  })
+})
+
+describe('nameLayout', () => {
+  it('keeps even the longest name inside the card', async () => {
+    const pdf = await PDFDocument.create()
+    const { bold } = await embedTextFonts(pdf)
+    const width = 237
+    expect(nameLayout('Ana Costa', bold, width)).toEqual({ size: 20, lines: ['Ana Costa'] })
+    const longest = `Guest of ${'Bartholomew Fitzgerald-Montgomery '.repeat(4).slice(0, 120)}`
+    const { size, lines } = nameLayout(longest, bold, width)
+    expect(lines.length).toBeGreaterThan(1)
+    for (const line of lines) expect(bold.widthOfTextAtSize(line, size)).toBeLessThanOrEqual(width)
+  })
 })
 
 describe('renderPlaceCardsPdf', () => {
@@ -65,12 +82,19 @@ describe('renderPlaceCardsPdf', () => {
     }))
     const bytes = await renderPlaceCardsPdf({ eventTitle: 'Ana and João', tables, guests: many, mealLabel }, labels)
     expect((await PDFDocument.load(bytes)).getPageCount()).toBe(2)
-    const text = drawnText(bytes)
+    const text = await pdfText(bytes)
     expect(text).toContain('Guest 00')
     expect(text).toContain('Guest 11')
     expect(text).toContain('Head table')
 
+    // Names print in their own letters; a script the font lacks becomes '?'.
+    const accents = await renderPlaceCardsPdf(
+      { eventTitle: 'Gala', tables, guests: [{ ...guests[4]!, name: 'Zoë Łukasz Ödön Şahin 王' }], mealLabel },
+      labels,
+    )
+    expect(await pdfText(accents)).toContain('Zoë Łukasz Ödön Şahin ?')
+
     const empty = await renderPlaceCardsPdf({ eventTitle: 'Ana and João', tables, guests: [guests[3]!], mealLabel }, labels)
-    expect(drawnText(empty)).toContain('Nobody yet.')
+    expect(await pdfText(empty)).toContain('Nobody yet.')
   })
 })

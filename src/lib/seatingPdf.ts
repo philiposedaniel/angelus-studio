@@ -1,11 +1,12 @@
 import type { PayloadHandler, PayloadRequest } from 'payload'
-import { PDFDocument, rgb, StandardFonts, type PDFFont, type PDFPage } from 'pdf-lib'
+import { PDFDocument, rgb, type PDFFont, type PDFPage } from 'pdf-lib'
 
 import { getDictionary } from '@/i18n/dictionaries'
 import { idOf, parseRowId } from '@/lib/ids'
-import { pdfSafeText, wrapText } from '@/lib/invoicePdf'
+import { wrapText } from '@/lib/invoicePdf'
 import { tenantLocales } from '@/lib/locale'
 import { isGuestListStaff, isOrganizerOf } from '@/lib/organizers'
+import { embedTextFonts, fontSafeText } from '@/lib/pdfFonts'
 import { seatsNeeded, summarizeSeating } from '@/lib/seating'
 import type { EventGuest, EventTable } from '@/payload-types'
 
@@ -84,14 +85,13 @@ export async function renderSeatingPdf(input: SeatingPdfInput, labels: SeatingPd
   const full = (guests: readonly { id: PlanGuest['id'] }[]) => guests.map((guest) => byId.get(String(guest.id))!)
 
   const pdf = await PDFDocument.create()
-  pdf.setTitle(pdfSafeText(`${labels.title}: ${input.eventTitle}`))
-  const regular = await pdf.embedFont(StandardFonts.Helvetica)
-  const bold = await pdf.embedFont(StandardFonts.HelveticaBold)
+  pdf.setTitle(`${labels.title}: ${input.eventTitle}`.replace(/\s+/g, ' '))
+  const { regular, bold } = await embedTextFonts(pdf)
   let page: PDFPage = pdf.addPage([PAGE_WIDTH, PAGE_HEIGHT])
   let y = PAGE_HEIGHT - MARGIN
 
   const write = (value: string, size: number, font: PDFFont, color = INK, indent = 0) => {
-    for (const line of wrapText(value, font, size, TEXT_WIDTH - indent)) {
+    for (const line of wrapText(value, font, size, TEXT_WIDTH - indent, (text) => fontSafeText(font, text))) {
       if (y - size < MARGIN) {
         page = pdf.addPage([PAGE_WIDTH, PAGE_HEIGHT])
         y = PAGE_HEIGHT - MARGIN

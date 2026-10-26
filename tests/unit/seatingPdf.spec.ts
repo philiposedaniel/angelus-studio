@@ -1,9 +1,9 @@
-import { inflateSync } from 'node:zlib'
-
 import { PDFDocument } from 'pdf-lib'
 import { describe, expect, it } from 'vitest'
 
 import { renderSeatingPdf, type SeatingPdfLabels } from '@/lib/seatingPdf'
+
+import { pdfText } from '../helpers/pdfText'
 
 const labels: SeatingPdfLabels = {
   title: 'Seating plan',
@@ -15,19 +15,6 @@ const labels: SeatingPdfLabels = {
   withoutTable: 'Without a table',
   noTables: 'No tables yet.',
 }
-
-/** The text drawn on the PDF's pages, line by line. */
-const drawnText = (bytes: Uint8Array) =>
-  [...Buffer.from(bytes).toString('latin1').matchAll(/stream\r?\n([\s\S]*?)\r?\nendstream/g)]
-    .map((match) => {
-      try {
-        return inflateSync(Buffer.from(match[1]!, 'latin1')).toString('latin1')
-      } catch {
-        return ''
-      }
-    })
-    .flatMap((content) => [...content.matchAll(/<([0-9A-F]*)> Tj/g)].map((hex) => Buffer.from(hex[1]!, 'hex').toString('latin1')))
-    .join('\n')
 
 const meals: Record<string, string> = { fish: 'Fish', meat: 'Meat' }
 
@@ -63,8 +50,8 @@ describe('renderSeatingPdf', () => {
       },
       labels,
     )
-    const text = drawnText(bytes)
-    expect(text).toContain('Seating plan: Ana and Jo')
+    const text = await pdfText(bytes)
+    expect(text).toContain('Seating plan: Ana and João')
     expect(text).toContain('2 of 4 seats')
     expect(text).toContain('Maria Silva · 2')
     expect(text).toContain('Maria Silva (Fish), Rui Silva (Meat)')
@@ -78,7 +65,7 @@ describe('renderSeatingPdf', () => {
   })
 
   it('says when there are no tables, and spreads a long plan over several pages', async () => {
-    expect(drawnText(await renderSeatingPdf({ eventTitle: 'Gala', when: '', tables: [], guests: [], mealLabel: () => undefined }, labels))).toContain(
+    expect(await pdfText(await renderSeatingPdf({ eventTitle: 'Gala', when: '', tables: [], guests: [], mealLabel: () => undefined }, labels))).toContain(
       'No tables yet.',
     )
     const tables = Array.from({ length: 20 }, (_, index) => ({ id: index + 1, name: `Table ${index + 1}`, capacity: 10 }))
@@ -92,6 +79,6 @@ describe('renderSeatingPdf', () => {
     }))
     const bytes = await renderSeatingPdf({ eventTitle: 'Gala', when: '', tables, guests, mealLabel: () => undefined }, labels)
     expect((await PDFDocument.load(bytes)).getPageCount()).toBeGreaterThan(1)
-    expect(drawnText(bytes)).toContain('Guest 199 · 1')
+    expect(await pdfText(bytes)).toContain('Guest 199 · 1')
   })
 })
