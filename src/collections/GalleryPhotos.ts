@@ -28,7 +28,7 @@ async function guardOriginalDownload(
     id: galleryId,
     depth: 0,
     req,
-    overrideAccess: true,
+    overrideAccess: false,
   })
   return gallery.allowDownloads ? undefined : forbidden()
 }
@@ -57,7 +57,7 @@ async function watermarkViewingCopy(
     id: galleryId,
     depth: 0,
     req,
-    overrideAccess: true,
+    overrideAccess: false,
   })
   if (!gallery.watermarkText) return undefined
 
