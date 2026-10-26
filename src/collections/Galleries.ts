@@ -2,6 +2,7 @@ import type { CollectionConfig } from 'payload'
 
 import { galleryRead, galleryStaff, isGalleryStaffFor } from '@/access/galleries'
 import { uniqueSlugPerTenant } from '@/hooks/uniqueSlugPerTenant'
+import { queueGalleryNotice } from '@/lib/galleryNotices'
 import { idOf } from '@/lib/ids'
 import { newShareToken } from '@/lib/shareTokens'
 
@@ -32,6 +33,15 @@ export const Galleries: CollectionConfig = {
         if (!enabled) return { ...data, shareToken: null }
         const keep = originalDoc?.shareEnabled && originalDoc.shareToken
         return { ...data, shareToken: keep ? originalDoc.shareToken : newShareToken() }
+      },
+    ],
+    afterChange: [
+      // Published with notification on and not yet sent: the clients get their link once, in the background.
+      async ({ doc, req }) => {
+        if (doc.status === 'published' && doc.notifyClients && !doc.clientsNotifiedAt && doc.clients?.length) {
+          await queueGalleryNotice(req, doc.id)
+        }
+        return doc
       },
     ],
   },
@@ -70,6 +80,33 @@ export const Galleries: CollectionConfig = {
         { label: 'Published to clients', value: 'published' },
       ],
       admin: { position: 'sidebar' },
+    },
+    {
+      name: 'notifyClients',
+      type: 'checkbox',
+      label: 'Email clients when published',
+      defaultValue: false,
+      admin: {
+        position: 'sidebar',
+        description:
+          'Email each client a link when this gallery is published. Sent once, the first time the gallery is published with this on. If the gallery is already published when this is turned on, the clients are emailed straight away. Needs email to be set up.',
+      },
+    },
+    {
+      name: 'clientsNotifiedAt',
+      type: 'date',
+      // Written only by the background job that sends the link, so the record shows when it went out.
+      access: {
+        read: ({ req: { user }, doc }) => isGalleryStaffFor(user, idOf(doc?.tenant)),
+        create: () => false,
+        update: () => false,
+      },
+      admin: {
+        position: 'sidebar',
+        readOnly: true,
+        condition: (data) => Boolean(data?.clientsNotifiedAt),
+        description: 'When the clients were emailed the link.',
+      },
     },
     {
       name: 'expiresAt',

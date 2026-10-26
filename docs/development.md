@@ -667,8 +667,7 @@ real SMTP server.
 
 Known limits: reply notices go one by one (no daily digest yet), and reminders are not sent to guests
 who were never given an email address. An event moved to a later date after its day-before
-reminders went out does not send them again. Client gallery links are not emailed yet, and
-inquiry alerts go to one address only. Delivery problems (bounces,
+reminders went out does not send them again. Gallery links are emailed to each client once, when the gallery is published with *Email clients* on. If every send fails the job is retried; if only some fail, the clients who were not emailed are not sent it again, and staff copy the link by hand. Inquiry alerts go to one address only. Delivery problems (bounces,
 spam reports) are only visible in the email service's own dashboard. The sending domain must be
 verified with the service (SPF and DKIM records in DNS), or messages land in spam.
 

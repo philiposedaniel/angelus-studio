@@ -577,6 +577,12 @@ export const es: Dictionary = {
   },
   emails: {
     greeting: 'Hola, {name}:',
+    galleryReady: {
+      subject: 'Tus fotos están listas: {gallery}',
+      body: 'Las fotos de {gallery} ya se pueden ver en tu portal de clientes de {studio}.',
+      action: 'Abrir tu galería',
+      note: 'Recibes este correo porque el estudio compartió una galería contigo. Inicia sesión en tu portal de clientes para verla.',
+    },
     invitation: {
       subject: 'Estás invitado: {event}',
       body: 'Te invitamos a {event}, {when}.',
