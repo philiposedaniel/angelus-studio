@@ -4,6 +4,7 @@ import { getPayload } from 'payload'
 import QRCode from 'qrcode'
 
 import { CancelTicketButton } from '@/components/tickets/CancelTicketButton'
+import { GiveBackPlacesForm } from '@/components/tickets/GiveBackPlacesForm'
 import { getDictionary } from '@/i18n/dictionaries'
 import { formatEventWhen } from '@/lib/eventTime'
 import { formatMoney } from '@/lib/money'
@@ -92,6 +93,7 @@ export default async function TicketPage({ params }: PageProps<'/[locale]/ticket
             </a>
           </section>
           <p className="rounded-xl border border-gold/40 p-4 text-sm">{t.keepLink}</p>
+          {cancelCheck === 'allowed' && <GiveBackPlacesForm token={token} quantity={quantity} t={t.giveBack} />}
           {cancelCheck === 'allowed' && <CancelTicketButton token={token} event={event.title} t={t.cancel} />}
           {cancelCheck === 'paid' && arrived === 0 && <p className="text-sm text-mist">{t.cancel.paidHelp}</p>}
         </>
