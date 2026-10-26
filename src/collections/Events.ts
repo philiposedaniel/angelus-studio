@@ -1,3 +1,4 @@
+import { sql } from '@payloadcms/db-postgres'
 import { APIError, type Access, type CollectionConfig, type Where } from 'payload'
 
 import {
@@ -14,6 +15,7 @@ import { idOf } from '@/lib/ids'
 import { INVITATION_STYLE_LABELS, INVITATION_STYLES, isWebAddress, MAX_SCHEDULE_ITEMS } from '@/lib/invitationDesign'
 import { MAX_MEAL_OPTIONS } from '@/lib/rsvp'
 import { newShareToken } from '@/lib/shareTokens'
+import { runSql } from '@/lib/sqlSession'
 
 /**
  * The public sees published events that are listed on the website; studio staff also see their
@@ -88,6 +90,17 @@ export const Events: CollectionConfig = {
           throw new APIError('The event must end after it starts.', 400)
         }
         return { ...data, guestToken }
+      },
+    ],
+    afterChange: [
+      // A moved event has new day-before reminders due for its new date, so the ones already sent for the old date are cleared.
+      async ({ doc, previousDoc, operation, req }) => {
+        const moved = previousDoc && new Date(previousDoc.startsAt).getTime() !== new Date(doc.startsAt).getTime()
+        if (operation === 'update' && moved) {
+          await runSql(req.payload, sql`UPDATE event_guests SET day_before_sent_at = NULL WHERE event_id = ${doc.id} AND day_before_sent_at IS NOT NULL`, req)
+          await runSql(req.payload, sql`UPDATE registrations SET day_before_sent_at = NULL WHERE event_id = ${doc.id} AND day_before_sent_at IS NOT NULL`, req)
+        }
+        return doc
       },
     ],
     beforeDelete: [
