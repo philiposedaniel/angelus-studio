@@ -89,7 +89,7 @@ export const Galleries: CollectionConfig = {
       admin: {
         position: 'sidebar',
         description:
-          'Email each client a link when this gallery is published. Sent once, the first time it is published with this on. Needs email to be set up.',
+          'Email each client a link when this gallery is published. Sent once, the first time the gallery is published with this on. If the gallery is already published when this is turned on, the clients are emailed straight away. Needs email to be set up.',
       },
     },
     {

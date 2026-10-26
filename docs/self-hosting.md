@@ -69,7 +69,7 @@ What is sent, and to whom:
 | Invitation, reply reminder, day-before reminder | The guest | Staff send an invitation or reminder, or the day before a guest's event |
 | Reply notice | The event's reply-notice recipients | A guest replies |
 | Ticket and ticket day-before reminder | The ticket buyer | A ticket is bought, and the day before the event |
-| Gallery link | Each client of the gallery, one message each | A gallery is published with *Email clients when published* on. Sent once; a second publish does not send it again. |
+| Gallery link | Each client of the gallery, one message each | A gallery is published with *Email clients when published* on, or that option is turned on for a gallery already published (then at once). Sent once; a second publish does not send it again. |
 | Waitlist offer | The person offered a place | A place opens for someone on the waitlist |
 | Vendor booking and confirmation | The vendor, and the event's reply-notice address | A vendor booking is made, and when it is confirmed |
 | Inquiry alert | The studio's contact address | Someone sends the contact form (turned off in the site settings if not wanted) |
