@@ -426,6 +426,7 @@ export const en = {
     tableSeats: '{seats} of {capacity} seats',
     overCapacity: 'over capacity',
     downloadSeating: 'Download the seating plan (PDF)',
+    downloadPlaceCards: 'Download place cards (PDF)',
     selectGuest: 'Select {name}',
     bulkSeat: {
       table: 'Seat the ticked guests at',
@@ -693,6 +694,11 @@ export const en = {
     notAnswered: 'not answered yet',
     withoutTable: 'Without a table',
     noTables: 'No tables yet.',
+  },
+  placeCardsPdf: {
+    title: 'Place cards',
+    guestOf: 'Guest of {name}',
+    noCards: 'No guests have said they are coming yet.',
   },
 }
 
