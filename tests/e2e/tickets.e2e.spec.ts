@@ -171,10 +171,18 @@ test.describe('Event registration and tickets', () => {
     await expect(page.getByRole('img', { name: 'Your entry code' })).toHaveCount(0)
   })
 
-  test('the holder cancels a free ticket from its page, and a paid one points to the studio', async ({ page }) => {
+  test('the holder gives back a place, then cancels a free ticket, and a paid one points to the studio', async ({ page }) => {
     await page.goto(`${BASE}/en/tickets/${freeToken}`)
     await expect(page.getByRole('img', { name: 'Your entry code' })).toBeVisible()
+    await expect(page.getByText('Admits 2 people.')).toBeVisible()
     await waitForHydration(page)
+    // One of the two places is given back first.
+    await expect(page.getByLabel('Places to keep')).toHaveValue('1')
+    await page.getByRole('button', { name: 'Give back the other places' }).click()
+    // With one place left the form goes away; the ticket says what it admits now.
+    await expect(page.getByText('Admits 1 person.', { exact: true })).toBeVisible()
+    await expect(page.getByLabel('Places to keep')).toHaveCount(0)
+
     page.once('dialog', (dialog) => void dialog.accept())
     await page.getByRole('button', { name: 'Cancel my registration' }).click()
     await expect(page.getByText('This registration was cancelled.')).toBeVisible()
