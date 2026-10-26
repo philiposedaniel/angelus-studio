@@ -521,6 +521,19 @@ export const en = {
     cancelled: 'This registration was cancelled. Please contact the studio if this is a mistake.',
     checkedIn: { one: 'Checked in: 1 person.', other: 'Checked in: {count} people.' },
     doNotAdmit: 'Cancelled registration. Do not admit.',
+    giveBack: {
+      help: 'Fewer of you coming? Keep only the places you need, and the rest go to someone else.',
+      keep: 'Places to keep',
+      places: { one: '1 place', other: '{count} places' },
+      button: 'Give back the other places',
+      saving: 'Saving…',
+      done: { one: 'Done: your ticket now admits 1 person.', other: 'Done: your ticket now admits {count} people.' },
+      errors: {
+        closed: 'This ticket can no longer be changed here. Please contact the studio.',
+        invalid: 'Choose how many places to keep.',
+        failed: 'Something went wrong and nothing was changed. Please try again.',
+      },
+    },
     cancel: {
       help: "Can't make it? Cancel your registration so your places can go to someone else.",
       button: 'Cancel my registration',
@@ -575,6 +588,12 @@ export const en = {
   },
   emails: {
     greeting: 'Dear {name},',
+    galleryReady: {
+      subject: 'Your photos are ready: {gallery}',
+      body: 'The photos from {gallery} are ready to see in your client portal at {studio}.',
+      action: 'Open your gallery',
+      note: 'You receive this because the studio shared a gallery with you. Sign in to your client portal to see it.',
+    },
     invitation: {
       subject: 'You are invited: {event}',
       body: 'You are invited to {event}, {when}.',
