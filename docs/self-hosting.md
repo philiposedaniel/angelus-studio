@@ -70,6 +70,7 @@ What is sent, and to whom:
 | Reply notice | The event's reply-notice recipients | A guest replies |
 | Ticket and ticket day-before reminder | The ticket buyer | A ticket is bought, and the day before the event |
 | Gallery link | Each client of the gallery, one message each | A gallery is published with *Email clients when published* on, or that option is turned on for a gallery already published (then at once). Sent once; a second publish does not send it again. |
+| Selection submitted | Each studio member who can manage galleries, one message each | A client submits a selection, and again when they resubmit after changes were asked for |
 | Waitlist offer | The person offered a place | A place opens for someone on the waitlist |
 | Vendor booking and confirmation | The vendor, and the event's reply-notice address | A vendor booking is made, and when it is confirmed |
 | Inquiry alert | The studio's contact address | Someone sends the contact form (turned off in the site settings if not wanted) |

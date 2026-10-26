@@ -35,6 +35,7 @@ import * as migration_20261019_154148_inquiry_alerts from './20261019_154148_inq
 import * as migration_20261019_204713_add_staff_mfa from './20261019_204713_add_staff_mfa';
 import * as migration_20261019_232429_add_quote_payment_schedule from './20261019_232429_add_quote_payment_schedule';
 import * as migration_20261026_044336_add_gallery_client_notice from './20261026_044336_add_gallery_client_notice';
+import * as migration_20261026_161423_add_selection_staff_notice from './20261026_161423_add_selection_staff_notice';
 
 export const migrations = [
   {
@@ -220,6 +221,11 @@ export const migrations = [
   {
     up: migration_20261026_044336_add_gallery_client_notice.up,
     down: migration_20261026_044336_add_gallery_client_notice.down,
-    name: '20261026_044336_add_gallery_client_notice'
+    name: '20261026_044336_add_gallery_client_notice',
+  },
+  {
+    up: migration_20261026_161423_add_selection_staff_notice.up,
+    down: migration_20261026_161423_add_selection_staff_notice.down,
+    name: '20261026_161423_add_selection_staff_notice'
   },
 ];

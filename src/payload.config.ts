@@ -38,6 +38,7 @@ import { sendEventReminders } from './jobs/eventReminders'
 import { buildGalleryZip, cleanupGalleryZips } from './jobs/galleryZips'
 import { sendEmail } from './jobs/sendEmail'
 import { sendGalleryNotice } from './jobs/sendGalleryNotice'
+import { sendSelectionNotice } from './jobs/sendSelectionNotice'
 import { emailAdapter } from './lib/email'
 import { migrations } from './migrations'
 import type { Config } from './payload-types'
@@ -93,7 +94,7 @@ export default buildConfig({
     fallback: true,
   },
   jobs: {
-    tasks: [buildGalleryZip, cleanupGalleryZips, sendEmail, sendGalleryNotice, sendEventReminders],
+    tasks: [buildGalleryZip, cleanupGalleryZips, sendEmail, sendGalleryNotice, sendSelectionNotice, sendEventReminders],
     // Background jobs (ZIP building, cleanup) run inside the app process every few seconds.
     // Set PAYLOAD_JOBS_AUTORUN=false where another process runs them, and in tests.
     autoRun: [{ cron: '*/5 * * * * *', queue: 'default', limit: 2 }],

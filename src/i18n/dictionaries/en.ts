@@ -594,6 +594,12 @@ export const en = {
       action: 'Open your gallery',
       note: 'You receive this because the studio shared a gallery with you. Sign in to your client portal to see it.',
     },
+    selectionSubmitted: {
+      subject: 'New selection from {client}: {gallery}',
+      body: '{client} has submitted their selection from {gallery}. Review it to approve it or ask for changes.',
+      action: 'Review the selection',
+      note: 'You receive this because you can manage galleries for {studio}.',
+    },
     invitation: {
       subject: 'You are invited: {event}',
       body: 'You are invited to {event}, {when}.',

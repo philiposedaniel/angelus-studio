@@ -3,7 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import config from '@/payload.config'
 import type { Gallery, GalleryPhoto, Tenant, User } from '@/payload-types'
-import { submitSelection } from '@/lib/selections'
+import { submitSelection } from '@/lib/selectionSubmit'
 
 import { testJpeg } from '../helpers/image'
 import { ensureTenant } from '../helpers/seedTenant'

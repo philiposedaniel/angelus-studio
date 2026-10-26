@@ -163,6 +163,7 @@ export interface Config {
       'cleanup-gallery-zips': TaskCleanupGalleryZips;
       'send-email': TaskSendEmail;
       'send-gallery-notice': TaskSendGalleryNotice;
+      'send-selection-notice': TaskSendSelectionNotice;
       'send-event-reminders': TaskSendEventReminders;
       inline: {
         input: unknown;
@@ -600,6 +601,7 @@ export interface GallerySelection {
   user: number | User;
   status: 'open' | 'submitted' | 'revision-requested' | 'approved';
   submittedAt?: string | null;
+  staffNoticeFor?: string | null;
   approvedAt?: string | null;
   /**
    * Shown to the client. Required when asking for changes.
@@ -1411,6 +1413,7 @@ export interface PayloadJob {
           | 'cleanup-gallery-zips'
           | 'send-email'
           | 'send-gallery-notice'
+          | 'send-selection-notice'
           | 'send-event-reminders';
         taskID: string;
         input?:
@@ -1451,6 +1454,7 @@ export interface PayloadJob {
         | 'cleanup-gallery-zips'
         | 'send-email'
         | 'send-gallery-notice'
+        | 'send-selection-notice'
         | 'send-event-reminders'
       )
     | null;
@@ -1941,6 +1945,7 @@ export interface GallerySelectionsSelect<T extends boolean = true> {
   user?: T;
   status?: T;
   submittedAt?: T;
+  staffNoticeFor?: T;
   approvedAt?: T;
   feedback?: T;
   updatedAt?: T;
@@ -2504,6 +2509,16 @@ export interface TaskSendEmail {
  * via the `definition` "TaskSend-gallery-notice".
  */
 export interface TaskSendGalleryNotice {
+  input: {
+    id: number;
+  };
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskSend-selection-notice".
+ */
+export interface TaskSendSelectionNotice {
   input: {
     id: number;
   };
