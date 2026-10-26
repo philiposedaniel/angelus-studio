@@ -575,6 +575,12 @@ export const en = {
   },
   emails: {
     greeting: 'Dear {name},',
+    galleryReady: {
+      subject: 'Your photos are ready: {gallery}',
+      body: 'The photos from {gallery} are ready to see in your client portal at {studio}.',
+      action: 'Open your gallery',
+      note: 'You receive this because the studio shared a gallery with you. Sign in to your client portal to see it.',
+    },
     invitation: {
       subject: 'You are invited: {event}',
       body: 'You are invited to {event}, {when}.',

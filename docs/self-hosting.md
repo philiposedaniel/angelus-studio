@@ -69,6 +69,7 @@ What is sent, and to whom:
 | Invitation, reply reminder, day-before reminder | The guest | Staff send an invitation or reminder, or the day before a guest's event |
 | Reply notice | The event's reply-notice recipients | A guest replies |
 | Ticket and ticket day-before reminder | The ticket buyer | A ticket is bought, and the day before the event |
+| Gallery link | Each client of the gallery, one message each | A gallery is published with *Email clients when published* on. Sent once; a second publish does not send it again. |
 | Waitlist offer | The person offered a place | A place opens for someone on the waitlist |
 | Vendor booking and confirmation | The vendor, and the event's reply-notice address | A vendor booking is made, and when it is confirmed |
 | Inquiry alert | The studio's contact address | Someone sends the contact form (turned off in the site settings if not wanted) |
@@ -82,8 +83,6 @@ list, then look for the message in your inbox. If it does not arrive, read the a
 the job retries three times before it gives up. To see the full text without sending, set `EMAIL_MODE=log`,
 redeploy, and send the same invitation. The log shows the subject, recipient and body. Then set `EMAIL_MODE`
 back to unset.
-
-Gallery-link emails are not built yet. Client gallery links are copied by hand.
 
 ## Not built yet: video and signatures
 
@@ -129,7 +128,7 @@ runs hourly. Run exactly one app instance, or set `PAYLOAD_JOBS_AUTORUN=false` o
 | Feature | State | Waiting on |
 | --- | --- | --- |
 | Online deposit and balance payment | Off until `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` are set | Stripe account and test keys. Live payment has never been run. |
-| Email (invitations, tickets, waitlist, vendor and inquiry notices) | Off until `SMTP_HOST` and `EMAIL_FROM_ADDRESS` are set. Staff copy links by hand. See *Email* above. | An email service with SMTP (Resend, Postmark or similar) and a verified sending domain. Gallery-link emails are not built yet. |
+| Email (invitations, tickets, waitlist, vendor and inquiry notices) | Off until `SMTP_HOST` and `EMAIL_FROM_ADDRESS` are set. Staff copy links by hand. See *Email* above. | An email service with SMTP (Resend, Postmark or similar) and a verified sending domain. |
 | Private video hosting | Not built. No variables exist yet. | A video provider choice, and the feature built. |
 | Contract signature | Typed name with IP and fingerprint, no third-party service. No variables. | A decision on an e-signature provider. |
 

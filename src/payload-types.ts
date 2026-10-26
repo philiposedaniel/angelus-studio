@@ -162,6 +162,7 @@ export interface Config {
       'build-gallery-zip': TaskBuildGalleryZip;
       'cleanup-gallery-zips': TaskCleanupGalleryZips;
       'send-email': TaskSendEmail;
+      'send-gallery-notice': TaskSendGalleryNotice;
       'send-event-reminders': TaskSendEventReminders;
       inline: {
         input: unknown;
@@ -429,6 +430,14 @@ export interface Gallery {
    */
   clients?: (number | User)[] | null;
   status: 'draft' | 'published';
+  /**
+   * Email each client a link when this gallery is published. Sent once, the first time it is published with this on. Needs email to be set up.
+   */
+  notifyClients?: boolean | null;
+  /**
+   * When the clients were emailed the link.
+   */
+  clientsNotifiedAt?: string | null;
   /**
    * After this date clients can no longer open the gallery. Leave empty for no expiry.
    */
@@ -1396,7 +1405,13 @@ export interface PayloadJob {
     | {
         executedAt: string;
         completedAt: string;
-        taskSlug: 'inline' | 'build-gallery-zip' | 'cleanup-gallery-zips' | 'send-email' | 'send-event-reminders';
+        taskSlug:
+          | 'inline'
+          | 'build-gallery-zip'
+          | 'cleanup-gallery-zips'
+          | 'send-email'
+          | 'send-gallery-notice'
+          | 'send-event-reminders';
         taskID: string;
         input?:
           | {
@@ -1429,7 +1444,16 @@ export interface PayloadJob {
         id?: string | null;
       }[]
     | null;
-  taskSlug?: ('inline' | 'build-gallery-zip' | 'cleanup-gallery-zips' | 'send-email' | 'send-event-reminders') | null;
+  taskSlug?:
+    | (
+        | 'inline'
+        | 'build-gallery-zip'
+        | 'cleanup-gallery-zips'
+        | 'send-email'
+        | 'send-gallery-notice'
+        | 'send-event-reminders'
+      )
+    | null;
   queue?: string | null;
   waitUntil?: string | null;
   processing?: boolean | null;
@@ -1821,6 +1845,8 @@ export interface GalleriesSelect<T extends boolean = true> {
   description?: T;
   clients?: T;
   status?: T;
+  notifyClients?: T;
+  clientsNotifiedAt?: T;
   expiresAt?: T;
   watermarkText?: T;
   allowDownloads?: T;
@@ -2469,6 +2495,16 @@ export interface TaskSendEmail {
       | 'vendorBooking'
       | 'vendorConfirmed'
       | 'inquiryAlert';
+    id: number;
+  };
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskSend-gallery-notice".
+ */
+export interface TaskSendGalleryNotice {
+  input: {
     id: number;
   };
   output?: unknown;
