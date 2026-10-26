@@ -523,6 +523,17 @@ export const es: Dictionary = {
     cancelled: 'Esta inscripción fue cancelada. Contacta con el estudio si es un error.',
     checkedIn: { one: 'Llegada registrada: 1 persona.', other: 'Llegada registrada: {count} personas.' },
     doNotAdmit: 'Inscripción cancelada. No admitir.',
+    cancel: {
+      help: '¿No puedes venir? Cancela tu inscripción para que tus plazas pasen a otra persona.',
+      button: 'Cancelar mi inscripción',
+      cancelling: 'Cancelando…',
+      confirm: '¿Cancelar tu inscripción para {event}? Tus plazas pasarán a otra persona y no se puede deshacer.',
+      paidHelp: 'Para cancelar una entrada pagada, contacta con el estudio: ellos gestionan los reembolsos.',
+      errors: {
+        closed: 'Esta inscripción ya no se puede cancelar aquí. Contacta con el estudio.',
+        failed: 'Algo salió mal y no se cambió nada. Inténtalo de nuevo.',
+      },
+    },
     waitlist: {
       heading: 'Apúntate a la lista de espera',
       intro: '¿Agotadas? Déjanos tus datos. Si se liberan plazas, se ofrecen a las personas de la lista de espera por orden de llegada y se te reservan durante 24 horas.',

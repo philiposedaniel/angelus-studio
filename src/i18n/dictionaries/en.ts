@@ -521,6 +521,17 @@ export const en = {
     cancelled: 'This registration was cancelled. Please contact the studio if this is a mistake.',
     checkedIn: { one: 'Checked in: 1 person.', other: 'Checked in: {count} people.' },
     doNotAdmit: 'Cancelled registration. Do not admit.',
+    cancel: {
+      help: "Can't make it? Cancel your registration so your places can go to someone else.",
+      button: 'Cancel my registration',
+      cancelling: 'Cancelling…',
+      confirm: 'Cancel your registration for {event}? Your places go to someone else, and this cannot be undone.',
+      paidHelp: 'To cancel a paid ticket, contact the studio: they handle refunds.',
+      errors: {
+        closed: 'This registration can no longer be cancelled here. Please contact the studio.',
+        failed: 'Something went wrong and nothing was changed. Please try again.',
+      },
+    },
     waitlist: {
       heading: 'Join the waitlist',
       intro: 'Sold out? Leave your details. If places free up they are offered to people on the waitlist in the order they joined, and held for you for 24 hours.',

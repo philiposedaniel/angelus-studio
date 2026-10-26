@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 import QRCode from 'qrcode'
 
+import { CancelTicketButton } from '@/components/tickets/CancelTicketButton'
 import { getDictionary } from '@/i18n/dictionaries'
 import { formatEventWhen } from '@/lib/eventTime'
 import { formatMoney } from '@/lib/money'
@@ -10,7 +11,7 @@ import { resolveLocale } from '@/lib/locale'
 import { isShareToken } from '@/lib/shareTokens'
 import { siteOrigin } from '@/lib/siteOrigin'
 import { getCurrentTenant } from '@/lib/tenant'
-import { findTicket, holdsPlaces } from '@/lib/tickets'
+import { findTicket, holdsPlaces, ticketCancelCheck } from '@/lib/tickets'
 
 // The link is the person's ticket: keep it out of search engines and referrers.
 export const metadata = { robots: { index: false }, referrer: 'no-referrer' }
@@ -34,6 +35,7 @@ export default async function TicketPage({ params }: PageProps<'/[locale]/ticket
   const quantity = registration.quantity ?? 1
   const confirmed = registration.status === 'confirmed'
   const arrived = registration.checkedInCount ?? 0
+  const cancelCheck = ticketCancelCheck(registration, event)
 
   // The entry code opens the ticket's check-in page, which only the studio's staff can use.
   const entryCode = confirmed
@@ -90,6 +92,8 @@ export default async function TicketPage({ params }: PageProps<'/[locale]/ticket
             </a>
           </section>
           <p className="rounded-xl border border-gold/40 p-4 text-sm">{t.keepLink}</p>
+          {cancelCheck === 'allowed' && <CancelTicketButton token={token} event={event.title} t={t.cancel} />}
+          {cancelCheck === 'paid' && arrived === 0 && <p className="text-sm text-mist">{t.cancel.paidHelp}</p>}
         </>
       ) : registration.status === 'pending' && holdsPlaces(registration) ? (
         <p role="status" className="rounded-xl border border-gold/40 p-4">

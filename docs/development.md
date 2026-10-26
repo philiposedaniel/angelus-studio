@@ -526,6 +526,11 @@ file from the portal can be at most 1 MB, the limit Next.js sets on server actio
   copy its ticket link to resend it. The event's *Registration and tickets* section shows places
   taken, left and checked in per ticket type. Only studio admins and production managers see ticket
   types and registrations.
+- The person holding a free ticket can cancel it from their ticket page (*Cancel my registration*,
+  after a confirmation) until the event starts, unless someone has already been checked in on it.
+  Their places go back, to the waitlist first if anyone waits. A paid ticket's page says to contact
+  the studio instead, since refunds are made from the admin (`cancelTicket` in `src/lib/tickets.ts`;
+  `tests/int/ticketCancel.int.spec.ts`).
 - *Download the attendee list (CSV)* in that section gives everyone registered for the event: name,
   email, phone, ticket, places, status (confirmed, waiting for payment, not paid, cancelled), amount
   and currency, language, when they registered, how many checked in and their ticket link. It is
@@ -579,7 +584,9 @@ file from the portal can be at most 1 MB, the limit Next.js sets on server actio
   back and whenever the event page or a waitlist link is opened; there is no background timer.
 - Deleting an event deletes its ticket types, registrations and waitlists.
 
-Known limits: refunds from the admin are for the full amount (refund part of it in Stripe). No
+Known limits: refunds from the admin are for the full amount (refund part of it in Stripe). A
+holder cancels their whole registration, not some of its places, and the studio is not notified
+when they do (the registration shows as cancelled). No
 booking fee is added (decision 6 in the events plan is open). Paid tickets have been tested with
 signed webhook events, not yet with a live Stripe round trip. Tickets and waitlist offers are
 emailed once email is set up (see *Event emails*); until then the ticket page asks people to save

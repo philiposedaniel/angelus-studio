@@ -537,6 +537,67 @@ export async function findTicket(payload: Payload, tenantId: number, token: unkn
   return { registration, event, ticketType }
 }
 
+/** Why a ticket's holder can or cannot cancel it from their ticket page. */
+export type TicketCancelCheck = 'allowed' | 'paid' | 'checkedIn' | 'started' | 'notConfirmed'
+
+/**
+ * Whether the holder may cancel their own registration with their link: a confirmed free
+ * registration, nobody checked in yet, before the event starts. Paid tickets are refunded by
+ * the studio, so they are cancelled there.
+ */
+export function ticketCancelCheck(
+  registration: Pick<Registration, 'status' | 'amount' | 'checkedInCount'>,
+  event: Pick<Event, 'startsAt'>,
+  now = Date.now(),
+): TicketCancelCheck {
+  if (registration.status !== 'confirmed') return 'notConfirmed'
+  if ((registration.amount ?? 0) > 0) return 'paid'
+  if ((registration.checkedInCount ?? 0) > 0) return 'checkedIn'
+  if (new Date(event.startsAt).getTime() <= now) return 'started'
+  return 'allowed'
+}
+
+/**
+ * Cancels a free registration with its own ticket link, on this studio's site. Its places are
+ * given back, so the registrations collection offers them to the next people on the waitlist.
+ */
+export async function cancelTicket({
+  payload,
+  tenantId,
+  token,
+  now = Date.now(),
+}: {
+  payload: Payload
+  tenantId: number
+  token: unknown
+  now?: number
+}): Promise<{ status: 'cancelled' } | { status: 'error'; reason: 'closed' | 'failed' }> {
+  const found = await findTicket(payload, tenantId, token)
+  if (!found || ticketCancelCheck(found.registration, found.event, now) !== 'allowed') {
+    return { status: 'error', reason: 'closed' }
+  }
+  try {
+    const result = await payload.update({
+      collection: 'registrations',
+      where: {
+        and: [
+          { id: { equals: found.registration.id } },
+          // Read again as the update runs, so a check-in at the door just before is not undone.
+          { status: { equals: 'confirmed' } },
+          { or: [{ checkedInCount: { equals: 0 } }, { checkedInCount: { exists: false } }] },
+        ],
+      },
+      data: { status: 'cancelled' },
+      overrideAccess: true,
+    })
+    if (result.docs.length !== 1) return { status: 'error', reason: 'closed' }
+    return { status: 'cancelled' }
+  } catch (error) {
+    payload.logger.error({ err: error, msg: 'Could not cancel a ticket from its link' })
+    return { status: 'error', reason: 'failed' }
+  }
+}
+
 /* ---- Summary ---- */
 
 type SummaryRegistration = Pick<Registration, 'ticketType' | 'quantity' | 'status' | 'checkedInCount'> &
