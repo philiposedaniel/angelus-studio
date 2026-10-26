@@ -5,7 +5,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 
 import type { Gallery, GallerySelection, Tenant, User } from '@/payload-types'
 import { deliverSelectionNotice } from '@/lib/selectionNotices'
-import { submitSelection } from '@/lib/selections'
+import { submitSelection } from '@/lib/selectionSubmit'
 import { runSql } from '@/lib/sqlSession'
 
 import { testJpeg } from '../helpers/image'

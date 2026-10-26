@@ -1,0 +1,19 @@
+
+> angelus-studio@1.0.0 seed:demo /home/claude/angelus-studio
+> cross-env NODE_OPTIONS=--no-deprecation payload run src/scripts/seed-demo.ts
+
+<claude-code-hint v="1" type="plugin" value="stripe@claude-plugins-official" />
+[16:26:53] [33mWARN[39m: [36mNo email adapter provided. Email will be written to console. More info at https://payloadcms.com/docs/email/overview.[39m
+Demo data created.
+Studio administrator: admin@angelus.demo.test / UZQTQiW9gCFZ
+Client: client@angelus.demo.test / UZQTQiW9gCFZ
+Public events: http://localhost:3000/en/events
+Event with tickets: http://localhost:3000/en/events/demo-studio-open-day
+Ticket: http://localhost:3000/en/tickets/FN5zQQkLEpTIvfEQUXPzCqjlfcdsrfIV
+Invitation: http://localhost:3000/en/invite/EC3bhDGSwt1-OEQMdbStLwYel8gYAIjE
+Quote and contract: http://localhost:3000/en/quote/yv_rTgZqROd8R2X7uomPrr2tzU4_7IWu
+Shared album: http://localhost:3000/s/wcORgj4RS3LOOMZtJ7Fgk5sIyQ37DRVE
+Vendor booking: http://localhost:3000/en/vendor/J4tchnv-xFx3FgR_hKSoxbj9jWds1R4i
+Waitlist place: http://localhost:3000/en/waitlist/WotahctLWtKIOWY46UZ6T1bKr6nbNJCS
+Client portal: http://localhost:3000/en/portal
+Studio admin: http://localhost:3000/admin
