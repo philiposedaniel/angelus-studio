@@ -7,10 +7,8 @@ import { PrintButton } from '@/components/portal/PrintButton'
 import { getDictionary } from '@/i18n/dictionaries'
 import { requirePortalUser } from '@/lib/auth'
 import { resolveLocale } from '@/lib/locale'
+import { parseRowId } from '@/lib/ids'
 import { getCurrentTenant } from '@/lib/tenant'
-
-/** Largest Postgres integer id. A bigger id fails in the query, so it is not found here. Switch to src/lib/ids.ts once #64 is on main. */
-const MAX_ROW_ID = 2147483647
 
 export const metadata = { robots: { index: false } }
 
@@ -21,8 +19,8 @@ export default async function PortalProject({ params }: PageProps<'/[locale]/por
   const { locale: requested, id } = await params
   const locale = await resolveLocale(tenant, requested)
   const user = await requirePortalUser(tenant, locale)
-  const numericId = Number(id)
-  if (!Number.isInteger(numericId) || numericId <= 0 || numericId > MAX_ROW_ID) notFound()
+  const numericId = parseRowId(id)
+  if (numericId === null) notFound()
   const t = getDictionary(locale).portal
   const payload = await getPayload({ config })
 

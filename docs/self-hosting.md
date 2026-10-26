@@ -33,6 +33,10 @@ Three volumes hold all the state. Back up all three:
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | No | Both are needed for online deposits. Until both are set, payment stays off. |
 | `EMAIL_MODE` | No | `smtp` (the default once SMTP is set), `log` or `off`. See *Email* below. |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD`, `EMAIL_FROM_ADDRESS`, `EMAIL_FROM_NAME` | No | The email service. See *Email* below. |
+| `S3_BUCKET`, `S3_REGION`, `S3_ENDPOINT`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_FORCE_PATH_STYLE` | No | Private object storage for client photos. See *Object storage for client photos* below. |
+| `PAYLOAD_DB_PUSH` | No | Leave unset. Outside production the schema is pushed on start unless this is `false`. Production always runs the committed migrations. |
+
+What unset means, in short: no email is sent or logged, no payment is taken, client photos stay on the `private-media` volume, and each app instance runs background jobs (set `PAYLOAD_JOBS_AUTORUN=false` on extra instances).
 
 Never commit real values. Keep them in Coolify's environment settings.
 

@@ -5,7 +5,7 @@ import { getPayload } from 'payload'
 import { Readable } from 'stream'
 
 import { openGalleryFile, readGalleryFile, signedGalleryFileUrl } from '@/lib/galleryFiles'
-import { idOf } from '@/lib/ids'
+import { idOf, parseRowId } from '@/lib/ids'
 import { objectStorageEnabled } from '@/lib/objectStorage'
 import { findSharedGallery } from '@/lib/sharedAlbum'
 import { isSharedSize } from '@/lib/shareTokens'
@@ -15,16 +15,14 @@ import { watermarkImage } from '@/lib/watermark'
 
 const notFound = () => new Response('Not found', { status: 404 })
 
-/** Largest Postgres integer id. A bigger id fails in the query, so it is not found here. Switch to src/lib/ids.ts once #64 is on main. */
-const MAX_ROW_ID = 2147483647
-
 /** Serves a web-size copy of a photo in a shared album. Never the original. */
 export async function GET(
   _request: Request,
   { params }: RouteContext<'/s/[token]/p/[photoId]/[size]'>,
 ) {
   const { token, photoId, size } = await params
-  if (!isSharedSize(size) || !/^\d+$/.test(photoId) || Number(photoId) > MAX_ROW_ID) return notFound()
+  const id = parseRowId(photoId)
+  if (!isSharedSize(size) || id === null) return notFound()
   const tenant = await getCurrentTenant()
   if (!tenant) return notFound()
   const gallery = await findSharedGallery(tenant, token)
@@ -32,7 +30,7 @@ export async function GET(
 
   const payload = await getPayload({ config })
   const photo = await payload
-    .findByID({ collection: 'gallery-photos', id: Number(photoId), depth: 0 })
+    .findByID({ collection: 'gallery-photos', id, depth: 0 })
     .catch(() => null)
   if (!photo || String(idOf(photo.gallery)) !== String(gallery.id)) return notFound()
 
