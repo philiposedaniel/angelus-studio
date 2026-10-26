@@ -32,11 +32,14 @@ export default async function AvailabilityPage({ params }: PageProps<'/[locale]/
 
   // Monday-first weekday names, from a known week.
   const weekdays = Array.from({ length: 7 }, (_, index) =>
-    new Date(Date.UTC(2024, 0, 1 + index)).toLocaleDateString(locale, { weekday: 'short', timeZone: 'UTC' }),
+    new Date(Date.UTC(2024, 0, 1 + index)).toLocaleDateString(locale, {
+      weekday: 'short',
+      timeZone: 'UTC',
+    }),
   )
 
   return (
-    <main className="mx-auto grid max-w-4xl gap-10 px-6 py-16 text-ivory">
+    <div className="mx-auto grid max-w-4xl gap-10 px-6 py-16 text-ivory">
       <header className="grid gap-3">
         <h1 className="font-serif text-4xl">{t.heading}</h1>
         <p className="text-mist">{t.intro}</p>
@@ -46,11 +49,14 @@ export default async function AvailabilityPage({ params }: PageProps<'/[locale]/
         const daysInMonth = new Date(Date.UTC(month.year, month.month, 0)).getUTCDate()
         // Leading blanks so the first day falls on its weekday (Monday first).
         const leading = (new Date(Date.UTC(month.year, month.month - 1, 1)).getUTCDay() + 6) % 7
-        const title = new Date(Date.UTC(month.year, month.month - 1, 1)).toLocaleDateString(locale, {
-          month: 'long',
-          year: 'numeric',
-          timeZone: 'UTC',
-        })
+        const title = new Date(Date.UTC(month.year, month.month - 1, 1)).toLocaleDateString(
+          locale,
+          {
+            month: 'long',
+            year: 'numeric',
+            timeZone: 'UTC',
+          },
+        )
         return (
           <section key={month.value} className="grid gap-3" aria-label={title}>
             <h2 className="font-serif text-2xl capitalize">{title}</h2>
@@ -68,12 +74,23 @@ export default async function AvailabilityPage({ params }: PageProps<'/[locale]/
                 const iso = `${month.year}-${String(month.month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
                 const status = dayStatus(iso, today, booked)
                 const style = {
-                  booked: { box: 'border-gold/60 bg-gold/10', label: 'text-xs text-gold', text: t.booked },
+                  booked: {
+                    box: 'border-gold/60 bg-gold/10',
+                    label: 'text-xs text-gold',
+                    text: t.booked,
+                  },
                   open: { box: 'border-ivory/10', label: 'text-xs text-mist', text: t.open },
-                  past: { box: 'border-ivory/5 bg-ivory/[0.02]', label: 'text-xs text-mist', text: t.past },
+                  past: {
+                    box: 'border-ivory/5 bg-ivory/[0.02]',
+                    label: 'text-xs text-mist',
+                    text: t.past,
+                  },
                 }[status]
                 return (
-                  <span key={iso} className={`grid min-h-14 content-start gap-1 rounded-lg border p-2 text-left ${style.box}`}>
+                  <span
+                    key={iso}
+                    className={`grid min-h-14 content-start gap-1 rounded-lg border p-2 text-left ${style.box}`}
+                  >
                     <span>{day}</span>
                     <span className={style.label}>{style.text}</span>
                   </span>
@@ -83,6 +100,6 @@ export default async function AvailabilityPage({ params }: PageProps<'/[locale]/
           </section>
         )
       })}
-    </main>
+    </div>
   )
 }
