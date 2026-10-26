@@ -114,7 +114,10 @@ export async function findVendorBooking(
     payload.findByID({ collection: 'events', id: eventId, depth: 0, overrideAccess: true }).catch(() => null),
     payload.findByID({ collection: 'vendors', id: vendorId, depth: 0, overrideAccess: true }).catch(() => null),
   ])
-  if (!event || !vendor || String(idOf(event.tenant)) !== String(tenantId)) return null
+  // The event and the vendor must both belong to this studio: the booking hook refuses a cross-studio vendor,
+  // but this lookup does not rely on that alone.
+  if (!event || !vendor) return null
+  if (String(idOf(event.tenant)) !== String(tenantId) || String(idOf(vendor.tenant)) !== String(tenantId)) return null
   return { booking, vendor, event }
 }
 
