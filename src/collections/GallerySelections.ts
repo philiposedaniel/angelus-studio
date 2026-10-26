@@ -63,6 +63,14 @@ export const GallerySelections: CollectionConfig = {
       ],
     },
     { name: 'submittedAt', type: 'date' },
+    // The submission the studio was last emailed about. Set by the notice job so each submission is
+    // announced once. Internal: no API client reads or writes it.
+    {
+      name: 'staffNoticeFor',
+      type: 'date',
+      access: { read: () => false, create: () => false, update: () => false },
+      admin: { hidden: true },
+    },
     { name: 'approvedAt', type: 'date' },
     {
       name: 'feedback',

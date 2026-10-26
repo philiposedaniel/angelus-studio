@@ -596,6 +596,12 @@ export const es: Dictionary = {
       action: 'Abrir tu galería',
       note: 'Recibes este correo porque el estudio compartió una galería contigo. Inicia sesión en tu portal de clientes para verla.',
     },
+    selectionSubmitted: {
+      subject: 'Nueva selección de {client}: {gallery}',
+      body: '{client} ha enviado su selección de {gallery}. Revísala para aprobarla o pedir cambios.',
+      action: 'Revisar la selección',
+      note: 'Recibes este correo porque puedes gestionar las galerías de {studio}.',
+    },
     invitation: {
       subject: 'Estás invitado: {event}',
       body: 'Te invitamos a {event}, {when}.',

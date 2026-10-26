@@ -2,6 +2,8 @@ import type { Payload } from 'payload'
 
 import type { User } from '@/payload-types'
 
+import { queueSelectionNotice } from '@/lib/selectionNotices'
+
 /**
  * A client's selection of photos from one gallery. Their favorites in that gallery are the
  * selection. Staff review it in the admin: they ask for changes, which reopens it, or approve
@@ -79,25 +81,25 @@ export async function submitSelection({
   if (existing && selectionIsLocked(existing.status)) return { status: 'locked' }
 
   const submittedAt = new Date().toISOString()
-  if (existing) {
-    await payload.update({
-      collection: 'gallery-selections',
-      id: existing.id,
-      data: { status: 'submitted', submittedAt },
-      overrideAccess: true,
-    })
-  } else {
-    await payload.create({
-      collection: 'gallery-selections',
-      data: {
-        tenant: typeof gallery.tenant === 'object' ? gallery.tenant?.id : gallery.tenant,
-        gallery: galleryId,
-        user: user.id,
-        status: 'submitted',
-        submittedAt,
-      },
-      overrideAccess: true,
-    })
-  }
+  const saved = existing
+    ? await payload.update({
+        collection: 'gallery-selections',
+        id: existing.id,
+        data: { status: 'submitted', submittedAt },
+        overrideAccess: true,
+      })
+    : await payload.create({
+        collection: 'gallery-selections',
+        data: {
+          tenant: typeof gallery.tenant === 'object' ? gallery.tenant?.id : gallery.tenant,
+          gallery: galleryId,
+          user: user.id,
+          status: 'submitted',
+          submittedAt,
+        },
+        overrideAccess: true,
+      })
+  // Queued after the save, so the studio is told only about a submission that was kept.
+  await queueSelectionNotice(payload, saved.id)
   return { status: 'submitted' }
 }

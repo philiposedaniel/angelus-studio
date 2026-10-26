@@ -101,8 +101,9 @@ starts. Every schema change therefore needs `pnpm migrate:create <name>` and a c
   feedback and set *Changes requested* to reopen it for the client, who submits again, or set
   *Approved and locked* to make it final. Clients cannot change a selection's status themselves, and
   a client from another studio cannot see it. Limits: a refused favorite shows the generic
-  favorite error on the photo rather than the reason, and staff are not emailed when a selection
-  is submitted (email is not built yet).
+  favorite error on the photo rather than the reason. When a selection is submitted, each member of the
+  studio who can manage galleries is emailed a link to review it, once per submission; if every send
+  fails the job is retried, and if only some fail the rest are not sent it again.
 
 ## Shared albums and embeds
 
