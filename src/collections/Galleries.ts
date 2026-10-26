@@ -105,6 +105,7 @@ export const Galleries: CollectionConfig = {
       admin: {
         position: 'sidebar',
         readOnly: true,
+        date: { pickerAppearance: 'dayAndTime' },
         condition: (data) => Boolean(data?.clientsNotifiedAt),
         description: 'When the clients were emailed the link.',
       },
