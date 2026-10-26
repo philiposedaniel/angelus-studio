@@ -77,6 +77,25 @@ describe('private links on public pages stay within their studio', () => {
     expect(await findVendorBooking(payload, studioB.id, token)).toBeNull()
   })
 
+  it('finds no vendor booking whose vendor belongs to another studio', async () => {
+    // The booking hook refuses a vendor from another studio, so the vendor is moved after the booking is made.
+    const movedVendor = await payload.create({
+      collection: 'vendors',
+      data: { tenant: studioA.id, name: `${PREFIX}Moved`, category: 'catering' } as never,
+      overrideAccess: true,
+    })
+    const booking = await payload.create({
+      collection: 'event-vendors',
+      data: { event: eventA.id, vendor: movedVendor.id, role: `${PREFIX}Catering`, currency: 'eur' } as never,
+      overrideAccess: true,
+    })
+    const { runSql } = await import('@/lib/sqlSession')
+    const { sql } = await import('@payloadcms/db-postgres')
+    await runSql(payload, sql`UPDATE vendors SET tenant_id = ${studioB.id} WHERE id = ${movedVendor.id}`)
+
+    expect(await findVendorBooking(payload, studioA.id, booking.vendorToken as string)).toBeNull()
+  })
+
   it('finds no vendor booking once it is cancelled, even with its own studio', async () => {
     const booking = await payload.create({
       collection: 'event-vendors',
